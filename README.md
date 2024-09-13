@@ -1,2 +1,2 @@
 # NutNet-ppt
-Retrieving precipitation data for NutNet sites
+Retrieving precipitation data for global NutNet sites
