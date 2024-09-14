@@ -13,78 +13,33 @@ library(terra)
 library(lubridate)
 library(tidyverse)
 
+# read in list of all NutNet site codes and coordinates 
 sites <- read.csv("/Users/ingridslette/Desktop/NutNet/NutNet-site-coords.csv")
 
-sites <- sites %>% vect(geom = c("longitude", "latitude"), crs = "EPSG:4326")
+# make that a SpatVector
+site <- sites %>% vect(geom = c("longitude", "latitude"), crs = "EPSG:4326")
 
+# list all of the monthly mswep precip data files
 r_paths <- list.files("/Users/ingridslette/Desktop/mswep",
                       full.names = TRUE) %>% 
   sort()
 
-years <- basename(r_paths) %>% 
-  str_extract("^\\d{4}") %>% 
-  unique() %>% 
-  sort()                       
+# make that a SpatRaster
+r <- rast(r_paths)
 
-# extract clim data from mswep --------------------------------------------
-#' extract mswep ppt data
-#' @param r spatraster (containing daily ppt 'rasters')
-#' @param site spatvector containing coordinates of ide sites
-#' @return dataframe with site_code, date, and precip columns
+# extract monthly precip data for each site
+ppt_monthly <- terra::extract(r, site, bind = TRUE)
 
-extract_mswep <- function(r, site) {
-  r_extracted <- terra::extract(r, site, bind = TRUE)
-  
-  # one row for each site, columns 
-  # are site_code 
-  df <- as.data.frame(r_extracted)
-  # first cold should be site_code
-  # additional cols should be precipitation for a given day
-  stopifnot(names(df[, 1]) == "site_code",
-            str_detect(names(df[, 2:ncol(df)]), "^precipitation"))
-  df2 <- df
-  names(df2) <- c("site_code", paste0("precip_", time(r)))
-  out <- pivot_longer(df2, -"site_code", names_to = "date",
-                      values_to = "precip") %>% 
-    mutate(date = str_replace(date, "^precip_", ""))
-  out
-}
+df <- as.data.frame(ppt_monthly)
 
-extract_mswep <- function(r, site) {
-  r_extracted <- terra::extract(r, site, bind = TRUE)
-  
-  # one row for each site, columns 
-  # are site_code 
-  df <- as.data.frame(r_extracted)
-  # first cold should be site_code
-  # additional cols should be precipitation for a given day
-  df2 <- df
-  names(df2) <- c("site_code", paste0("precip_", time(r)))
-  out <- pivot_longer(df2, -"site_code", names_to = "date",
-                      values_to = "precip") %>% 
-    mutate(date = str_replace(date, "^precip_", ""))
-  out
-}
+names(df) <- c("site_code", paste0("precip_", time(r)))
 
-dummy <- extract_mswep(rast(r_paths[1]), sites[1, ])
+out <- pivot_longer(df, -"site_code", names_to = "date",
+                    values_to = "precip") %>% 
+  mutate(date = str_replace(date, "^precip_", ""))
 
-dummy <- dummy[c(), ]
+out$date <- substr(out$date, 1, 7)
 
-for (yr in years) {
-  
-  path_names <- names(r_paths) %>% 
-    str_subset(paste0("^", yr))
-  
-  paths_yr <- r_paths[path_names]
-  
-  r <- rast(paths_yr) # read in data just for the given year
-  
-  ppt_monthly <- extract_mswep(r, sites)
-  write_csv(ppt_monthly, file = "/Users/ingridslette/Desktop/NutNet/mswep-monthly-ppt.csv", append = TRUE)
-  message(yr, " complete")
-}
-
-ppt_monthly <- extract_mswep(r_paths, sites)
 
 
 
