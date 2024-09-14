@@ -1,14 +1,19 @@
+# Ingrid Slette
+# started 13 September 2024
+
 library(tidyverse)
 
+ppt_all_months <- read.csv("/Users/ingridslette/Dropbox/NutNet data/climate/mswep/mswep-monthly-ppt-all-nutnet-sites.csv")
+
 # for sites where the growing season spans multiple calendar years:
-out$gs_year <- out$year 
+ppt_all_months$gs_year <- ppt_all_months$year 
 
-str(out)
-out$gs_year <- as.numeric(out$gs_year)
-out$year <- as.numeric(out$year)
-out$month <- as.numeric(out$month)
+str(ppt_all_months)
+ppt_all_months$gs_year <- as.numeric(ppt_all_months$gs_year)
+ppt_all_months$year <- as.numeric(ppt_all_months$year)
+ppt_all_months$month <- as.numeric(ppt_all_months$month)
 
-out <- out %>%
+ppt_all_months <- ppt_all_months %>%
   mutate(gs_year = case_when(
     site_code == "bogong.au" & month %in% c(10, 11, 12) ~ year + 1,
     site_code == "burrawan.au" & month %in% c(10, 11, 12) ~ year + 1,
@@ -32,7 +37,8 @@ out <- out %>%
   ))
 
 # keep only growing season months at each site (there is definitely a better way to do this...)
-ppt_monthly_gs_only <- filter(out, 
+# for now, only doing this for sites included in my ppt-biomass coupling project, not all nutnet sites
+ppt_monthly_gs_only <- filter(ppt_all_months, 
                          site_code == "arch.us" & month %in% c(5, 6, 7, 8, 9, 10) |
                            site_code =="badlau.de" & month %in% c(4, 5, 6, 7, 8, 9, 10) |
                            site_code =="bayr.de" & month %in% c(3, 4, 5, 6, 7, 8, 9) |
