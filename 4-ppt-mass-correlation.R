@@ -33,12 +33,12 @@ site_year_counts <- mass2 %>%
   group_by(site_code) %>%
   summarise(year_count = n_distinct(year))
 
-sites_with_8_years <- site_year_counts %>%
-  filter(year_count >= 8) %>%
+sites_with_10_years <- site_year_counts %>%
+  filter(year_count >= 10) %>%
   select(site_code)
 
 mass3 <- mass2 %>%
-  filter(site_code %in% sites_with_8_years$site_code)
+  filter(site_code %in% sites_with_10_years$site_code)
 
 total_mass <- aggregate(
   mass ~ year + year_trt + trt + site_name + site_code + block + plot + subplot, 
@@ -63,19 +63,10 @@ ggplot(mass_ppt_c_npk, aes(x=mswep_ppt, y=mass, color = trt, shape = trt, label 
   xlab("MSWEP Growing Season Precipitation (mm)") + ylab("Total live mass") +
   geom_text(aes(label=ifelse(mass>2500, as.character(site_code), '')), hjust=-0.1, vjust=0.1) +
   theme_bw()
-ggplot(mass_ppt_c_npk, aes(x=log_mswep_ppt, y=log_mass, color = trt, shape = trt, label = site_code)) +
-  geom_point() + geom_smooth(method = lm) +
-  xlab("log(MSWEP Growing Season Precipitation (mm))") + ylab("log(Total live mass)") +
-  theme_bw()
 
 ggplot(mass_ppt_c_npk, aes(x=mswep_ppt, y=mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("MSWEP Growing Season Precipitation (mm)") + ylab("Total live mass") +
-  facet_wrap(vars(site_code), scales = "free") +
-  theme_bw()
-ggplot(mass_ppt_c_npk, aes(x=log_mswep_ppt, y=log_mass, color = trt, shape = trt)) +
-  geom_point() + geom_smooth(method = lm) +
-  xlab("log(MSWEP Growing Season Precipitation (mm))") + ylab("log(Total live mass)") +
   facet_wrap(vars(site_code), scales = "free") +
   theme_bw()
 
@@ -88,32 +79,17 @@ ggplot(mass_ppt_c_npk, aes(x = mswep_ppt, y = mass)) +
        y = "Total live mass",
        color = "Site Code") +
   theme(legend.position = "right")
-ggplot(mass_ppt_c_npk, aes(x = log_mswep_ppt, y = log_mass)) +
-  geom_smooth(aes(group = site_code, color = site_code), method = "lm", se = FALSE) +
-  geom_smooth(method = "lm", se = FALSE, color = "black") +
-  facet_wrap(~ trt, nrow = 2) +
-  theme_bw() +
-  labs(x = "log(MSWEP Growing Season Precipitation)",
-       y = "log(Total live mass)",
-       color = "Site Code") +
-  theme(legend.position = "right")
 
 c_npk_x_model <- lm(mass ~ mswep_ppt * trt, data = mass_ppt_c_npk)
 summary(c_npk_x_model)
 
-mass_ppt_c_npk_filtered <- mass_ppt_c_npk %>%
-  filter(log_mass != -Inf)
+#mass_ppt_c_npk_filtered <- mass_ppt_c_npk %>% filter(log_mass != -Inf)
 
-c_npk_x_model2 <- lm(log_mass ~ log_mswep_ppt * trt, data = mass_ppt_c_npk_filtered)
-summary(c_npk_x_model2)
+#c_npk_x_model2 <- lm(log_mass ~ log_mswep_ppt * trt, data = mass_ppt_c_npk_filtered)
+#summary(c_npk_x_model2)
 
-control_data <- subset(mass_ppt_c_npk_filtered, trt == "Control")
-npk_data <- subset(mass_ppt_c_npk_filtered, trt == "NPK")
-
-control_model <- lm(log_mass ~ log_mswep_ppt, data = control_data)
-summary(control_model)
-npk_model <- lm(log_mass ~ log_mswep_ppt, data = npk_data)
-summary(npk_model)
+control_data <- subset(mass_ppt_c_npk, trt == "Control")
+npk_data <- subset(mass_ppt_c_npk, trt == "NPK")
 
 # Define a function to calculate R^2 for bootstrapping
 calc_r2 <- function(data, indices) {
@@ -126,12 +102,14 @@ calc_r2 <- function(data, indices) {
 }
 # Set number of bootstrap iterations
 n_boot <- 1000
+
 # Perform bootstrap for "Control" group
 control_boot <- boot(data = control_data, statistic = calc_r2, R = n_boot)
 control_r2_bootstrap <- control_boot$t
 # Perform bootstrap for "NPK" group
 npk_boot <- boot(data = npk_data, statistic = calc_r2, R = n_boot)
 npk_r2_bootstrap <- npk_boot$t
+
 # Print the means and standard deviations of the bootstrapped R^2 values
 cat("Mean R^2 for Control (bootstrapped):", mean(control_r2_bootstrap), "\n")
 cat("Mean R^2 for NPK (bootstrapped):", mean(npk_r2_bootstrap), "\n")
@@ -154,8 +132,8 @@ results <- data.frame(site_code = character(),
 # Loop over each site_code
 for (site in site_codes) {
   # Subset data for the site
-  site_data_control <- subset(mass_ppt_c_npk_filtered, site_code == site & trt == "Control")
-  site_data_npk <- subset(mass_ppt_c_npk_filtered, site_code == site & trt == "NPK")
+  site_data_control <- subset(mass_ppt_c_npk, site_code == site & trt == "Control")
+  site_data_npk <- subset(mass_ppt_c_npk, site_code == site & trt == "NPK")
   # Only proceed if both Control and NPK have sufficient data for the site
   if (nrow(site_data_control) > 1 & nrow(site_data_npk) > 1) {
     # Fit the linear models for Control and NPK
@@ -179,5 +157,4 @@ for (site in site_codes) {
 # Perform a one-sample t-test on the r2_difference values
 t_test_r2_diff <- t.test(results$r2_difference)
 print(t_test_r2_diff)
-# not significantly different from 0 
 
