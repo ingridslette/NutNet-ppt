@@ -1,10 +1,4 @@
-library(dplyr)
-
-# Create a new column for the year
-out$year <- substr(out$date, 1, 4)
-
-# Create a new column for the month
-out$month <- substr(out$date, 6, 7)
+library(tidyverse)
 
 # for sites where the growing season spans multiple calendar years:
 out$gs_year <- out$year 

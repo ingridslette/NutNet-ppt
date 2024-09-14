@@ -40,7 +40,15 @@ out <- pivot_longer(df, -"site_code", names_to = "date",
 
 out$date <- substr(out$date, 1, 7)
 
+# Create a new column for the year
+out$year <- substr(out$date, 1, 4)
 
+# Create a new column for the month
+out$month <- substr(out$date, 6, 7)
 
+# filter out 1979 and 2024 - don't have data for all months
+out <- filter(out, year != 1979)
+out <- filter(out, year != 2024)
 
+write.csv(out, file = "/Users/ingridslette/Dropbox/NutNet data/climate/mswep/mswep-monthly-ppt-all-nutnet-sites.csv")
 
