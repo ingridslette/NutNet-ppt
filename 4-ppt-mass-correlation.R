@@ -2,13 +2,9 @@ library(tidyverse)
 library(nlme)
 library(lme4)
 library(lmerTest)
-library(emmeans)
-library(broom)
-library(broom.mixed)
 library(boot)
 library(MuMIn)
-library(purrr)
-library(tidyr)
+library(performance)
 
 mswep <- read.csv("/Users/ingridslette/Desktop/NutNet/mswep_ppt_annual_gs_only.csv")
 
@@ -29,7 +25,7 @@ unique(mass1$year_trt)
 
 unique(mass1$category)
 mass2 <- filter(mass1, category != 'WOODY')
-mass2 <- filter(mass1, category != 'CACTUS')
+mass2 <- filter(mass2, category != 'CACTUS')
 unique(mass2$category)
 
 site_year_counts <- mass2 %>%
@@ -47,9 +43,7 @@ total_mass <- aggregate(
   mass ~ year + year_trt + trt + site_name + site_code + block + plot + subplot, 
   data = mass3, sum)
 
-total_mass_plots_avg <- aggregate(
-  mass ~ year + year_trt + trt + site_name + site_code, 
-  data = mass3, mean)
+#total_mass_plots_avg <- aggregate(mass ~ year + year_trt + trt + site_name + site_code, data = mass3, mean)
 
 mass_ppt <- inner_join(total_mass, mswep, by=c("site_code", "year"))
 
@@ -80,6 +74,12 @@ ggplot(mass_ppt_c_npk, aes(x=mswep_ppt, y=mass, color = trt, shape = trt)) +
   facet_wrap(vars(site_code), scales = "free") +
   theme_bw()
 
+ggplot(mass_ppt_c_npk, aes(x=year_trt, y=mass, color = trt, shape = trt)) +
+  geom_point() + geom_smooth(method = lm) +
+  xlab("Treatment Year") + ylab("Total live mass") +
+  facet_wrap(vars(site_code), scales = "free") +
+  theme_bw()
+
 ggplot(mass_ppt_c_npk, aes(x = mswep_ppt, y = mass)) +
   geom_smooth(aes(group = site_code, color = site_code), method = "lm", se = FALSE) +
   geom_smooth(method = "lm", se = FALSE, color = "black") +
@@ -98,50 +98,39 @@ summary(c_npk_x_model)
 #c_npk_x_model2 <- lm(log_mass ~ log_mswep_ppt * trt, data = mass_ppt_c_npk_filtered)
 #summary(c_npk_x_model2)
 
+### Approach 1: Bootstrapping to test for difference in R2 between Control and NKP models
+
 control_data <- subset(mass_ppt_c_npk, trt == "Control")
 npk_data <- subset(mass_ppt_c_npk, trt == "NPK")
 
-# Fit separate linear models for each treatment
-control_model <- lmer(mass ~ mswep_ppt + (1 | site_code), data = control_data)
-npk_model <- lmer(mass ~ mswep_ppt + (1 | site_code), data = npk_data)
-
-# Compare models using ANOVA
-anova(control_model, npk_model)
-
-
-
-
-# Define a function to calculate R^2 for bootstrapping
 calc_r2 <- function(data, indices) {
-  # Resample the data
   d <- data[indices, ]
-  # Fit the linear model
-  model <- lmer(mass ~ mswep_ppt + (1 | site_code), data = d)
-  # Return the R^2 value
+  model <- lm(mass ~ mswep_ppt, data = d)
   return(summary(model)$r.squared)
 }
-# Set number of bootstrap iterations
+
 n_boot <- 1000
 
-# Perform bootstrap for "Control" group
 control_boot <- boot(data = control_data, statistic = calc_r2, R = n_boot)
 control_r2_bootstrap <- control_boot$t
-# Perform bootstrap for "NPK" group
+
 npk_boot <- boot(data = npk_data, statistic = calc_r2, R = n_boot)
 npk_r2_bootstrap <- npk_boot$t
 
-# Print the means and standard deviations of the bootstrapped R^2 values
 cat("Mean R^2 for Control (bootstrapped):", mean(control_r2_bootstrap), "\n")
 cat("Mean R^2 for NPK (bootstrapped):", mean(npk_r2_bootstrap), "\n")
 cat("Standard deviation of R^2 for Control (bootstrapped):", sd(control_r2_bootstrap), "\n")
 cat("Standard deviation of R^2 for NPK (bootstrapped):", sd(npk_r2_bootstrap), "\n")
 
-# Perform t-test to compare the two distributions of R^2 values
+# t-test to compare the two R2 distributions
 r2_t_test <- t.test(control_r2_bootstrap, npk_r2_bootstrap)
 print(r2_t_test)
 
+### Approach 2: calculate and compare difference in R2 between Control and NKP at each site
+
 # Get unique site codes
 site_codes <- unique(mass_ppt_c_npk$site_code)
+
 # Initialize a dataframe to store results
 results <- data.frame(site_code = character(), 
                       control_r2 = numeric(), 
@@ -149,7 +138,6 @@ results <- data.frame(site_code = character(),
                       r2_difference = numeric(), 
                       stringsAsFactors = FALSE)
 
-# Loop over each site_code
 for (site in site_codes) {
   # Subset data for the site
   site_data_control <- subset(mass_ppt_c_npk, site_code == site & trt == "Control")
@@ -159,10 +147,10 @@ for (site in site_codes) {
     # Fit the linear models for Control and NPK
     control_model <- lm(mass ~ mswep_ppt, data = site_data_control)
     npk_model <- lm(mass ~ mswep_ppt, data = site_data_npk)
-    # Extract the R^2 values
+    # Extract the R2 values
     control_r2 <- summary(control_model)$r.squared
     npk_r2 <- summary(npk_model)$r.squared
-    # Calculate the difference in R^2
+    # Calculate the difference in R2
     r2_difference <- control_r2 - npk_r2
     # Store the results in the dataframe
     results <- rbind(results, data.frame(
@@ -174,7 +162,43 @@ for (site in site_codes) {
   }
 }
 
-# Perform a one-sample t-test on the r2_difference values
+# Perform a t-test on the r2_difference values
 t_test_r2_diff <- t.test(results$r2_difference)
 print(t_test_r2_diff)
+
+### Approach 3: calculate and compare z scores
+
+# Fit linear mixed-effects models for each treatment level
+model_control <- lmer(mass ~ mswep_ppt + (1 | site_code), data = subset(mass_ppt_c_npk, trt == "Control"))
+model_npk <- lmer(mass ~ mswep_ppt + (1 | site_code), data = subset(mass_ppt_c_npk, trt == "NPK"))
+
+summary(model_control)
+summary(model_npk)
+
+# Use the performance package to calculate R2
+r2_control <- performance::r2(model_control)
+r2_npk <- performance::r2(model_npk)
+
+# Extract R2 values
+conditional_r2_control <- r2_control$R2_conditional
+conditional_r2_npk <- r2_npk$R2_conditional
+
+# Compare R2 values using Fisher's Z transformation
+z_control <- 0.5 * log((1 + sqrt(conditional_r2_control)) / (1 - sqrt(conditional_r2_control)))
+z_npk <- 0.5 * log((1 + sqrt(conditional_r2_npk)) / (1 - sqrt(conditional_r2_npk)))
+
+# Calculate the standard error
+n_control <- length(unique(subset(mass_ppt_c_npk, trt == "Control")$site_code))
+n_npk <- length(unique(subset(mass_ppt_c_npk, trt == "NPK")$site_code))
+se_diff <- sqrt((1 / (n_control - 3)) + (1 / (n_npk - 3)))
+
+# Calculate the Z-score for the difference
+z_diff <- (z_control - z_npk) / se_diff
+
+# Calculate the p-value
+p_value <- 2 * (1 - pnorm(abs(z_diff)))
+
+# Print the results
+cat("Z-score for the difference:", z_diff, "\n")
+cat("P-value for the difference in conditional R-squared values:", p_value, "\n")
 
