@@ -10,6 +10,8 @@ library(MuMIn)
 library(purrr)
 library(tidyr)
 
+mswep <- read.csv("/Users/ingridslette/Desktop/NutNet/mswep_ppt_annual_gs_only.csv")
+
 mass <- read.csv("/Users/ingridslette/Desktop/full-biomass_2024-05-31.csv")
 
 unique(mass$site_code)
@@ -27,38 +29,46 @@ unique(mass1$year_trt)
 
 unique(mass1$category)
 mass2 <- filter(mass1, category != 'WOODY')
+mass2 <- filter(mass1, category != 'CACTUS')
 unique(mass2$category)
 
 site_year_counts <- mass2 %>%
   group_by(site_code) %>%
   summarise(year_count = n_distinct(year))
 
-sites_with_10_years <- site_year_counts %>%
-  filter(year_count >= 10) %>%
+sites_with_8_years <- site_year_counts %>%
+  filter(year_count >= 8) %>%
   select(site_code)
 
 mass3 <- mass2 %>%
-  filter(site_code %in% sites_with_10_years$site_code)
+  filter(site_code %in% sites_with_8_years$site_code)
 
 total_mass <- aggregate(
   mass ~ year + year_trt + trt + site_name + site_code + block + plot + subplot, 
   data = mass3, sum)
 
-mass_ppt <- inner_join(total_mass, mswep_cru, by=c("site_code", "year"))
+total_mass_plots_avg <- aggregate(
+  mass ~ year + year_trt + trt + site_name + site_code, 
+  data = mass3, mean)
+
+mass_ppt <- inner_join(total_mass, mswep, by=c("site_code", "year"))
 
 unique(mass_ppt$site_code)
 
 mass_ppt <- mass_ppt %>%
   mutate(log_mass = log10(mass),
-         log_mswep_ppt = log10(mswep_ppt),
-         log_cru_ppt = log10(cru_ppt))
+         log_mswep_ppt = log10(mswep_ppt))
 
 desired_order <- c("Control", "K", "P", "N", "PK", "NK", "NP", "NPK")
 mass_ppt$trt <- factor(mass_ppt$trt, levels = desired_order)
 
 mass_ppt_c_npk <- filter(mass_ppt, trt %in% c("Control", "NPK")) 
 
-ggplot(mass_ppt_c_npk, aes(x=mswep_ppt, y=mass, color = trt, shape = trt, label = site_code)) +
+str(mass_ppt_c_npk)
+
+ggplot(mass_ppt_c_npk, aes(x=mswep_ppt, y=mass, color = trt, shape = trt, 
+                           label = site_code
+                           )) +
   geom_point() + geom_smooth(method = lm) +
   xlab("MSWEP Growing Season Precipitation (mm)") + ylab("Total live mass") +
   geom_text(aes(label=ifelse(mass>2500, as.character(site_code), '')), hjust=-0.1, vjust=0.1) +
@@ -80,7 +90,7 @@ ggplot(mass_ppt_c_npk, aes(x = mswep_ppt, y = mass)) +
        color = "Site Code") +
   theme(legend.position = "right")
 
-c_npk_x_model <- lm(mass ~ mswep_ppt * trt, data = mass_ppt_c_npk)
+c_npk_x_model <- lmer(mass ~ mswep_ppt * trt + (1 | site_code), data = mass_ppt_c_npk)
 summary(c_npk_x_model)
 
 #mass_ppt_c_npk_filtered <- mass_ppt_c_npk %>% filter(log_mass != -Inf)
@@ -91,12 +101,22 @@ summary(c_npk_x_model)
 control_data <- subset(mass_ppt_c_npk, trt == "Control")
 npk_data <- subset(mass_ppt_c_npk, trt == "NPK")
 
+# Fit separate linear models for each treatment
+control_model <- lmer(mass ~ mswep_ppt + (1 | site_code), data = control_data)
+npk_model <- lmer(mass ~ mswep_ppt + (1 | site_code), data = npk_data)
+
+# Compare models using ANOVA
+anova(control_model, npk_model)
+
+
+
+
 # Define a function to calculate R^2 for bootstrapping
 calc_r2 <- function(data, indices) {
   # Resample the data
   d <- data[indices, ]
   # Fit the linear model
-  model <- lm(mass ~ mswep_ppt, data = d)
+  model <- lmer(mass ~ mswep_ppt + (1 | site_code), data = d)
   # Return the R^2 value
   return(summary(model)$r.squared)
 }
