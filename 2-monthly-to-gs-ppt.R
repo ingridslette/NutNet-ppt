@@ -108,7 +108,13 @@ ppt_monthly_gs_only <- filter(ppt_all_months,
 # sum over all growing season months to get total growing season precip per year per site
 ppt_annual_gs_only <- aggregate(precip ~ site_code + gs_year, data = ppt_monthly_gs_only, sum)
 
-write.csv(ppt_annual_gs_only, file = "/Users/ingridslette/Desktop/NutNet/ppt_annual_gs_only.csv")
+ppt_annual_gs_only <- ppt_annual_gs_only %>%
+  rename(year = gs_year)
+
+ppt_annual_gs_only <- ppt_annual_gs_only %>%
+  rename(mswep_ppt = precip)
+
+write.csv(ppt_annual_gs_only, file = "/Users/ingridslette/Desktop/NutNet/mswep_ppt_annual_gs_only.csv")
 
 
 
