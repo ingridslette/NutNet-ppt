@@ -1,5 +1,4 @@
 library(tidyverse)
-library(nlme)
 library(lme4)
 library(lmerTest)
 library(boot)
@@ -8,7 +7,7 @@ library(performance)
 
 mswep <- read.csv("/Users/ingridslette/Desktop/NutNet/mswep_ppt_annual_gs_only.csv")
 
-mass <- read.csv("/Users/ingridslette/Desktop/full-biomass_2024-05-31.csv")
+mass <- read.csv("/Users/ingridslette/Desktop/NutNet/full-biomass-2024-09-17.csv")
 
 unique(mass$site_code)
 unique(mass$live)
@@ -25,7 +24,6 @@ unique(mass1$year_trt)
 
 unique(mass1$category)
 mass2 <- filter(mass1, category != 'WOODY')
-mass2 <- filter(mass2, category != 'CACTUS')
 unique(mass2$category)
 
 site_year_counts <- mass2 %>%
@@ -60,7 +58,21 @@ mass_ppt_c_npk <- filter(mass_ppt, trt %in% c("Control", "NPK"))
 
 str(mass_ppt_c_npk)
 
-ggplot(mass_ppt_c_npk, aes(x=mswep_ppt, y=mass, color = trt, shape = trt, 
+# remove high biomass outlier
+mass_ppt_c_npk <- mass_ppt_c_npk %>%
+  filter(!(year == 2021 & site_code == "ukul.za" & plot == 23))
+
+# remove 2013 comp.pt - data is incorrect, I'm looking into it...
+mass_ppt_c_npk <- mass_ppt_c_npk %>%
+  filter(!(year == 2013 & site_code == "comp.pt"))
+
+# remove 2022 ukul.za - data looks incorrect, I'm looking into it...
+mass_ppt_c_npk <- mass_ppt_c_npk %>%
+  filter(!(year == 2022 & site_code == "ukul.za"))
+
+#mass_ppt_c_npk <- mass_ppt_c_npk %>% filter(mass != 3072.800)
+
+ggplot(mass_ppt_c_npk, aes(x= mswep_ppt, y= mass, color = trt, shape = trt, 
                            label = site_code
                            )) +
   geom_point() + geom_smooth(method = lm) +
@@ -68,7 +80,7 @@ ggplot(mass_ppt_c_npk, aes(x=mswep_ppt, y=mass, color = trt, shape = trt,
   geom_text(aes(label=ifelse(mass>2500, as.character(site_code), '')), hjust=-0.1, vjust=0.1) +
   theme_bw()
 
-ggplot(mass_ppt_c_npk, aes(x=mswep_ppt, y=mass, color = trt, shape = trt)) +
+ggplot(mass_ppt_c_npk, aes(x= mswep_ppt, y= mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("MSWEP Growing Season Precipitation (mm)") + ylab("Total live mass") +
   facet_wrap(vars(site_code), scales = "free") +
@@ -80,7 +92,7 @@ ggplot(mass_ppt_c_npk, aes(x=year_trt, y=mass, color = trt, shape = trt)) +
   facet_wrap(vars(site_code), scales = "free") +
   theme_bw()
 
-ggplot(mass_ppt_c_npk, aes(x = mswep_ppt, y = mass)) +
+ggplot(mass_ppt_c_npk, aes(x= mswep_ppt, y= mass)) +
   geom_smooth(aes(group = site_code, color = site_code), method = "lm", se = FALSE) +
   geom_smooth(method = "lm", se = FALSE, color = "black") +
   facet_wrap(~ trt, nrow = 2) +
@@ -90,7 +102,7 @@ ggplot(mass_ppt_c_npk, aes(x = mswep_ppt, y = mass)) +
        color = "Site Code") +
   theme(legend.position = "right")
 
-c_npk_x_model <- lmer(mass ~ mswep_ppt * trt + (1 | site_code), data = mass_ppt_c_npk)
+c_npk_x_model <- lmer(mass ~ mswep_ppt * trt + (1 | site_code) + (1 | year_trt), data = mass_ppt_c_npk)
 summary(c_npk_x_model)
 
 #mass_ppt_c_npk_filtered <- mass_ppt_c_npk %>% filter(log_mass != -Inf)
@@ -169,8 +181,8 @@ print(t_test_r2_diff)
 ### Approach 3: calculate and compare z scores
 
 # Fit linear mixed-effects models for each treatment level
-model_control <- lmer(mass ~ mswep_ppt + (1 | site_code), data = subset(mass_ppt_c_npk, trt == "Control"))
-model_npk <- lmer(mass ~ mswep_ppt + (1 | site_code), data = subset(mass_ppt_c_npk, trt == "NPK"))
+model_control <- lmer(mass ~ mswep_ppt + (1 | site_code) + (1 | year_trt), data = subset(mass_ppt_c_npk, trt == "Control"))
+model_npk <- lmer(mass ~ mswep_ppt + (1 | site_code) + (1 | year_trt), data = subset(mass_ppt_c_npk, trt == "NPK"))
 
 summary(model_control)
 summary(model_npk)
