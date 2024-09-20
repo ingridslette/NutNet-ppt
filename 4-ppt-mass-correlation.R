@@ -15,11 +15,9 @@ unique(mass$trt)
 unique(mass$year_trt)
 
 mass1 <- filter(mass, live == 1)
-mass1 <- filter(mass1, trt %in% c("Control", "K", "P", "N", "PK", "NK", "NP", "NPK"))
 mass1 <- filter(mass1, year_trt > 0)
 
 unique(mass1$live)
-unique(mass1$trt)
 unique(mass1$year_trt)
 
 unique(mass1$category)
@@ -41,8 +39,6 @@ total_mass <- aggregate(
   mass ~ year + year_trt + trt + site_name + site_code + block + plot + subplot, 
   data = mass3, sum)
 
-#total_mass_plots_avg <- aggregate(mass ~ year + year_trt + trt + site_name + site_code, data = mass3, mean)
-
 mass_ppt <- inner_join(total_mass, mswep, by=c("site_code", "year"))
 
 unique(mass_ppt$site_code)
@@ -51,19 +47,13 @@ mass_ppt <- mass_ppt %>%
   mutate(log_mass = log10(mass),
          log_mswep_ppt = log10(mswep_ppt))
 
-desired_order <- c("Control", "K", "P", "N", "PK", "NK", "NP", "NPK")
-mass_ppt$trt <- factor(mass_ppt$trt, levels = desired_order)
-
 mass_ppt_c_npk <- filter(mass_ppt, trt %in% c("Control", "NPK")) 
 
 str(mass_ppt_c_npk)
 
-# remove high biomass outlier
+# remove high biomass outliers
 mass_ppt_c_npk <- mass_ppt_c_npk %>%
   filter(!(year == 2021 & site_code == "ukul.za" & plot == 23))
-
-mass_ppt_c_npk <- mass_ppt_c_npk %>%
-  filter(!(year == 2015 & site_code == "trel.us" & plot == 24))
 
 # remove 2013 comp.pt - mass data is incorrect, I'm looking into it...
 mass_ppt_c_npk <- mass_ppt_c_npk %>%
@@ -194,7 +184,7 @@ cat("P-value for the difference in conditional R-squared values:", p_value, "\n"
 
 ### Approach 3: Bootstrapping to test for difference in R2 between Control and NKP models
 
-# Function to calculate the difference in marginal R²
+# Function to calculate the difference in conditional R²
 r2_diff <- function(data, indices) {
   data_resampled <- data[indices, ]
   model_control <- lmer(mass ~ mswep_ppt + (1 | site_code) + (1 | year_trt), 
