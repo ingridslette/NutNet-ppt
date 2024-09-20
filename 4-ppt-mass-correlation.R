@@ -62,15 +62,16 @@ str(mass_ppt_c_npk)
 mass_ppt_c_npk <- mass_ppt_c_npk %>%
   filter(!(year == 2021 & site_code == "ukul.za" & plot == 23))
 
-# remove 2013 comp.pt - data is incorrect, I'm looking into it...
+mass_ppt_c_npk <- mass_ppt_c_npk %>%
+  filter(!(year == 2015 & site_code == "trel.us" & plot == 24))
+
+# remove 2013 comp.pt - mass data is incorrect, I'm looking into it...
 mass_ppt_c_npk <- mass_ppt_c_npk %>%
   filter(!(year == 2013 & site_code == "comp.pt"))
 
 # remove 2022 ukul.za - data looks incorrect, I'm looking into it...
 mass_ppt_c_npk <- mass_ppt_c_npk %>%
   filter(!(year == 2022 & site_code == "ukul.za"))
-
-#mass_ppt_c_npk <- mass_ppt_c_npk %>% filter(mass != 3072.800)
 
 ggplot(mass_ppt_c_npk, aes(x= mswep_ppt, y= mass, color = trt, shape = trt, 
                            label = site_code
@@ -105,40 +106,8 @@ ggplot(mass_ppt_c_npk, aes(x= mswep_ppt, y= mass)) +
 c_npk_x_model <- lmer(mass ~ mswep_ppt * trt + (1 | site_code) + (1 | year_trt), data = mass_ppt_c_npk)
 summary(c_npk_x_model)
 
-#mass_ppt_c_npk_filtered <- mass_ppt_c_npk %>% filter(log_mass != -Inf)
 
-#c_npk_x_model2 <- lm(log_mass ~ log_mswep_ppt * trt, data = mass_ppt_c_npk_filtered)
-#summary(c_npk_x_model2)
-
-### Approach 1: Bootstrapping to test for difference in R2 between Control and NKP models
-
-control_data <- subset(mass_ppt_c_npk, trt == "Control")
-npk_data <- subset(mass_ppt_c_npk, trt == "NPK")
-
-calc_r2 <- function(data, indices) {
-  d <- data[indices, ]
-  model <- lm(mass ~ mswep_ppt, data = d)
-  return(summary(model)$r.squared)
-}
-
-n_boot <- 1000
-
-control_boot <- boot(data = control_data, statistic = calc_r2, R = n_boot)
-control_r2_bootstrap <- control_boot$t
-
-npk_boot <- boot(data = npk_data, statistic = calc_r2, R = n_boot)
-npk_r2_bootstrap <- npk_boot$t
-
-cat("Mean R^2 for Control (bootstrapped):", mean(control_r2_bootstrap), "\n")
-cat("Mean R^2 for NPK (bootstrapped):", mean(npk_r2_bootstrap), "\n")
-cat("Standard deviation of R^2 for Control (bootstrapped):", sd(control_r2_bootstrap), "\n")
-cat("Standard deviation of R^2 for NPK (bootstrapped):", sd(npk_r2_bootstrap), "\n")
-
-# t-test to compare the two R2 distributions
-r2_t_test <- t.test(control_r2_bootstrap, npk_r2_bootstrap)
-print(r2_t_test)
-
-### Approach 2: calculate and compare difference in R2 between Control and NKP at each site
+### Approach 1: calculate and compare difference in R2 between Control and NKP at each site
 
 # Get unique site codes
 site_codes <- unique(mass_ppt_c_npk$site_code)
@@ -178,7 +147,12 @@ for (site in site_codes) {
 t_test_r2_diff <- t.test(results$r2_difference)
 print(t_test_r2_diff)
 
-### Approach 3: calculate and compare z scores
+# Perform a paired t-test on the R^2 values for Control and NPK
+paired_t_test_result <- t.test(results$control_r2, results$npk_r2, paired = TRUE)
+print(paired_t_test_result)
+
+
+### Approach 2: fit separate models for control and NPK data, calculate and compare z scores
 
 # Fit linear mixed-effects models for each treatment level
 model_control <- lmer(mass ~ mswep_ppt + (1 | site_code) + (1 | year_trt), data = subset(mass_ppt_c_npk, trt == "Control"))
@@ -186,6 +160,9 @@ model_npk <- lmer(mass ~ mswep_ppt + (1 | site_code) + (1 | year_trt), data = su
 
 summary(model_control)
 summary(model_npk)
+
+# Compare AIC of the two models
+AIC(model_control, model_npk)
 
 # Use the performance package to calculate R2
 r2_control <- performance::r2(model_control)
@@ -214,3 +191,29 @@ p_value <- 2 * (1 - pnorm(abs(z_diff)))
 cat("Z-score for the difference:", z_diff, "\n")
 cat("P-value for the difference in conditional R-squared values:", p_value, "\n")
 
+
+### Approach 3: Bootstrapping to test for difference in R2 between Control and NKP models
+
+# Function to calculate the difference in marginal R²
+r2_diff <- function(data, indices) {
+  data_resampled <- data[indices, ]
+  model_control <- lmer(mass ~ mswep_ppt + (1 | site_code) + (1 | year_trt), 
+                        data = data_resampled[data_resampled$trt == "Control", ])
+  model_npk <- lmer(mass ~ mswep_ppt + (1 | site_code) + (1 | year_trt), 
+                    data = data_resampled[data_resampled$trt == "NPK", ])
+  r2_control <- r.squaredGLMM(model_control)[2]
+  r2_npk <- r.squaredGLMM(model_npk)[2]          
+  return(r2_control - r2_npk)
+}
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Perform bootstrapping with 1000 resamples
+boot_r2 <- boot(data = mass_ppt_c_npk, statistic = r2_diff, R = 1000)
+
+print(boot_r2)
+
+# Get 95% confidence intervals for the R² difference
+boot_ci <- boot.ci(boot_r2, type = "perc")
+print(boot_ci)
