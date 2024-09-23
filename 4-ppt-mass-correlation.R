@@ -7,6 +7,16 @@ library(performance)
 
 mswep <- read.csv("/Users/ingridslette/Desktop/NutNet/mswep_ppt_annual_gs_only.csv")
 
+mswep <- filter(mswep, year > 1990)
+
+mswep <- mswep %>%
+  group_by(site_code) %>%
+  mutate(avg_ppt_site = mean(mswep_ppt, na.rm = TRUE),
+         se_ppt_site = sd(mswep_ppt, na.rm = TRUE) / sqrt(n()),
+         mswep_ppt_std = (mswep_ppt / avg_ppt_site) * 100, 
+         mswep_ppt_err = (mswep_ppt - avg_ppt_site) / se_ppt_site) %>%
+  ungroup()
+
 mass <- read.csv("/Users/ingridslette/Desktop/NutNet/full-biomass-2024-09-17.csv")
 
 unique(mass$site_code)
@@ -51,7 +61,7 @@ mass_ppt_c_npk <- filter(mass_ppt, trt %in% c("Control", "NPK"))
 
 str(mass_ppt_c_npk)
 
-# remove high biomass outliers
+# remove one insanely high biomass outlier
 mass_ppt_c_npk <- mass_ppt_c_npk %>%
   filter(!(year == 2021 & site_code == "ukul.za" & plot == 23))
 
@@ -64,8 +74,7 @@ mass_ppt_c_npk <- mass_ppt_c_npk %>%
   filter(!(year == 2022 & site_code == "ukul.za"))
 
 ggplot(mass_ppt_c_npk, aes(x= mswep_ppt, y= mass, color = trt, shape = trt, 
-                           label = site_code
-                           )) +
+                           label = site_code)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("MSWEP Growing Season Precipitation (mm)") + ylab("Total live mass") +
   geom_text(aes(label=ifelse(mass>2500, as.character(site_code), '')), hjust=-0.1, vjust=0.1) +
@@ -145,8 +154,10 @@ print(paired_t_test_result)
 ### Approach 2: fit separate models for control and NPK data, calculate and compare z scores
 
 # Fit linear mixed-effects models for each treatment level
-model_control <- lmer(mass ~ mswep_ppt + (1 | site_code) + (1 | year_trt), data = subset(mass_ppt_c_npk, trt == "Control"))
-model_npk <- lmer(mass ~ mswep_ppt + (1 | site_code) + (1 | year_trt), data = subset(mass_ppt_c_npk, trt == "NPK"))
+model_control <- lmer(mass ~ mswep_ppt_std + (1 | site_code) + (1 | year_trt), 
+                      data = subset(mass_ppt_c_npk, trt == "Control"))
+model_npk <- lmer(mass ~ mswep_ppt_std + (1 | site_code) + (1 | year_trt), 
+                  data = subset(mass_ppt_c_npk, trt == "NPK"))
 
 summary(model_control)
 summary(model_npk)
@@ -187,9 +198,9 @@ cat("P-value for the difference in conditional R-squared values:", p_value, "\n"
 # Function to calculate the difference in conditional R²
 r2_diff <- function(data, indices) {
   data_resampled <- data[indices, ]
-  model_control <- lmer(mass ~ mswep_ppt + (1 | site_code) + (1 | year_trt), 
+  model_control <- lmer(mass ~ mswep_ppt_std + (1 | site_code), 
                         data = data_resampled[data_resampled$trt == "Control", ])
-  model_npk <- lmer(mass ~ mswep_ppt + (1 | site_code) + (1 | year_trt), 
+  model_npk <- lmer(mass ~ mswep_ppt_std + (1 | site_code), 
                     data = data_resampled[data_resampled$trt == "NPK", ])
   r2_control <- r.squaredGLMM(model_control)[2]
   r2_npk <- r.squaredGLMM(model_npk)[2]          
