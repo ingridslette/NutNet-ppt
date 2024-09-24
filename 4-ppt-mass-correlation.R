@@ -7,92 +7,77 @@ library(performance)
 
 mswep <- read.csv("/Users/ingridslette/Desktop/NutNet/mswep_ppt_annual_gs_only.csv")
 
-mswep <- filter(mswep, year > 1990)
+mswep <- filter(mswep, year >= 1983)
 
 mswep <- mswep %>%
   group_by(site_code) %>%
   mutate(avg_ppt_site = mean(mswep_ppt, na.rm = TRUE),
-         se_ppt_site = sd(mswep_ppt, na.rm = TRUE) / sqrt(n()),
-         mswep_ppt_std = (mswep_ppt / avg_ppt_site) * 100, 
-         mswep_ppt_err = (mswep_ppt - avg_ppt_site) / se_ppt_site) %>%
+         sd_ppt_site = sd(mswep_ppt, na.rm = TRUE),
+         mswep_ppt_per = (mswep_ppt / avg_ppt_site) * 100, 
+         mswep_ppt_sd = (mswep_ppt - avg_ppt_site) / sd_ppt_site) %>%
   ungroup()
 
-mass <- read.csv("/Users/ingridslette/Desktop/NutNet/full-biomass-2024-09-17.csv")
+mass <- read.csv("/Users/ingridslette/Desktop/NutNet/comb-by-plot-2024-09-24.csv",
+                 na.strings = c("NULL","NA"))
 
 unique(mass$site_code)
-unique(mass$live)
 unique(mass$trt)
 unique(mass$year_trt)
 
-mass1 <- filter(mass, live == 1)
-mass1 <- filter(mass1, year_trt > 0)
-
-unique(mass1$live)
+mass1 <- filter(mass, year_trt > 0)
 unique(mass1$year_trt)
 
-unique(mass1$category)
-mass2 <- filter(mass1, category != 'WOODY')
-unique(mass2$category)
-
-site_year_counts <- mass2 %>%
-  group_by(site_code) %>%
-  summarise(year_count = n_distinct(year))
-
-sites_with_8_years <- site_year_counts %>%
-  filter(year_count >= 8) %>%
-  select(site_code)
-
-mass3 <- mass2 %>%
-  filter(site_code %in% sites_with_8_years$site_code)
-
-total_mass <- aggregate(
-  mass ~ year + year_trt + trt + site_name + site_code + block + plot + subplot, 
-  data = mass3, sum)
-
-mass_ppt <- inner_join(total_mass, mswep, by=c("site_code", "year"))
+mass_ppt <- inner_join(mass1, mswep, by=c("site_code", "year"))
 
 unique(mass_ppt$site_code)
 
-mass_ppt <- mass_ppt %>%
-  mutate(log_mass = log10(mass),
-         log_mswep_ppt = log10(mswep_ppt))
-
 mass_ppt_c_npk <- filter(mass_ppt, trt %in% c("Control", "NPK")) 
 
-str(mass_ppt_c_npk)
+unique(mass_ppt_c_npk$site_code)
+unique(mass_ppt_c_npk$trt)
 
-# remove one insanely high biomass outlier
+site_year_counts <- mass_ppt_c_npk %>%
+  group_by(site_code, trt) %>%
+  filter(!is.na(vascular_live_mass)) %>% 
+  summarise(year_count = n_distinct(year), .groups = 'drop')
+
+sites_with_8_years <- site_year_counts %>%
+  filter(year_count >= 8) %>%
+  group_by(site_code) %>% 
+  filter(n_distinct(trt) == 2) %>% 
+  select(site_code)
+
 mass_ppt_c_npk <- mass_ppt_c_npk %>%
-  filter(!(year == 2021 & site_code == "ukul.za" & plot == 23))
+  filter(site_code %in% sites_with_8_years$site_code)
 
-# remove 2013 comp.pt - mass data is incorrect, I'm looking into it...
+unique(mass_ppt_c_npk$site_code)
+
+# Filter to keep only sites with a certain ppt range
 mass_ppt_c_npk <- mass_ppt_c_npk %>%
-  filter(!(year == 2013 & site_code == "comp.pt"))
+  group_by(site_code) %>%
+  filter(max(mswep_ppt_sd) > 1 & min(mswep_ppt_sd) < -1) %>%
+  ungroup()
 
-# remove 2022 ukul.za - data looks incorrect, I'm looking into it...
-mass_ppt_c_npk <- mass_ppt_c_npk %>%
-  filter(!(year == 2022 & site_code == "ukul.za"))
+unique(mass_ppt_c_npk$site_code)
 
-ggplot(mass_ppt_c_npk, aes(x= mswep_ppt, y= mass, color = trt, shape = trt, 
-                           label = site_code)) +
+ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x= mswep_ppt, y= vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("MSWEP Growing Season Precipitation (mm)") + ylab("Total live mass") +
-  geom_text(aes(label=ifelse(mass>2500, as.character(site_code), '')), hjust=-0.1, vjust=0.1) +
   theme_bw()
 
-ggplot(mass_ppt_c_npk, aes(x= mswep_ppt, y= mass, color = trt, shape = trt)) +
+ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x= mswep_ppt, y= vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("MSWEP Growing Season Precipitation (mm)") + ylab("Total live mass") +
   facet_wrap(vars(site_code), scales = "free") +
   theme_bw()
 
-ggplot(mass_ppt_c_npk, aes(x=year_trt, y=mass, color = trt, shape = trt)) +
+ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x=year_trt, y=vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("Treatment Year") + ylab("Total live mass") +
   facet_wrap(vars(site_code), scales = "free") +
   theme_bw()
 
-ggplot(mass_ppt_c_npk, aes(x= mswep_ppt, y= mass)) +
+ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x= mswep_ppt, y= vascular_live_mass)) +
   geom_smooth(aes(group = site_code, color = site_code), method = "lm", se = FALSE) +
   geom_smooth(method = "lm", se = FALSE, color = "black") +
   facet_wrap(~ trt, nrow = 2) +
@@ -102,7 +87,7 @@ ggplot(mass_ppt_c_npk, aes(x= mswep_ppt, y= mass)) +
        color = "Site Code") +
   theme(legend.position = "right")
 
-c_npk_x_model <- lmer(mass ~ mswep_ppt * trt + (1 | site_code) + (1 | year_trt), data = mass_ppt_c_npk)
+c_npk_x_model <- lmer(vascular_live_mass ~ mswep_ppt * trt + (1 | site_code) + (1 | year_trt), data = mass_ppt_c_npk)
 summary(c_npk_x_model)
 
 
@@ -119,57 +104,45 @@ results <- data.frame(site_code = character(),
                       stringsAsFactors = FALSE)
 
 for (site in site_codes) {
-  # Subset data for the site
   site_data_control <- subset(mass_ppt_c_npk, site_code == site & trt == "Control")
   site_data_npk <- subset(mass_ppt_c_npk, site_code == site & trt == "NPK")
-  # Only proceed if both Control and NPK have sufficient data for the site
-  if (nrow(site_data_control) > 1 & nrow(site_data_npk) > 1) {
-    # Fit the linear models for Control and NPK
-    control_model <- lm(mass ~ mswep_ppt, data = site_data_control)
-    npk_model <- lm(mass ~ mswep_ppt, data = site_data_npk)
-    # Extract the R2 values
-    control_r2 <- summary(control_model)$r.squared
-    npk_r2 <- summary(npk_model)$r.squared
-    # Calculate the difference in R2
-    r2_difference <- control_r2 - npk_r2
-    # Store the results in the dataframe
-    results <- rbind(results, data.frame(
-      site_code = site,
-      control_r2 = control_r2,
-      npk_r2 = npk_r2,
-      r2_difference = r2_difference
-    ))
-  }
+  control_model <- lm(vascular_live_mass ~ mswep_ppt, data = site_data_control)
+  npk_model <- lm(vascular_live_mass ~ mswep_ppt, data = site_data_npk)
+  control_r2 <- summary(control_model)$r.squared
+  npk_r2 <- summary(npk_model)$r.squared
+  r2_difference <- control_r2 - npk_r2
+  results <- rbind(results, data.frame(
+    site_code = site,
+    control_r2 = control_r2,
+    npk_r2 = npk_r2,
+    r2_difference = r2_difference
+  ))
 }
 
-# Perform a t-test on the r2_difference values
+# t-test on the r2_difference values
 t_test_r2_diff <- t.test(results$r2_difference)
 print(t_test_r2_diff)
 
-# Perform a paired t-test on the R^2 values for Control and NPK
+# paired t-test on the R2 values for Control and NPK
 paired_t_test_result <- t.test(results$control_r2, results$npk_r2, paired = TRUE)
 print(paired_t_test_result)
+
+# sites with higher R2 in NPK plots
+sites_higher_r2_npk <- filter(results, r2_difference < 0)
 
 
 ### Approach 2: fit separate models for control and NPK data, calculate and compare z scores
 
-# Fit linear mixed-effects models for each treatment level
-model_control <- lmer(mass ~ mswep_ppt_std + (1 | site_code) + (1 | year_trt), 
+model_control <- lmer(vascular_live_mass ~ mswep_ppt + (1 | site_code) + (1 | year_trt), 
                       data = subset(mass_ppt_c_npk, trt == "Control"))
-model_npk <- lmer(mass ~ mswep_ppt_std + (1 | site_code) + (1 | year_trt), 
+model_npk <- lmer(vascular_live_mass ~ mswep_ppt + (1 | site_code) + (1 | year_trt), 
                   data = subset(mass_ppt_c_npk, trt == "NPK"))
 
-summary(model_control)
-summary(model_npk)
-
-# Compare AIC of the two models
 AIC(model_control, model_npk)
 
-# Use the performance package to calculate R2
 r2_control <- performance::r2(model_control)
 r2_npk <- performance::r2(model_npk)
 
-# Extract R2 values
 conditional_r2_control <- r2_control$R2_conditional
 conditional_r2_npk <- r2_npk$R2_conditional
 
@@ -177,7 +150,6 @@ conditional_r2_npk <- r2_npk$R2_conditional
 z_control <- 0.5 * log((1 + sqrt(conditional_r2_control)) / (1 - sqrt(conditional_r2_control)))
 z_npk <- 0.5 * log((1 + sqrt(conditional_r2_npk)) / (1 - sqrt(conditional_r2_npk)))
 
-# Calculate the standard error
 n_control <- length(unique(subset(mass_ppt_c_npk, trt == "Control")$site_code))
 n_npk <- length(unique(subset(mass_ppt_c_npk, trt == "NPK")$site_code))
 se_diff <- sqrt((1 / (n_control - 3)) + (1 / (n_npk - 3)))
@@ -185,32 +157,27 @@ se_diff <- sqrt((1 / (n_control - 3)) + (1 / (n_npk - 3)))
 # Calculate the Z-score for the difference
 z_diff <- (z_control - z_npk) / se_diff
 
-# Calculate the p-value
 p_value <- 2 * (1 - pnorm(abs(z_diff)))
 
-# Print the results
 cat("Z-score for the difference:", z_diff, "\n")
 cat("P-value for the difference in conditional R-squared values:", p_value, "\n")
 
 
 ### Approach 3: Bootstrapping to test for difference in R2 between Control and NKP models
 
-# Function to calculate the difference in conditional R²
 r2_diff <- function(data, indices) {
   data_resampled <- data[indices, ]
-  model_control <- lmer(mass ~ mswep_ppt_std + (1 | site_code), 
+  model_control <- lmer(vascular_live_mass ~ mswep_ppt + (1 | site_code), 
                         data = data_resampled[data_resampled$trt == "Control", ])
-  model_npk <- lmer(mass ~ mswep_ppt_std + (1 | site_code), 
+  model_npk <- lmer(vascular_live_mass ~ mswep_ppt + (1 | site_code), 
                     data = data_resampled[data_resampled$trt == "NPK", ])
   r2_control <- r.squaredGLMM(model_control)[2]
   r2_npk <- r.squaredGLMM(model_npk)[2]          
   return(r2_control - r2_npk)
 }
 
-# Set seed for reproducibility
 set.seed(123)
 
-# Perform bootstrapping with 1000 resamples
 boot_r2 <- boot(data = mass_ppt_c_npk, statistic = r2_diff, R = 1000)
 
 print(boot_r2)
@@ -218,3 +185,5 @@ print(boot_r2)
 # Get 95% confidence intervals for the R² difference
 boot_ci <- boot.ci(boot_r2, type = "perc")
 print(boot_ci)
+
+
