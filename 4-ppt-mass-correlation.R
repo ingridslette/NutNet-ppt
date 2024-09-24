@@ -60,12 +60,12 @@ mass_ppt_c_npk <- mass_ppt_c_npk %>%
 
 unique(mass_ppt_c_npk$site_code)
 
-ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x= mswep_ppt, y= vascular_live_mass, color = trt, shape = trt)) +
+ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x= mswep_ppt_per, y= vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("MSWEP Growing Season Precipitation (mm)") + ylab("Total live mass") +
   theme_bw()
 
-ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x= mswep_ppt, y= vascular_live_mass, color = trt, shape = trt)) +
+ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x= mswep_ppt_per, y= vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("MSWEP Growing Season Precipitation (mm)") + ylab("Total live mass") +
   facet_wrap(vars(site_code), scales = "free") +
@@ -77,7 +77,7 @@ ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x=year_trt
   facet_wrap(vars(site_code), scales = "free") +
   theme_bw()
 
-ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x= mswep_ppt, y= vascular_live_mass)) +
+ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x= mswep_ppt_per, y= vascular_live_mass)) +
   geom_smooth(aes(group = site_code, color = site_code), method = "lm", se = FALSE) +
   geom_smooth(method = "lm", se = FALSE, color = "black") +
   facet_wrap(~ trt, nrow = 2) +
@@ -87,7 +87,7 @@ ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x= mswep_p
        color = "Site Code") +
   theme(legend.position = "right")
 
-c_npk_x_model <- lmer(vascular_live_mass ~ mswep_ppt * trt + (1 | site_code) + (1 | year_trt), data = mass_ppt_c_npk)
+c_npk_x_model <- lmer(vascular_live_mass ~ mswep_ppt_per * trt + (1 | site_code) + (1 | year_trt), data = mass_ppt_c_npk)
 summary(c_npk_x_model)
 
 
@@ -106,8 +106,8 @@ results <- data.frame(site_code = character(),
 for (site in site_codes) {
   site_data_control <- subset(mass_ppt_c_npk, site_code == site & trt == "Control")
   site_data_npk <- subset(mass_ppt_c_npk, site_code == site & trt == "NPK")
-  control_model <- lm(vascular_live_mass ~ mswep_ppt, data = site_data_control)
-  npk_model <- lm(vascular_live_mass ~ mswep_ppt, data = site_data_npk)
+  control_model <- lm(vascular_live_mass ~ mswep_ppt_per, data = site_data_control)
+  npk_model <- lm(vascular_live_mass ~ mswep_ppt_per, data = site_data_npk)
   control_r2 <- summary(control_model)$r.squared
   npk_r2 <- summary(npk_model)$r.squared
   r2_difference <- control_r2 - npk_r2
@@ -133,9 +133,9 @@ sites_higher_r2_npk <- filter(results, r2_difference < 0)
 
 ### Approach 2: fit separate models for control and NPK data, calculate and compare z scores
 
-model_control <- lmer(vascular_live_mass ~ mswep_ppt + (1 | site_code) + (1 | year_trt), 
+model_control <- lmer(vascular_live_mass ~ mswep_ppt_per + (1 | site_code) + (1 | year_trt), 
                       data = subset(mass_ppt_c_npk, trt == "Control"))
-model_npk <- lmer(vascular_live_mass ~ mswep_ppt + (1 | site_code) + (1 | year_trt), 
+model_npk <- lmer(vascular_live_mass ~ mswep_ppt_per + (1 | site_code) + (1 | year_trt), 
                   data = subset(mass_ppt_c_npk, trt == "NPK"))
 
 AIC(model_control, model_npk)
@@ -167,9 +167,9 @@ cat("P-value for the difference in conditional R-squared values:", p_value, "\n"
 
 r2_diff <- function(data, indices) {
   data_resampled <- data[indices, ]
-  model_control <- lmer(vascular_live_mass ~ mswep_ppt + (1 | site_code), 
+  model_control <- lmer(vascular_live_mass ~ mswep_ppt_per + (1 | site_code), 
                         data = data_resampled[data_resampled$trt == "Control", ])
-  model_npk <- lmer(vascular_live_mass ~ mswep_ppt + (1 | site_code), 
+  model_npk <- lmer(vascular_live_mass ~ mswep_ppt_per + (1 | site_code), 
                     data = data_resampled[data_resampled$trt == "NPK", ])
   r2_control <- r.squaredGLMM(model_control)[2]
   r2_npk <- r.squaredGLMM(model_npk)[2]          
