@@ -31,6 +31,10 @@ mass_ppt <- inner_join(mass1, mswep, by=c("site_code", "year"))
 
 unique(mass_ppt$site_code)
 
+mass_ppt <- mass_ppt %>%
+  mutate(log_mass = log10(mass),
+         log_mswep_ppt = log10(mswep_ppt))
+
 mass_ppt_c_npk <- filter(mass_ppt, trt %in% c("Control", "NPK")) 
 
 unique(mass_ppt_c_npk$site_code)
