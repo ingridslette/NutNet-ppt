@@ -187,3 +187,38 @@ boot_ci <- boot.ci(boot_r2, type = "perc")
 print(boot_ci)
 
 
+### Investigating the effect of light limitation on the change in R2
+## Using approach 2 from above: fit separate models for different trts, calculate and compare z scores
+
+model_control <- lmer(vascular_live_mass ~ mswep_ppt * proportion_par + (1 | site_code) + (1 | year_trt), 
+                      data = subset(mass_ppt_c_npk, trt == "Control"))
+model_npk <- lmer(vascular_live_mass ~ mswep_ppt * proportion_par + (1 | site_code) + (1 | year_trt), 
+                  data = subset(mass_ppt_c_npk, trt == "NPK"))
+
+summary(model_control)
+summary(model_npk)
+
+AIC(model_control, model_npk)
+
+r2_control <- performance::r2(model_control)
+r2_npk <- performance::r2(model_npk)
+
+conditional_r2_control <- r2_control$R2_conditional
+conditional_r2_npk <- r2_npk$R2_conditional
+
+# Compare R2 values using Fisher's Z transformation
+z_control <- 0.5 * log((1 + sqrt(conditional_r2_control)) / (1 - sqrt(conditional_r2_control)))
+z_npk <- 0.5 * log((1 + sqrt(conditional_r2_npk)) / (1 - sqrt(conditional_r2_npk)))
+
+n_control <- length(unique(subset(mass_ppt_c_npk, trt == "Control")$site_code))
+n_npk <- length(unique(subset(mass_ppt_c_npk, trt == "NPK")$site_code))
+se_diff <- sqrt((1 / (n_control - 3)) + (1 / (n_npk - 3)))
+
+# Calculate the Z-score for the difference
+z_diff <- (z_control - z_npk) / se_diff
+
+p_value <- 2 * (1 - pnorm(abs(z_diff)))
+
+cat("Z-score for the difference:", z_diff, "\n")
+cat("P-value for the difference in conditional R-squared values:", p_value, "\n")
+
