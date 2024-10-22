@@ -4,6 +4,7 @@ library(lmerTest)
 library(boot)
 library(MuMIn)
 library(performance)
+library(MASS)
 
 mswep <- read.csv("/Users/ingridslette/Desktop/NutNet/mswep_ppt_annual_gs_only.csv")
 
@@ -17,7 +18,7 @@ mswep <- mswep %>%
          mswep_ppt_sd = (mswep_ppt - avg_ppt_site) / sd_ppt_site) %>%
   ungroup()
 
-mass <- read.csv("/Users/ingridslette/Desktop/NutNet/comb-by-plot-2024-09-24.csv",
+mass <- read.csv("/Users/ingridslette/Desktop/NutNet/comb-by-plot-clim-soil-diversity_2024-05-31.csv",
                  na.strings = c("NULL","NA"))
 
 unique(mass$site_code)
@@ -32,7 +33,7 @@ mass_ppt <- inner_join(mass1, mswep, by=c("site_code", "year"))
 unique(mass_ppt$site_code)
 
 mass_ppt <- mass_ppt %>%
-  mutate(log_mass = log10(mass),
+  mutate(log_mass = log10(vascular_live_mass),
          log_mswep_ppt = log10(mswep_ppt))
 
 mass_ppt_c_npk <- filter(mass_ppt, trt %in% c("Control", "NPK")) 
@@ -48,8 +49,8 @@ site_year_counts <- mass_ppt_c_npk %>%
 sites_with_8_years <- site_year_counts %>%
   filter(year_count >= 8) %>%
   group_by(site_code) %>% 
-  filter(n_distinct(trt) == 2) %>% 
-  select(site_code)
+  filter(n_distinct(trt) == 2) 
+#%>% select(site_code)
 
 mass_ppt_c_npk <- mass_ppt_c_npk %>%
   filter(site_code %in% sites_with_8_years$site_code)
@@ -64,12 +65,12 @@ mass_ppt_c_npk <- mass_ppt_c_npk %>%
 
 unique(mass_ppt_c_npk$site_code)
 
-ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x= mswep_ppt_per, y= vascular_live_mass, color = trt, shape = trt)) +
+ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x= mswep_ppt, y= vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("MSWEP Growing Season Precipitation (mm)") + ylab("Total live mass") +
   theme_bw()
 
-ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x= mswep_ppt_per, y= vascular_live_mass, color = trt, shape = trt)) +
+ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x= mswep_ppt, y= vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("MSWEP Growing Season Precipitation (mm)") + ylab("Total live mass") +
   facet_wrap(vars(site_code), scales = "free") +
@@ -81,7 +82,7 @@ ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x=year_trt
   facet_wrap(vars(site_code), scales = "free") +
   theme_bw()
 
-ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x= mswep_ppt_per, y= vascular_live_mass)) +
+ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x= mswep_ppt, y= vascular_live_mass)) +
   geom_smooth(aes(group = site_code, color = site_code), method = "lm", se = FALSE) +
   geom_smooth(method = "lm", se = FALSE, color = "black") +
   facet_wrap(~ trt, nrow = 2) +
@@ -91,11 +92,97 @@ ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x= mswep_p
        color = "Site Code") +
   theme(legend.position = "right")
 
-c_npk_x_model <- lmer(vascular_live_mass ~ mswep_ppt_per * trt + (1 | site_code) + (1 | year_trt), data = mass_ppt_c_npk)
+
+## Model fitting
+c_npk_x_model <- lmer(log_mass ~ log_mswep_ppt * trt + (1 | site_code) + (1 | year_trt), 
+                      data = mass_ppt_c_npk)
 summary(c_npk_x_model)
 
+mass_ppt_c <- subset(mass_ppt_c_npk, trt == 'Control')
+mass_ppt_npk <- subset(mass_ppt_c_npk, trt == 'NPK')
 
-### Approach 1: calculate and compare difference in R2 between Control and NKP at each site
+mass_ppt_c <- subset(mass_ppt_c, !is.na(PercentSand))
+mass_ppt_npk <- subset(mass_ppt_npk, !is.na(PercentSand))
+
+mass_ppt_c <- subset(mass_ppt_c, !is.na(proportion_par))
+mass_ppt_npk <- subset(mass_ppt_npk, !is.na(proportion_par))
+
+unique(mass_ppt_c$site_code)
+unique(mass_ppt_npk$site_code)
+
+global_model_c <- lmer(log_mass ~ log_mswep_ppt + year_trt + proportion_par + PercentSand + avg_ppt_site +
+                       (1 | site_code), data = mass_ppt_c, REML = FALSE)
+
+model_c1 <- lmer(log_mass ~ log_mswep_ppt + year_trt + proportion_par + PercentSand +
+                         (1 | site_code), data = mass_ppt_c, REML = FALSE)
+
+model_c2 <- lmer(log_mass ~ log_mswep_ppt + year_trt + proportion_par +
+                   (1 | site_code), data = mass_ppt_c, REML = FALSE)
+
+model_c3 <- lmer(log_mass ~ log_mswep_ppt + year_trt +
+                   (1 | site_code), data = mass_ppt_c, REML = FALSE)
+
+model_c4 <- lmer(log_mass ~ log_mswep_ppt +
+                   (1 | site_code), data = mass_ppt_c, REML = FALSE)
+
+model_c5 <- lmer(log_mass ~ log_mswep_ppt + proportion_par +
+                   (1 | site_code), data = mass_ppt_c, REML = FALSE)
+
+model_c6 <- lmer(log_mass ~ log_mswep_ppt + PercentSand +
+                   (1 | site_code), data = mass_ppt_c, REML = FALSE)
+
+model_c7 <- lmer(log_mass ~ log_mswep_ppt + year_trt + PercentSand +
+                   (1 | site_code), data = mass_ppt_c, REML = FALSE)
+
+model_c8 <- lmer(log_mass ~ log_mswep_ppt + proportion_par + PercentSand +
+                   (1 | site_code), data = mass_ppt_c, REML = FALSE)
+
+AIC(model_c1, model_c2, model_c3, model_c4, model_c5, model_c6, model_c7, model_c8, global_model_c)
+
+summary(model_c1)
+
+r2_model_c1 <- r.squaredGLMM(model_c1)
+r2_model_c2 <- r.squaredGLMM(model_c2)
+
+
+global_model_npk <- lmer(log_mass ~ log_mswep_ppt + year_trt + proportion_par + PercentSand + avg_ppt_site +
+                         (1 | site_code), data = mass_ppt_npk, REML = FALSE)
+
+model_npk1 <- lmer(log_mass ~ log_mswep_ppt + year_trt + proportion_par + PercentSand +
+                   (1 | site_code), data = mass_ppt_npk, REML = FALSE)
+
+model_npk2 <- lmer(log_mass ~ log_mswep_ppt + year_trt + proportion_par +
+                   (1 | site_code), data = mass_ppt_npk, REML = FALSE)
+
+model_npk3 <- lmer(log_mass ~ log_mswep_ppt + year_trt +
+                   (1 | site_code), data = mass_ppt_npk, REML = FALSE)
+
+model_npk4 <- lmer(log_mass ~ log_mswep_ppt +
+                   (1 | site_code), data = mass_ppt_npk, REML = FALSE)
+
+model_npk5 <- lmer(log_mass ~ log_mswep_ppt + proportion_par +
+                   (1 | site_code), data = mass_ppt_npk, REML = FALSE)
+
+model_npk6 <- lmer(log_mass ~ log_mswep_ppt + PercentSand +
+                   (1 | site_code), data = mass_ppt_npk, REML = FALSE)
+
+model_npk7 <- lmer(log_mass ~ log_mswep_ppt + year_trt + PercentSand +
+                   (1 | site_code), data = mass_ppt_npk, REML = FALSE)
+
+model_npk8 <- lmer(log_mass ~ log_mswep_ppt + proportion_par + PercentSand +
+                   (1 | site_code), data = mass_ppt_npk, REML = FALSE)
+
+AIC(model_npk8, model_npk7, model_npk6, model_npk5, model_npk4, model_npk3, model_npk2, model_npk1, global_model_npk)
+
+summary(model_npk2)
+
+r2_model_npk1 <- r.squaredGLMM(model_npk1)
+r2_model_npk2 <- r.squaredGLMM(model_npk2)
+
+anova(model_npk1, model_npk2)
+
+
+### Comparing control vs. NPK R2 - Approach 1: calculate and compare difference at each site
 
 # Get unique site codes
 site_codes <- unique(mass_ppt_c_npk$site_code)
@@ -135,7 +222,7 @@ print(paired_t_test_result)
 sites_higher_r2_npk <- filter(results, r2_difference < 0)
 
 
-### Approach 2: fit separate models for control and NPK data, calculate and compare z scores
+### Comparing control vs. NPK R2 - Approach 2: fit separate models for control and NPK data, calculate and compare z scores
 
 model_control <- lmer(vascular_live_mass ~ mswep_ppt_per + (1 | site_code) + (1 | year_trt), 
                       data = subset(mass_ppt_c_npk, trt == "Control"))
@@ -167,7 +254,7 @@ cat("Z-score for the difference:", z_diff, "\n")
 cat("P-value for the difference in conditional R-squared values:", p_value, "\n")
 
 
-### Approach 3: Bootstrapping to test for difference in R2 between Control and NKP models
+### Comparing control vs. NPK R2 - Approach 3: Bootstrapping to test for difference in R2 between Control and NKP models
 
 r2_diff <- function(data, indices) {
   data_resampled <- data[indices, ]
@@ -189,6 +276,11 @@ print(boot_r2)
 # Get 95% confidence intervals for the R² difference
 boot_ci <- boot.ci(boot_r2, type = "perc")
 print(boot_ci)
+
+
+
+
+
 
 
 ### Investigating the effect of light limitation on the change in R2
