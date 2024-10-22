@@ -5,6 +5,7 @@ library(boot)
 library(MuMIn)
 library(performance)
 library(MASS)
+library(dplyr)
 
 mswep <- read.csv("/Users/ingridslette/Desktop/NutNet/mswep_ppt_annual_gs_only.csv")
 
@@ -93,93 +94,39 @@ ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x= mswep_p
   theme(legend.position = "right")
 
 
-## Model fitting
+## Model fitting and model selection
 c_npk_x_model <- lmer(log_mass ~ log_mswep_ppt * trt + (1 | site_code) + (1 | year_trt), 
                       data = mass_ppt_c_npk)
 summary(c_npk_x_model)
 
+mass_ppt_c_npk_edited <- mass_ppt_c_npk %>%
+  dplyr::select(site_code, block, plot, trt, year, vascular_live_mass, log_mass, mswep_ppt, 
+                log_mswep_ppt, year_trt, proportion_par, avg_ppt_site, PercentSand)
+
+mass_ppt_c_npk_edited <- mass_ppt_c_npk_edited %>%
+  group_by(site_code) %>%
+  mutate(PercentSand = ifelse(is.na(PercentSand), mean(PercentSand, na.rm = TRUE), PercentSand)) %>%
+  ungroup()
+
+mass_ppt_c_npk_edited <- na.omit(mass_ppt_c_npk_edited)
+
+full_model <- lmer(log_mass ~ log_mswep_ppt + trt + proportion_par + avg_ppt_site + PercentSand + 
+                     (1 | site_code/year_trt), data = mass_ppt_c_npk_edited, REML = FALSE, na.action = na.fail)
+
+model_set <- dredge(full_model)
+
+# Display the model selection table sorted by AICc
+model_set
+
+# Get the best model based on AICc
+best_model <- get.models(model_set, 1)[[1]]
+
+# Summary of the best model
+summary(best_model)
+
+
 mass_ppt_c <- subset(mass_ppt_c_npk, trt == 'Control')
 mass_ppt_npk <- subset(mass_ppt_c_npk, trt == 'NPK')
-
-mass_ppt_c <- subset(mass_ppt_c, !is.na(PercentSand))
-mass_ppt_npk <- subset(mass_ppt_npk, !is.na(PercentSand))
-
-mass_ppt_c <- subset(mass_ppt_c, !is.na(proportion_par))
-mass_ppt_npk <- subset(mass_ppt_npk, !is.na(proportion_par))
-
-unique(mass_ppt_c$site_code)
-unique(mass_ppt_npk$site_code)
-
-global_model_c <- lmer(log_mass ~ log_mswep_ppt + year_trt + proportion_par + PercentSand + avg_ppt_site +
-                       (1 | site_code), data = mass_ppt_c, REML = FALSE)
-
-model_c1 <- lmer(log_mass ~ log_mswep_ppt + year_trt + proportion_par + PercentSand +
-                         (1 | site_code), data = mass_ppt_c, REML = FALSE)
-
-model_c2 <- lmer(log_mass ~ log_mswep_ppt + year_trt + proportion_par +
-                   (1 | site_code), data = mass_ppt_c, REML = FALSE)
-
-model_c3 <- lmer(log_mass ~ log_mswep_ppt + year_trt +
-                   (1 | site_code), data = mass_ppt_c, REML = FALSE)
-
-model_c4 <- lmer(log_mass ~ log_mswep_ppt +
-                   (1 | site_code), data = mass_ppt_c, REML = FALSE)
-
-model_c5 <- lmer(log_mass ~ log_mswep_ppt + proportion_par +
-                   (1 | site_code), data = mass_ppt_c, REML = FALSE)
-
-model_c6 <- lmer(log_mass ~ log_mswep_ppt + PercentSand +
-                   (1 | site_code), data = mass_ppt_c, REML = FALSE)
-
-model_c7 <- lmer(log_mass ~ log_mswep_ppt + year_trt + PercentSand +
-                   (1 | site_code), data = mass_ppt_c, REML = FALSE)
-
-model_c8 <- lmer(log_mass ~ log_mswep_ppt + proportion_par + PercentSand +
-                   (1 | site_code), data = mass_ppt_c, REML = FALSE)
-
-AIC(model_c1, model_c2, model_c3, model_c4, model_c5, model_c6, model_c7, model_c8, global_model_c)
-
-summary(model_c1)
-
-r2_model_c1 <- r.squaredGLMM(model_c1)
-r2_model_c2 <- r.squaredGLMM(model_c2)
-
-
-global_model_npk <- lmer(log_mass ~ log_mswep_ppt + year_trt + proportion_par + PercentSand + avg_ppt_site +
-                         (1 | site_code), data = mass_ppt_npk, REML = FALSE)
-
-model_npk1 <- lmer(log_mass ~ log_mswep_ppt + year_trt + proportion_par + PercentSand +
-                   (1 | site_code), data = mass_ppt_npk, REML = FALSE)
-
-model_npk2 <- lmer(log_mass ~ log_mswep_ppt + year_trt + proportion_par +
-                   (1 | site_code), data = mass_ppt_npk, REML = FALSE)
-
-model_npk3 <- lmer(log_mass ~ log_mswep_ppt + year_trt +
-                   (1 | site_code), data = mass_ppt_npk, REML = FALSE)
-
-model_npk4 <- lmer(log_mass ~ log_mswep_ppt +
-                   (1 | site_code), data = mass_ppt_npk, REML = FALSE)
-
-model_npk5 <- lmer(log_mass ~ log_mswep_ppt + proportion_par +
-                   (1 | site_code), data = mass_ppt_npk, REML = FALSE)
-
-model_npk6 <- lmer(log_mass ~ log_mswep_ppt + PercentSand +
-                   (1 | site_code), data = mass_ppt_npk, REML = FALSE)
-
-model_npk7 <- lmer(log_mass ~ log_mswep_ppt + year_trt + PercentSand +
-                   (1 | site_code), data = mass_ppt_npk, REML = FALSE)
-
-model_npk8 <- lmer(log_mass ~ log_mswep_ppt + proportion_par + PercentSand +
-                   (1 | site_code), data = mass_ppt_npk, REML = FALSE)
-
-AIC(model_npk8, model_npk7, model_npk6, model_npk5, model_npk4, model_npk3, model_npk2, model_npk1, global_model_npk)
-
-summary(model_npk2)
-
-r2_model_npk1 <- r.squaredGLMM(model_npk1)
-r2_model_npk2 <- r.squaredGLMM(model_npk2)
-
-anova(model_npk1, model_npk2)
 
 
 ### Comparing control vs. NPK R2 - Approach 1: calculate and compare difference at each site
