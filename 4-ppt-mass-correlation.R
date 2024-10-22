@@ -5,6 +5,8 @@ library(boot)
 library(MuMIn)
 library(performance)
 library(MASS)
+library(broom)
+library(purrr)
 
 mswep <- read.csv("/Users/ingridslette/Desktop/NutNet/mswep_ppt_annual_gs_only.csv")
 
@@ -91,6 +93,71 @@ ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x= mswep_p
        y = "Total live mass",
        color = "Site Code") +
   theme(legend.position = "right")
+
+
+# Graphing back-transformed data
+
+fit_model_and_predict <- function(data) {
+  model <- lm(log_mass ~ log_mswep_ppt, data = data)
+  new_data <- data.frame(log_mswep_ppt = seq(min(data$log_mswep_ppt, na.rm = TRUE),
+                                             max(data$log_mswep_ppt, na.rm = TRUE),
+                                             length.out = 100))
+  new_data$predicted_log_mass <- predict(model, newdata = new_data)
+  new_data$predicted_mass <- 10^new_data$predicted_log_mass
+  new_data$site_code <- unique(data$site_code)
+  new_data$trt <- unique(data$trt)
+  return(new_data)
+}
+
+predictions <- mass_ppt_c_npk %>%
+  group_by(site_code, trt) %>%
+  group_modify(~ fit_model_and_predict(.x)) %>%
+  ungroup()
+
+ggplot(mass_ppt_c_npk, aes(x = mswep_ppt, y = vascular_live_mass, color = site_code)) +
+  geom_line(data = predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass), size = 1) +
+  labs(x = "Total Growing Season Precipitation (mm)", y = "Live Mass") +
+  facet_wrap(~ trt) +
+  theme_bw()
+
+ggplot(mass_ppt_c_npk, aes(x = mswep_ppt, y = vascular_live_mass, color = trt)) +
+  geom_point() +
+  geom_line(data = predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass), size = 1) +
+  labs(x = "Total Growing Season Precipitation (mm)", y = "Live Mass") +
+  facet_wrap(~ site_code, scales = "free") +
+  theme_bw()
+
+
+fit_model_and_predict_allsites <- function(data) {
+  model <- lm(log_mass ~ log_mswep_ppt, data = data)
+  new_data <- data.frame(log_mswep_ppt = seq(min(data$log_mswep_ppt, na.rm = TRUE),
+                                             max(data$log_mswep_ppt, na.rm = TRUE),
+                                             length.out = 100))
+  new_data$predicted_log_mass <- predict(model, newdata = new_data)
+  new_data$predicted_mass <- 10^new_data$predicted_log_mass
+  new_data$trt <- unique(data$trt)
+  return(new_data)
+}
+
+predictions_allsites <- mass_ppt_c_npk %>%
+  group_by(trt) %>%
+  group_modify(~ fit_model_and_predict_allsites(.x)) %>%
+  ungroup()
+
+ggplot(mass_ppt_c_npk, aes(x = mswep_ppt, y = vascular_live_mass, color = site_code)) +
+  geom_line(data = predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass), size = 1) +
+  geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), 
+                                             size = 1, color = "black") +
+  labs(x = "Growing Season Precipitation (mm)", y = "Live Mass") +
+  facet_wrap(~ trt) +
+  theme_bw()
+
+
+ggplot(data = mass_ppt_c_npk,aes(x= mswep_ppt, y= vascular_live_mass, color = trt, shape = trt)) +
+  geom_point() + 
+  geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), size = 1) +
+  xlab("Growing Season Precipitation (mm)") + ylab("live mass") +
+  theme_bw()
 
 
 ### Comparing control vs. NPK R2 - Approach 1: calculate and compare difference at each site
