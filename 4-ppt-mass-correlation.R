@@ -115,19 +115,36 @@ full_model <- lmer(log_mass ~ log_mswep_ppt + trt + proportion_par + avg_ppt_sit
 
 model_set <- dredge(full_model)
 
-# Display the model selection table sorted by AICc
 model_set
 
-# Get the best model based on AICc
 best_model <- get.models(model_set, 1)[[1]]
 
-# Summary of the best model
 summary(best_model)
 
+mass_ppt_c <- subset(mass_ppt_c_npk_edited, trt == 'Control')
+mass_ppt_npk <- subset(mass_ppt_c_npk_edited, trt == 'NPK')
 
-mass_ppt_c <- subset(mass_ppt_c_npk, trt == 'Control')
-mass_ppt_npk <- subset(mass_ppt_c_npk, trt == 'NPK')
+full_model_c <- lmer(log_mass ~ log_mswep_ppt + proportion_par + avg_ppt_site + PercentSand + 
+                     (1 | site_code/year_trt), data = mass_ppt_c, REML = FALSE, na.action = na.fail)
 
+model_set_c <- dredge(full_model_c)
+
+model_set_c
+
+best_model_c <- get.models(model_set_c, 1)[[1]]
+
+summary(best_model_c)
+
+full_model_npk <- lmer(log_mass ~ log_mswep_ppt + proportion_par + avg_ppt_site + PercentSand + 
+                       (1 | site_code/year_trt), data = mass_ppt_npk, REML = FALSE, na.action = na.fail)
+
+model_set_npk <- dredge(full_model_npk)
+
+model_set_npk
+
+best_model_npk <- get.models(model_set_npk, 1)[[1]]
+
+summary(best_model_npk)
 
 ### Comparing control vs. NPK R2 - Approach 1: calculate and compare difference at each site
 
@@ -223,45 +240,4 @@ print(boot_r2)
 # Get 95% confidence intervals for the R² difference
 boot_ci <- boot.ci(boot_r2, type = "perc")
 print(boot_ci)
-
-
-
-
-
-
-
-### Investigating the effect of light limitation on the change in R2
-## Using approach 2 from above: fit separate models for different trts, calculate and compare z scores
-
-model_control <- lmer(vascular_live_mass ~ mswep_ppt * proportion_par + (1 | site_code) + (1 | year_trt), 
-                      data = subset(mass_ppt_c_npk, trt == "Control"))
-model_npk <- lmer(vascular_live_mass ~ mswep_ppt * proportion_par + (1 | site_code) + (1 | year_trt), 
-                  data = subset(mass_ppt_c_npk, trt == "NPK"))
-
-summary(model_control)
-summary(model_npk)
-
-AIC(model_control, model_npk)
-
-r2_control <- performance::r2(model_control)
-r2_npk <- performance::r2(model_npk)
-
-conditional_r2_control <- r2_control$R2_conditional
-conditional_r2_npk <- r2_npk$R2_conditional
-
-# Compare R2 values using Fisher's Z transformation
-z_control <- 0.5 * log((1 + sqrt(conditional_r2_control)) / (1 - sqrt(conditional_r2_control)))
-z_npk <- 0.5 * log((1 + sqrt(conditional_r2_npk)) / (1 - sqrt(conditional_r2_npk)))
-
-n_control <- length(unique(subset(mass_ppt_c_npk, trt == "Control")$site_code))
-n_npk <- length(unique(subset(mass_ppt_c_npk, trt == "NPK")$site_code))
-se_diff <- sqrt((1 / (n_control - 3)) + (1 / (n_npk - 3)))
-
-# Calculate the Z-score for the difference
-z_diff <- (z_control - z_npk) / se_diff
-
-p_value <- 2 * (1 - pnorm(abs(z_diff)))
-
-cat("Z-score for the difference:", z_diff, "\n")
-cat("P-value for the difference in conditional R-squared values:", p_value, "\n")
 
