@@ -5,7 +5,6 @@ library(boot)
 library(MuMIn)
 library(performance)
 library(MASS)
-library(dplyr)
 
 mswep <- read.csv("/Users/ingridslette/Desktop/NutNet/mswep_ppt_annual_gs_only.csv")
 
@@ -93,13 +92,14 @@ ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x= mswep_p
        color = "Site Code") +
   theme(legend.position = "right")
 
+
 ### Comparing control vs. NPK R2 - Approach 1: calculate and compare difference at each site
 
 # Get unique site codes
 site_codes <- unique(mass_ppt_c_npk$site_code)
 
 # Initialize a dataframe to store results
-results <- data.frame(site_code = character(), 
+r2_results <- data.frame(site_code = character(), 
                       control_r2 = numeric(), 
                       npk_r2 = numeric(), 
                       r2_difference = numeric(), 
@@ -108,12 +108,12 @@ results <- data.frame(site_code = character(),
 for (site in site_codes) {
   site_data_control <- subset(mass_ppt_c_npk, site_code == site & trt == "Control")
   site_data_npk <- subset(mass_ppt_c_npk, site_code == site & trt == "NPK")
-  control_model <- lm(vascular_live_mass ~ mswep_ppt_per, data = site_data_control)
-  npk_model <- lm(vascular_live_mass ~ mswep_ppt_per, data = site_data_npk)
+  control_model <- lm(log_mass ~ log_mswep_ppt, data = site_data_control)
+  npk_model <- lm(log_mass ~ log_mswep_ppt, data = site_data_npk)
   control_r2 <- summary(control_model)$r.squared
   npk_r2 <- summary(npk_model)$r.squared
   r2_difference <- control_r2 - npk_r2
-  results <- rbind(results, data.frame(
+  r2_results <- rbind(r2_results, data.frame(
     site_code = site,
     control_r2 = control_r2,
     npk_r2 = npk_r2,
@@ -231,4 +231,5 @@ model_set_npk <- dredge(full_model_npk)
 model_set_npk
 best_model_npk <- get.models(model_set_npk, 1)[[1]]
 summary(best_model_npk)
+
 
