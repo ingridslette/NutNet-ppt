@@ -93,59 +93,6 @@ ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x= mswep_p
        color = "Site Code") +
   theme(legend.position = "right")
 
-
-## Model fitting and model selection
-c_npk_x_model <- lmer(log_mass ~ log_mswep_ppt * trt + (1 | site_code) + (1 | year_trt), 
-                      data = mass_ppt_c_npk)
-summary(c_npk_x_model)
-
-mass_ppt_c_npk_edited <- mass_ppt_c_npk %>%
-  dplyr::select(site_code, block, plot, trt, year, vascular_live_mass, log_mass, mswep_ppt, 
-                log_mswep_ppt, year_trt, proportion_par, avg_ppt_site, PercentSand)
-
-mass_ppt_c_npk_edited <- mass_ppt_c_npk_edited %>%
-  group_by(site_code) %>%
-  mutate(PercentSand = ifelse(is.na(PercentSand), mean(PercentSand, na.rm = TRUE), PercentSand)) %>%
-  ungroup()
-
-mass_ppt_c_npk_edited <- na.omit(mass_ppt_c_npk_edited)
-
-full_model <- lmer(log_mass ~ log_mswep_ppt + trt + proportion_par + avg_ppt_site + PercentSand + 
-                     (1 | site_code/year_trt), data = mass_ppt_c_npk_edited, REML = FALSE, na.action = na.fail)
-
-model_set <- dredge(full_model)
-
-model_set
-
-best_model <- get.models(model_set, 1)[[1]]
-
-summary(best_model)
-
-mass_ppt_c <- subset(mass_ppt_c_npk_edited, trt == 'Control')
-mass_ppt_npk <- subset(mass_ppt_c_npk_edited, trt == 'NPK')
-
-full_model_c <- lmer(log_mass ~ log_mswep_ppt + proportion_par + avg_ppt_site + PercentSand + 
-                     (1 | site_code/year_trt), data = mass_ppt_c, REML = FALSE, na.action = na.fail)
-
-model_set_c <- dredge(full_model_c)
-
-model_set_c
-
-best_model_c <- get.models(model_set_c, 1)[[1]]
-
-summary(best_model_c)
-
-full_model_npk <- lmer(log_mass ~ log_mswep_ppt + proportion_par + avg_ppt_site + PercentSand + 
-                       (1 | site_code/year_trt), data = mass_ppt_npk, REML = FALSE, na.action = na.fail)
-
-model_set_npk <- dredge(full_model_npk)
-
-model_set_npk
-
-best_model_npk <- get.models(model_set_npk, 1)[[1]]
-
-summary(best_model_npk)
-
 ### Comparing control vs. NPK R2 - Approach 1: calculate and compare difference at each site
 
 # Get unique site codes
@@ -240,4 +187,48 @@ print(boot_r2)
 # Get 95% confidence intervals for the R² difference
 boot_ci <- boot.ci(boot_r2, type = "perc")
 print(boot_ci)
+
+
+## Model fitting and model selection
+c_npk_x_model <- lmer(log_mass ~ log_mswep_ppt * trt + (1 | site_code) + (1 | year_trt), 
+                      data = mass_ppt_c_npk)
+summary(c_npk_x_model)
+
+mass_ppt_c_npk_edited <- mass_ppt_c_npk %>%
+  dplyr::select(site_code, block, plot, trt, year, vascular_live_mass, log_mass, mswep_ppt, 
+                log_mswep_ppt, year_trt, proportion_par, avg_ppt_site, PercentSand)
+
+mass_ppt_c_npk_edited <- mass_ppt_c_npk_edited %>%
+  group_by(site_code) %>%
+  mutate(PercentSand = ifelse(is.na(PercentSand), mean(PercentSand, na.rm = TRUE), PercentSand)) %>%
+  ungroup()
+
+mass_ppt_c_npk_edited <- na.omit(mass_ppt_c_npk_edited)
+
+full_model <- lmer(log_mass ~ log_mswep_ppt + trt + proportion_par + avg_ppt_site + PercentSand + 
+                     (1 | site_code/year_trt), data = mass_ppt_c_npk_edited, REML = FALSE, na.action = na.fail)
+
+model_set <- dredge(full_model)
+model_set
+best_model <- get.models(model_set, 1)[[1]]
+summary(best_model)
+
+mass_ppt_c <- subset(mass_ppt_c_npk_edited, trt == 'Control')
+mass_ppt_npk <- subset(mass_ppt_c_npk_edited, trt == 'NPK')
+
+full_model_c <- lmer(log_mass ~ log_mswep_ppt + proportion_par + avg_ppt_site + PercentSand + 
+                       (1 | site_code/year_trt), data = mass_ppt_c, REML = FALSE, na.action = na.fail)
+
+model_set_c <- dredge(full_model_c)
+model_set_c
+best_model_c <- get.models(model_set_c, 1)[[1]]
+summary(best_model_c)
+
+full_model_npk <- lmer(log_mass ~ log_mswep_ppt + proportion_par + avg_ppt_site + PercentSand + 
+                         (1 | site_code/year_trt), data = mass_ppt_npk, REML = FALSE, na.action = na.fail)
+
+model_set_npk <- dredge(full_model_npk)
+model_set_npk
+best_model_npk <- get.models(model_set_npk, 1)[[1]]
+summary(best_model_npk)
 
