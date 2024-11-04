@@ -48,13 +48,13 @@ site_year_counts <- mass_ppt_c_npk %>%
   filter(!is.na(vascular_live_mass)) %>% 
   summarise(year_count = n_distinct(year), .groups = 'drop')
 
-sites_with_7_years <- site_year_counts %>%
-  filter(year_count >= 7) %>%
+sites_with_6_years <- site_year_counts %>%
+  filter(year_count >= 6) %>%
   group_by(site_code) %>% 
   filter(n_distinct(trt) == 2) 
 
 mass_ppt_c_npk <- mass_ppt_c_npk %>%
-  filter(site_code %in% sites_with_7_years$site_code)
+  filter(site_code %in% sites_with_6_years$site_code)
 
 unique(mass_ppt_c_npk$site_code)
 
