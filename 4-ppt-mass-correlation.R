@@ -38,6 +38,8 @@ mass_ppt <- mass_ppt %>%
   mutate(log_mass = log10(vascular_live_mass),
          log_mswep_ppt = log10(mswep_ppt))
 
+unique(mass_ppt$trt)
+
 mass_ppt_c_npk <- filter(mass_ppt, trt %in% c("Control", "NPK")) 
 
 unique(mass_ppt_c_npk$site_code)
@@ -206,6 +208,24 @@ print(paired_t_test_result)
 sites_higher_r2_npk <- filter(results, r2_difference < 0)
 
 
+# Add a column to indicate if the site_code is in the site_higher_r2_npk list
+mass_ppt_c_npk <- mass_ppt_c_npk %>%
+  mutate(dashed_line = if_else(site_code %in% sites_higher_r2_npk$site_code, "dashed", "solid"))
+
+predictions <- predictions %>%
+  mutate(dashed_line = if_else(site_code %in% sites_higher_r2_npk$site_code, "dashed", "solid"))
+
+# Update the ggplot code
+ggplot(mass_ppt_c_npk, aes(x = mswep_ppt, y = vascular_live_mass, color = site_code)) +
+  geom_line(data = predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass, linetype = dashed_line), linewidth = 1) +
+  geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), 
+            linewidth = 1, color = "black") +
+  scale_linetype_manual(values = c("solid" = "solid", "dashed" = "dashed")) +
+  labs(x = "Growing Season Precipitation (mm)", y = "Live Mass") +
+  facet_wrap(~ trt) +
+  theme_bw()
+
+
 ### Comparing control vs. NPK R2 - Approach 2: fit separate models for control and NPK data, calculate and compare z scores
 
 model_control <- lmer(log_mass ~ log_mswep_ppt + (1 | site_code / year_trt), 
@@ -273,14 +293,14 @@ mass_ppt_c_npk_edited <- mass_ppt_c_npk %>%
 
 mass_ppt_c_npk_edited <- mass_ppt_c_npk_edited %>%
   group_by(site_code) %>%
-  mutate(PercentSand = ifelse(is.na(PercentSand), mean(PercentSand, na.rm = TRUE), PercentSand)) %>%
+  mutate(PercentSand = if_else(is.na(PercentSand), mean(PercentSand, na.rm = TRUE), PercentSand)) %>%
   ungroup()
 
 mass_ppt_c_npk_edited <- na.omit(mass_ppt_c_npk_edited)
 
 unique(mass_ppt_c_npk_edited$site_code)
 
-full_model <- lmer(log_mass ~ log_mswep_ppt + trt + proportion_par + avg_ppt_site + PercentSand + 
+full_model <- lmer(log_mass ~ log_mswep_ppt + trt + proportion_par + avg_ppt_site + 
                      (1 | site_code/year_trt), data = mass_ppt_c_npk_edited, REML = FALSE, na.action = na.fail)
 summary(full_model)
 model_set <- dredge(full_model)
@@ -473,3 +493,6 @@ ggplot(data = results_with_averages, aes(x = avg_PercentSand, y = avg_proportion
 model <- lm(avg_proportion_par ~ trt * avg_PercentSand * avg_avg_ppt_site, 
                    data = results_with_averages)
 summary(model)
+
+
+
