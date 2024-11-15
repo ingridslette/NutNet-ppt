@@ -7,6 +7,7 @@ library(performance)
 library(MASS)
 library(broom)
 library(purrr)
+library(eemeans)
 
 mswep <- read.csv("/Users/ingridslette/Desktop/NutNet/mswep_ppt_annual_gs_only.csv")
 
