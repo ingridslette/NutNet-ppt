@@ -528,12 +528,12 @@ r2_emm <- emmeans(r2_aov, ~ trt | habitat)
 pairwise_results <- pairs(r2_emm)
 print(pairwise_results)
 
-ggplot(results_with_averages, aes(x = trt, y = r2, color = habitat)) +
+ggplot(results_with_averages, aes(x = trt, y = r2)) +
   geom_point() +
   facet_wrap(~ habitat) +
-  theme_bw() +
+  theme_bw(14) +
   labs(x = "Treatment",
-       y = "R2")
+       y = "R2 of precipitation-mass")
 
 slope_aov <- aov(slope ~ habitat * trt, data = results_with_averages)
 summary(slope_aov)
@@ -541,12 +541,12 @@ slope_emm <- emmeans(slope_aov, ~ trt | habitat)
 pairwise_results_slope <- pairs(slope_emm)
 print(pairwise_results_slope)
 
-ggplot(results_with_averages, aes(x = trt, y = slope, color = habitat)) +
+ggplot(results_with_averages, aes(x = trt, y = slope)) +
   geom_point() +
   facet_wrap(~ habitat) +
-  theme_bw() +
+  theme_bw(14) +
   labs(x = "Treatment",
-       y = "R2")
+       y = "Slope of precipitation-mass")
 
 ## testing for regional effect
 
@@ -559,12 +559,12 @@ r2_emm_reg <- emmeans(r2_aov_reg, ~ trt | region)
 pairwise_results_reg <- pairs(r2_emm_reg)
 print(pairwise_results_reg)
 
-ggplot(results_with_averages, aes(x = trt, y = r2, color = region)) +
+ggplot(results_with_averages, aes(x = trt, y = r2)) +
   geom_point() +
   facet_wrap(~ region) +
   theme_bw() +
   labs(x = "Treatment",
-       y = "R2")
+       y = "R2 of precipitation-mass")
 
 slope_aov_reg <- aov(slope ~ region * trt, data = results_with_averages)
 summary(slope_aov_reg)
@@ -572,11 +572,11 @@ slope_emm_reg <- emmeans(slope_aov_reg, ~ trt | region)
 pairwise_results_slope_reg <- pairs(slope_emm_reg)
 print(pairwise_results_slope_reg)
 
-ggplot(results_with_averages, aes(x = trt, y = slope, color = region)) +
+ggplot(results_with_averages, aes(x = trt, y = slope)) +
   geom_point() +
   facet_wrap(~ region) +
   theme_bw() +
   labs(x = "Treatment",
-       y = "R2")
+       y = "Slope of precipitation-mass")
 
 
