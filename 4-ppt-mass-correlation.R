@@ -382,7 +382,9 @@ averages <- mass_ppt_c_npk_edited %>%
     avg_avg_ppt_site = mean(avg_ppt_site, na.rm = TRUE),
     avg_PercentSand = mean(PercentSand, na.rm = TRUE),
     avg_richness = mean(richness_vegan, na.rm = TRUE),
-    avg_litter_mass = mean(litter_mass, na.rm = TRUE)
+    avg_litter_mass = mean(litter_mass, na.rm = TRUE),
+    region = first(region),
+    habitat = first(habitat)
   )
 
 results_with_averages <- results_long %>%
@@ -514,5 +516,67 @@ model <- lm(avg_proportion_par ~ trt * avg_PercentSand * avg_avg_ppt_site,
                    data = results_with_averages)
 summary(model)
 
+
+## testing for habitat effect
+
+mass_aov <- aov(log_mass ~ habitat *trt, data = mass_ppt_c_npk)
+summary(mass_aov)
+
+r2_aov <- aov(r2 ~ habitat * trt, data = results_with_averages)
+summary(r2_aov)
+r2_emm <- emmeans(r2_aov, ~ trt | habitat)
+pairwise_results <- pairs(r2_emm)
+print(pairwise_results)
+
+ggplot(results_with_averages, aes(x = trt, y = r2, color = habitat)) +
+  geom_point() +
+  facet_wrap(~ habitat) +
+  theme_bw() +
+  labs(x = "Treatment",
+       y = "R2")
+
+slope_aov <- aov(slope ~ habitat * trt, data = results_with_averages)
+summary(slope_aov)
+slope_emm <- emmeans(slope_aov, ~ trt | habitat)
+pairwise_results_slope <- pairs(slope_emm)
+print(pairwise_results_slope)
+
+ggplot(results_with_averages, aes(x = trt, y = slope, color = habitat)) +
+  geom_point() +
+  facet_wrap(~ habitat) +
+  theme_bw() +
+  labs(x = "Treatment",
+       y = "R2")
+
+## testing for regional effect
+
+mass_aov_reg <- aov(log_mass ~ region *trt, data = mass_ppt_c_npk)
+summary(mass_aov_reg)
+
+r2_aov_reg <- aov(r2 ~ region * trt, data = results_with_averages)
+summary(r2_aov_reg)
+r2_emm_reg <- emmeans(r2_aov_reg, ~ trt | region)
+pairwise_results_reg <- pairs(r2_emm_reg)
+print(pairwise_results_reg)
+
+ggplot(results_with_averages, aes(x = trt, y = r2, color = region)) +
+  geom_point() +
+  facet_wrap(~ region) +
+  theme_bw() +
+  labs(x = "Treatment",
+       y = "R2")
+
+slope_aov_reg <- aov(slope ~ region * trt, data = results_with_averages)
+summary(slope_aov_reg)
+slope_emm_reg <- emmeans(slope_aov_reg, ~ trt | region)
+pairwise_results_slope_reg <- pairs(slope_emm_reg)
+print(pairwise_results_slope_reg)
+
+ggplot(results_with_averages, aes(x = trt, y = slope, color = region)) +
+  geom_point() +
+  facet_wrap(~ region) +
+  theme_bw() +
+  labs(x = "Treatment",
+       y = "R2")
 
 
