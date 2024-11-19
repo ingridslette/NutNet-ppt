@@ -196,6 +196,14 @@ ggplot(predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass, colour = site_
   facet_wrap(~ trt) +
   theme_bw()
 
+ggplot(predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass, colour = site_code)) +
+  geom_line() +
+  geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), 
+            color = "black", linetype = "dashed") +
+  labs(x = "Growing Season Precipitation (mm)", y = "Live Mass") +
+  facet_wrap(~ trt) +
+  theme_bw()
+
 
 ### Comparing control vs. NPK R2 - Approach 1: calculate and compare difference at each site
 
@@ -337,7 +345,6 @@ summary(full_model_site)
 full_model_plot <- lmer(log_mass ~ trt * (log_mswep_ppt + proportion_par + richness_vegan + prev_ppt)
                      + (1 | site_code/year_trt), data = mass_ppt_c_npk_edited, REML = FALSE)
 summary(full_model_plot)
-
 #model_set <- dredge(full_model)
 #model_set
 #best_model <- get.models(model_set, 1)[[1]]
@@ -431,6 +438,7 @@ averages <- mass_ppt_c_npk_edited %>%
     avg_PercentSand = mean(PercentSand, na.rm = TRUE),
     avg_richness = mean(richness_vegan, na.rm = TRUE),
     region = first(region),
+    country = first(country),
     habitat = first(habitat)
   )
 
@@ -463,7 +471,7 @@ r2_rich_plot
 
 slope_map_plot <- ggplot(data = results_with_averages, aes(x = avg_avg_ppt_site, y = slope, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
-  xlab("MAP") + ylab("Slope of precipitation vs. mass") +
+  xlab("MAP") + ylab("Slope of ppt vs. mass") +
   theme_bw()
 slope_map_plot
 
@@ -604,10 +612,10 @@ ggplot(results_with_averages, aes(x = trt, y = slope)) +
 
 ## testing for regional effect
 
-mass_aov_reg <- aov(log_mass ~ region * trt, data = mass_ppt_c_npk)
+mass_aov_reg <- aov(log_mass ~ country * trt, data = mass_ppt_c_npk)
 summary(mass_aov_reg)
 
-r2_aov_reg <- aov(r2 ~ region * trt, data = results_with_averages)
+r2_aov_reg <- aov(r2 ~ country * trt, data = results_with_averages)
 summary(r2_aov_reg)
 r2_emm_reg <- emmeans(r2_aov_reg, ~ trt | region)
 pairwise_results_reg <- pairs(r2_emm_reg)
