@@ -665,10 +665,17 @@ ggplot(lrr_df, aes(x = lrr_prop_par, y = lrr_mass)) +
 results_with_averages <- results_with_averages %>% 
   left_join(lrr_df, by = "site_code")
 
-ggplot(lrr_df, aes(x = lrr_prop_par, y = lrr_mass)) +
+ggplot(results_with_averages, aes(x = lrr_mass, y = slope, color = trt)) +
   geom_point() +
-  geom_smooth(method = "lm", color = "darkgrey") +
-  labs(x = "LRR proportion par",
+  geom_smooth(method = "lm") +
+  labs(x = "Slope of ppt vs. mass",
+       y = "LRR mass") +
+  theme_bw()
+
+ggplot(results, aes(x = LRR, y = r2_difference,)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  labs(x = "R2 of ppt vs. mass",
        y = "LRR mass") +
   theme_bw()
 
