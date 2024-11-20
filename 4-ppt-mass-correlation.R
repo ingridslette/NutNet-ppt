@@ -642,3 +642,35 @@ ggplot(results_with_averages, aes(x = trt, y = slope)) +
        y = "Slope of precipitation-mass")
 
 
+# comparing responsiveness to ppt vs. fertilization among sites using log response ratios
+
+unique(mass_ppt_c_npk$trt)
+
+lrr_df <- mass_ppt_c_npk %>%
+  group_by(site_code) %>%
+  summarize(
+    lrr_mass = log(mean(vascular_live_mass[trt == "NPK"], na.rm = TRUE) /
+                                   mean(vascular_live_mass[trt == "Control"], na.rm = TRUE)),
+    lrr_prop_par = log(mean(proportion_par[trt == "NPK"], na.rm = TRUE) /
+                               mean(proportion_par[trt == "Control"], na.rm = TRUE))
+  )
+
+ggplot(lrr_df, aes(x = lrr_prop_par, y = lrr_mass)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "darkgrey") +
+  labs(x = "LRR proportion par",
+       y = "LRR mass") +
+  theme_bw()
+
+results_with_averages <- results_with_averages %>% 
+  left_join(lrr_df, by = "site_code")
+
+ggplot(lrr_df, aes(x = lrr_prop_par, y = lrr_mass)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "darkgrey") +
+  labs(x = "LRR proportion par",
+       y = "LRR mass") +
+  theme_bw()
+
+
+
