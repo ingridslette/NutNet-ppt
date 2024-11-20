@@ -310,6 +310,25 @@ boot_ci <- boot.ci(boot_r2, type = "perc")
 print(boot_ci)
 
 
+## Calculating log response ratios
+
+lrr_df <- mass_ppt_c_npk %>%
+  group_by(site_code) %>%
+  summarize(
+    lrr_mass = log(mean(vascular_live_mass[trt == "NPK"], na.rm = TRUE) /
+                     mean(vascular_live_mass[trt == "Control"], na.rm = TRUE)),
+    lrr_prop_par = log(mean(proportion_par[trt == "NPK"], na.rm = TRUE) /
+                         mean(proportion_par[trt == "Control"], na.rm = TRUE))
+  )
+
+ggplot(lrr_df, aes(x = lrr_prop_par, y = lrr_mass)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "darkgrey") +
+  labs(x = "LRR proportion par",
+       y = "LRR mass") +
+  theme_bw()
+
+
 ## Covariate analysis of mass
 
 c_npk_x_model <- lmer(log_mass ~ log_mswep_ppt * trt + (1 | site_code / year_trt), data = mass_ppt_c_npk)
@@ -326,17 +345,27 @@ mass_ppt_c_npk_edited <- mass_ppt_c_npk_edited %>%
 
 unique(mass_ppt_c_npk_edited$site_code)
 
-#mass_ppt_c_npk_edited <- na.omit(mass_ppt_c_npk_edited)
+mass_ppt_c_npk_edited <- mass_ppt_c_npk_edited %>% 
+  left_join(lrr_df, by = "site_code")
+
+mass_ppt_c_npk_edited <- na.omit(mass_ppt_c_npk_edited)
+unique(mass_ppt_c_npk_edited$site_code)
 
 full_model <- lmer(log_mass ~ trt + log_mswep_ppt + proportion_par + avg_ppt_site + PercentSand 
-                   + richness_vegan + prev_ppt
+                   + richness_vegan + prev_ppt + lrr_mass
                    + (1 | site_code/year_trt), data = mass_ppt_c_npk_edited, REML = FALSE)
 summary(full_model)
 
 full_model_x <- lmer(log_mass ~ trt * (log_mswep_ppt + proportion_par + avg_ppt_site + PercentSand 
-                                     + richness_vegan + prev_ppt)
+                                     + richness_vegan + prev_ppt + lrr_mass)
                    + (1 | site_code/year_trt), data = mass_ppt_c_npk_edited, REML = FALSE)
 summary(full_model_x)
+
+model <- lmer(log_mass ~ trt * lrr_prop_par
+                     + (1 | site_code/year_trt), data = mass_ppt_c_npk_edited, REML = FALSE)
+summary(model)
+
+emmeans(full_model_x, pairwise ~ trt)
 
 full_model_site <- lmer(log_mass ~ trt * (avg_ppt_site + PercentSand)
                      + (1 | site_code/year_trt), data = mass_ppt_c_npk_edited, REML = FALSE)
@@ -444,6 +473,23 @@ averages <- mass_ppt_c_npk_edited %>%
 
 results_with_averages <- results_long %>%
   left_join(averages, by = c("site_code", "trt"))
+
+results_with_averages <- results_with_averages %>% 
+  left_join(lrr_df, by = "site_code")
+
+ggplot(results_with_averages, aes(x = lrr_mass, y = slope, color = trt)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  labs(x = "Slope of ppt vs. mass",
+       y = "LRR mass") +
+  theme_bw()
+
+ggplot(results, aes(x = LRR, y = r2_difference)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "darkgrey") +
+  labs(x = "LRR mass",
+       y = "Difference in R2 of ppt vs. mass") +
+  theme_bw(14)
 
 r2_map_plot <- ggplot(data = results_with_averages, aes(x = avg_avg_ppt_site, y = r2, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
@@ -642,42 +688,6 @@ ggplot(results_with_averages, aes(x = trt, y = slope)) +
        y = "Slope of precipitation-mass")
 
 
-# comparing responsiveness to ppt vs. fertilization among sites using log response ratios
-
-unique(mass_ppt_c_npk$trt)
-
-lrr_df <- mass_ppt_c_npk %>%
-  group_by(site_code) %>%
-  summarize(
-    lrr_mass = log(mean(vascular_live_mass[trt == "NPK"], na.rm = TRUE) /
-                                   mean(vascular_live_mass[trt == "Control"], na.rm = TRUE)),
-    lrr_prop_par = log(mean(proportion_par[trt == "NPK"], na.rm = TRUE) /
-                               mean(proportion_par[trt == "Control"], na.rm = TRUE))
-  )
-
-ggplot(lrr_df, aes(x = lrr_prop_par, y = lrr_mass)) +
-  geom_point() +
-  geom_smooth(method = "lm", color = "darkgrey") +
-  labs(x = "LRR proportion par",
-       y = "LRR mass") +
-  theme_bw()
-
-results_with_averages <- results_with_averages %>% 
-  left_join(lrr_df, by = "site_code")
-
-ggplot(results_with_averages, aes(x = lrr_mass, y = slope, color = trt)) +
-  geom_point() +
-  geom_smooth(method = "lm") +
-  labs(x = "Slope of ppt vs. mass",
-       y = "LRR mass") +
-  theme_bw()
-
-ggplot(results, aes(x = LRR, y = r2_difference,)) +
-  geom_point() +
-  geom_smooth(method = "lm") +
-  labs(x = "R2 of ppt vs. mass",
-       y = "LRR mass") +
-  theme_bw()
 
 
 
