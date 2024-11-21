@@ -167,40 +167,6 @@ ggplot(data = mass_ppt_c_npk,aes(x= mswep_ppt, y= vascular_live_mass, color = tr
   theme_bw()
 
 
-
-
-
-predictions <- predictions %>%
-  left_join(results, by = "site_code")
-
-predictions <- predictions %>%
-  mutate(site_code = factor(site_code, levels = unique(site_code[order(r2_difference)])))
-
-pal2 <- c("#800000","#c00000","#ff0000","#ff4040","#ff8080","#a83a01","#e04d01","#f06201","#ff7700","#e0a500",
-          "#ffbc00","#ffcd40","#ffde80","#305020","#406a2a","#609f3f","#80d353","#bdda0f","#0b5043","#117864",
-          "#1abc9c","#03045e","#125d93","#057dcd","#43b0f1","#96cff1","#503658","#80558c","#af7ab3","#c497b0",
-          "#808080")
-
-ggplot(predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass, color = site_code)) +
-  geom_line() +
-  scale_color_manual(values = pal2) +
-  labs(x = "Growing Season Precipitation (mm)", y = "Live Mass") +
-  facet_wrap(~ trt) +
-  theme_bw()
-
-ggplot(predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass, colour = site_code)) +
-  geom_line() +
-  scale_color_manual(values = pal2) +
-  geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), 
-            color = "black", linetype = "dashed") +
-  labs(x = "Growing Season Precipitation (mm)", y = "Live Mass") +
-  facet_wrap(~ trt) +
-  theme_bw()
-
-
-
-
-
 ### Comparing control vs. NPK R2 - Approach 1: calculate and compare difference at each site
 
 # Get unique site codes
@@ -306,6 +272,29 @@ boot_ci <- boot.ci(boot_r2, type = "perc")
 print(boot_ci)
 
 
+## Updating graphs to order by R2
+
+predictions <- predictions %>%
+  left_join(results, by = "site_code")
+
+predictions <- predictions %>%
+  mutate(site_code = factor(site_code, levels = unique(site_code[order(r2_difference)])))
+
+pal2 <- c("#800000","#c00000","#ff0000","#ff4040","#ff8080","#a83a01","#e04d01","#f06201","#ff7700","#e0a500",
+          "#ffbc00","#ffcd40","#ffde80","#305020","#406a2a","#609f3f","#80d353","#bdda0f","#0b5043","#117864",
+          "#1abc9c","#03045e","#125d93","#057dcd","#43b0f1","#96cff1","#503658","#80558c","#af7ab3","#c497b0",
+          "#808080")
+
+ggplot(predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass, colour = site_code)) +
+  geom_line() +
+  scale_color_manual(values = pal2) +
+  geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), 
+            color = "black", linetype = "dashed") +
+  labs(x = "Growing Season Precipitation (mm)", y = "Live Mass") +
+  facet_wrap(~ trt) +
+  theme_bw()
+
+
 ## Calculating log response ratios
 
 lrr_df <- mass_ppt_c_npk %>%
@@ -327,6 +316,7 @@ ggplot(lrr_df, aes(x = lrr_prop_par, y = lrr_mass)) +
 lrr_par_mass_model <- lm(lrr_mass ~ lrr_prop_par, data = lrr_df)
 summary(lrr_par_mass_model)
 
+
 ## Covariate analysis of mass
 
 c_npk_x_model <- lmer(log_mass ~ log_mswep_ppt * trt + (1 | site_code / year_trt), data = mass_ppt_c_npk)
@@ -334,7 +324,7 @@ summary(c_npk_x_model)
 
 mass_ppt_c_npk_edited <- mass_ppt_c_npk %>%
   dplyr::select(site_code, block, plot, continent, country, region, habitat, trt, year, vascular_live_mass, log_mass, mswep_ppt, 
-                log_mswep_ppt, prev_ppt, year_trt, proportion_par, avg_ppt_site, PercentSand, richness_vegan, litter_mass)
+                log_mswep_ppt, prev_ppt, year_trt, proportion_par, avg_ppt_site, richness_vegan, litter_mass, PercentSand)
 
 mass_ppt_c_npk_edited <- mass_ppt_c_npk_edited %>%
   group_by(site_code) %>%
@@ -358,12 +348,6 @@ full_model_x <- lmer(log_mass ~ trt * (log_mswep_ppt + proportion_par + avg_ppt_
                                      + richness_vegan + prev_ppt + lrr_mass)
                    + (1 | site_code/year_trt), data = mass_ppt_c_npk_edited, REML = FALSE)
 summary(full_model_x)
-
-model <- lmer(log_mass ~ trt * lrr_prop_par
-                     + (1 | site_code/year_trt), data = mass_ppt_c_npk_edited, REML = FALSE)
-summary(model)
-
-emmeans(full_model_x, pairwise ~ trt)
 
 full_model_site <- lmer(log_mass ~ trt * (avg_ppt_site + PercentSand)
                      + (1 | site_code/year_trt), data = mass_ppt_c_npk_edited, REML = FALSE)
