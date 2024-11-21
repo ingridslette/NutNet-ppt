@@ -167,13 +167,14 @@ ggplot(data = mass_ppt_c_npk,aes(x= mswep_ppt, y= vascular_live_mass, color = tr
   theme_bw()
 
 
+
+
+
 predictions <- predictions %>%
   left_join(results, by = "site_code")
 
 predictions <- predictions %>%
   mutate(site_code = factor(site_code, levels = unique(site_code[order(r2_difference)])))
-
-palette <- colorRampPalette( brewer.pal(11, "Spectral") )
 
 pal2 <- c("#800000","#c00000","#ff0000","#ff4040","#ff8080","#a83a01","#e04d01","#f06201","#ff7700","#e0a500",
           "#ffbc00","#ffcd40","#ffde80","#305020","#406a2a","#609f3f","#80d353","#bdda0f","#0b5043","#117864",
@@ -196,13 +197,8 @@ ggplot(predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass, colour = site_
   facet_wrap(~ trt) +
   theme_bw()
 
-ggplot(predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass, colour = site_code)) +
-  geom_line() +
-  geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), 
-            color = "black", linetype = "dashed") +
-  labs(x = "Growing Season Precipitation (mm)", y = "Live Mass") +
-  facet_wrap(~ trt) +
-  theme_bw()
+
+
 
 
 ### Comparing control vs. NPK R2 - Approach 1: calculate and compare difference at each site
@@ -328,6 +324,8 @@ ggplot(lrr_df, aes(x = lrr_prop_par, y = lrr_mass)) +
        y = "LRR mass") +
   theme_bw()
 
+lrr_par_mass_model <- lm(lrr_mass ~ lrr_prop_par, data = lrr_df)
+summary(lrr_par_mass_model)
 
 ## Covariate analysis of mass
 
