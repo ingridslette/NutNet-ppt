@@ -533,6 +533,7 @@ figure <- ggarrange(mass_map_plot, mass_sand_plot, mass_par_plot, mass_rich_plot
                     ncol = 4, nrow = 3, common.legend = TRUE, legend = "bottom", align = 'hv')
 figure
 
+
 ## testing for habitat effect
 
 mass_aov <- aov(log_mass ~ habitat * trt, data = mass_ppt_c_npk)
@@ -548,7 +549,7 @@ ggplot(results_with_averages, aes(x = trt, y = r2)) +
   geom_point() +
   facet_wrap(~ habitat) +
   theme_bw(14) +
-  labs(x = "Treatment",
+  labs(x = "Habitat",
        y = "R2 of precipitation-mass")
 
 slope_aov <- aov(slope ~ habitat * trt, data = results_with_averages)
@@ -561,15 +562,16 @@ ggplot(results_with_averages, aes(x = trt, y = slope)) +
   geom_point() +
   facet_wrap(~ habitat) +
   theme_bw(14) +
-  labs(x = "Treatment",
+  labs(x = "Habitat",
        y = "Slope of precipitation-mass")
+
 
 ## testing for regional effect
 
-mass_aov_reg <- aov(log_mass ~ country * trt, data = mass_ppt_c_npk)
+mass_aov_reg <- aov(log_mass ~ region * trt, data = mass_ppt_c_npk)
 summary(mass_aov_reg)
 
-r2_aov_reg <- aov(r2 ~ country * trt, data = results_with_averages)
+r2_aov_reg <- aov(r2 ~ region * trt, data = results_with_averages)
 summary(r2_aov_reg)
 r2_emm_reg <- emmeans(r2_aov_reg, ~ trt | region)
 pairwise_results_reg <- pairs(r2_emm_reg)
@@ -579,7 +581,7 @@ ggplot(results_with_averages, aes(x = trt, y = r2)) +
   geom_point() +
   facet_wrap(~ region) +
   theme_bw() +
-  labs(x = "Treatment",
+  labs(x = "Region",
        y = "R2 of precipitation-mass")
 
 slope_aov_reg <- aov(slope ~ region * trt, data = results_with_averages)
@@ -592,7 +594,39 @@ ggplot(results_with_averages, aes(x = trt, y = slope)) +
   geom_point() +
   facet_wrap(~ region) +
   theme_bw() +
-  labs(x = "Treatment",
+  labs(x = "Region",
+       y = "Slope of precipitation-mass")
+
+
+## testing for country effect
+
+mass_aov_cou <- aov(log_mass ~ country * trt, data = mass_ppt_c_npk)
+summary(mass_aov_cou)
+
+r2_aov_cou <- aov(r2 ~ country * trt, data = results_with_averages)
+summary(r2_aov_cou)
+r2_emm_cou <- emmeans(r2_aov_cou, ~ trt | country)
+pairwise_results_cou <- pairs(r2_emm_cou)
+print(pairwise_results_cou)
+
+ggplot(results_with_averages, aes(x = trt, y = r2)) +
+  geom_point() +
+  facet_wrap(~ country) +
+  theme_bw() +
+  labs(x = "Country",
+       y = "R2 of precipitation-mass")
+
+slope_aov_cou <- aov(slope ~ country * trt, data = results_with_averages)
+summary(slope_aov_cou)
+slope_emm_cou <- emmeans(slope_aov_cou, ~ trt | country)
+pairwise_results_slope_cou <- pairs(slope_emm_cou)
+print(pairwise_results_slope_cou)
+
+ggplot(results_with_averages, aes(x = trt, y = slope)) +
+  geom_point() +
+  facet_wrap(~ country) +
+  theme_bw() +
+  labs(x = "Country",
        y = "Slope of precipitation-mass")
 
 
