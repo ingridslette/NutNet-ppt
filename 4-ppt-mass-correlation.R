@@ -339,46 +339,39 @@ mass_ppt_c_npk_edited <- mass_ppt_c_npk_edited %>%
 mass_ppt_c_npk_edited <- na.omit(mass_ppt_c_npk_edited)
 unique(mass_ppt_c_npk_edited$site_code)
 
-full_model <- lmer(log_mass ~ trt + log_mswep_ppt + proportion_par + avg_ppt_site + PercentSand 
+full_model <- lmer(log_mass ~ trt + log_mswep_ppt + proportion_par + avg_ppt_site 
                    + richness_vegan + prev_ppt + lrr_mass
                    + (1 | site_code/year_trt), data = mass_ppt_c_npk_edited, REML = FALSE)
 summary(full_model)
 
-full_model_x <- lmer(log_mass ~ trt * (log_mswep_ppt + proportion_par + avg_ppt_site + PercentSand 
-                                     + richness_vegan + prev_ppt + lrr_mass)
-                   + (1 | site_code/year_trt), data = mass_ppt_c_npk_edited, REML = FALSE)
+full_model_x <- lmer(log_mass ~ trt * (log_mswep_ppt + proportion_par + avg_ppt_site 
+                                     + richness_vegan + prev_ppt + lrr_mass + PercentSand) +
+                   + (1 | site_code/year_trt), data = mass_ppt_c_npk_edited, REML = FALSE, na.action = "na.fail")
 summary(full_model_x)
-
-full_model_site <- lmer(log_mass ~ trt * (avg_ppt_site + PercentSand)
-                     + (1 | site_code/year_trt), data = mass_ppt_c_npk_edited, REML = FALSE)
-summary(full_model_site)
-
-full_model_plot <- lmer(log_mass ~ trt * (log_mswep_ppt + proportion_par + richness_vegan + prev_ppt)
-                     + (1 | site_code/year_trt), data = mass_ppt_c_npk_edited, REML = FALSE)
-summary(full_model_plot)
-#model_set <- dredge(full_model)
-#model_set
-#best_model <- get.models(model_set, 1)[[1]]
-#summary(best_model)
+model_set <- dredge(full_model_x)
+model_set
+best_model <- get.models(model_set, 1)[[1]]
+summary(best_model)
 
 mass_ppt_c <- subset(mass_ppt_c_npk_edited, trt == 'Control')
 mass_ppt_npk <- subset(mass_ppt_c_npk_edited, trt == 'NPK')
 
 full_model_c <- lmer(log_mass ~ log_mswep_ppt + proportion_par + avg_ppt_site + PercentSand + richness_vegan + prev_ppt +
-                       (1 | site_code/year_trt), data = mass_ppt_c, REML = FALSE)
+                       (1 | site_code/year_trt), data = mass_ppt_c, REML = FALSE, na.action = "na.fail")
 summary(full_model_c)
-#model_set_c <- dredge(full_model_c)
-#model_set_c
-#best_model_c <- get.models(model_set_c, 1)[[1]]
-#summary(best_model_c)
+model_set_c <- dredge(full_model_c)
+model_set_c
+best_model_c <- get.models(model_set_c, 1)[[1]]
+summary(best_model_c)
 
 full_model_npk <- lmer(log_mass ~ log_mswep_ppt + proportion_par + avg_ppt_site + PercentSand + richness_vegan + prev_ppt +
-                         (1 | site_code/year_trt), data = mass_ppt_npk, REML = FALSE)
+                         (1 | site_code/year_trt), data = mass_ppt_npk, REML = FALSE, na.action = "na.fail")
 summary(full_model_npk)
-#model_set_npk <- dredge(full_model_npk)
-#model_set_npk
-#best_model_npk <- get.models(model_set_npk, 1)[[1]]
-#summary(best_model_npk)
+model_set_npk <- dredge(full_model_npk)
+model_set_npk
+best_model_npk <- get.models(model_set_npk, 1)[[1]]
+summary(best_model_npk)
+
 
 mass_map_plot <- ggplot(data = mass_ppt_c_npk_edited, aes(x = avg_ppt_site, y = vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
