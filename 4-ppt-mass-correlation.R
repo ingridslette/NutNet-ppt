@@ -340,7 +340,7 @@ unique(mass_ppt_c_npk_edited$site_code)
 
 full_model <- lmer(log_mass ~ trt * (log_mswep_ppt + proportion_par + avg_ppt_site 
                                      + richness_vegan + prev_ppt) + lrr_mass + (1 | site_code/year_trt), 
-                     data = mass_ppt_c_npk_edited, REML = FALSE, na.action = "na.fail")
+                   data = mass_ppt_c_npk_edited, REML = FALSE, na.action = "na.fail")
 summary(full_model)
 model_set <- dredge(full_model)
 best_model <- get.models(model_set, 1)[[1]]
@@ -375,32 +375,32 @@ mass_prev_ppt_plot
 ## Covariate analysis of R2 and slope
 
 results_long <- data.frame(site_code = character(), 
-                      trt = character(), 
-                      r2 = numeric(), 
-                      slope = numeric(),
-                      stringsAsFactors = FALSE)
+                           trt = character(), 
+                           r2 = numeric(), 
+                           slope = numeric(),
+                           stringsAsFactors = FALSE)
 
 for (site in site_codes) {
   site_data_control <- subset(mass_ppt_c_npk, site_code == site & trt == "Control")
   site_data_npk <- subset(mass_ppt_c_npk, site_code == site & trt == "NPK")
-    control_model <- lm(log_mass ~ log_mswep_ppt, data = site_data_control)
-    npk_model <- lm(log_mass ~ log_mswep_ppt, data = site_data_npk)
-    control_r2 <- summary(control_model)$r.squared
-    npk_r2 <- summary(npk_model)$r.squared
-    control_slope <- coef(control_model)["log_mswep_ppt"]
-    npk_slope <- coef(npk_model)["log_mswep_ppt"]
-    results_long <- rbind(results_long, data.frame(
-      site_code = site,
-      trt = "Control",
-      r2 = control_r2,
-      slope = control_slope
-    ))
-    results_long <- rbind(results_long, data.frame(
-      site_code = site,
-      trt = "NPK",
-      r2 = npk_r2,
-      slope = npk_slope
-    ))
+  control_model <- lm(log_mass ~ log_mswep_ppt, data = site_data_control)
+  npk_model <- lm(log_mass ~ log_mswep_ppt, data = site_data_npk)
+  control_r2 <- summary(control_model)$r.squared
+  npk_r2 <- summary(npk_model)$r.squared
+  control_slope <- coef(control_model)["log_mswep_ppt"]
+  npk_slope <- coef(npk_model)["log_mswep_ppt"]
+  results_long <- rbind(results_long, data.frame(
+    site_code = site,
+    trt = "Control",
+    r2 = control_r2,
+    slope = control_slope
+  ))
+  results_long <- rbind(results_long, data.frame(
+    site_code = site,
+    trt = "NPK",
+    r2 = npk_r2,
+    slope = npk_slope
+  ))
 }
 
 averages <- mass_ppt_c_npk_edited %>%
@@ -422,7 +422,7 @@ r2_lrr_model <- lm(r2 ~ avg_lrr_mass, data = results_with_averages)
 summary(r2_lrr_model)
 
 full_r2_model <- lm(r2 ~ trt * (avg_proportion_par + avg_avg_ppt_site + avg_richness) + avg_lrr_mass, 
-                      data = results_with_averages, na.action = "na.fail")
+                    data = results_with_averages, na.action = "na.fail")
 summary(full_r2_model)
 model_set <- dredge(full_r2_model)
 best_model_r2 <- get.models(model_set, 1)[[1]]
@@ -433,7 +433,7 @@ slope_lrr_model <- lm(slope ~ avg_lrr_mass, data = results_with_averages)
 summary(slope_lrr_model)
 
 full_slope_model <- lm(slope ~ trt * (avg_proportion_par + avg_avg_ppt_site + avg_richness) + avg_lrr_mass, 
-                   data = results_with_averages_edited, na.action = "na.fail")
+                       data = results_with_averages_edited, na.action = "na.fail")
 summary(full_slope_model)
 model_set <- dredge(full_slope_model)
 best_model_slope <- get.models(model_set, 1)[[1]]
@@ -619,10 +619,13 @@ ggplot(variance, aes(x = trt)) +
   geom_bar(aes(y = total_variance), stat = "identity", fill = "darkgrey") +
   geom_bar(aes(y = prop_variance_marginal), stat = "identity", fill = "lightgrey") +
   labs(y = "Variance",
-    x = "Treatment",
-    fill = "Variance Type") +
+       x = "Treatment",
+       fill = "Variance Type") +
   theme_bw(14) +
   scale_fill_manual(
     values = c("darkgrey", "lightgrey"),  
     labels = c("Total variance", "Variance explained by ppt")) +
   theme(legend.position = "right")
+
+
+
