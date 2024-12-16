@@ -75,7 +75,7 @@ mass_ppt_c_npk <- mass_ppt_c_npk %>%
 
 unique(mass_ppt_c_npk$site_code)
 
-ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x= mswep_ppt, y= vascular_live_mass, color = trt, shape = trt)) +
+ggplot(data = mass_ppt_c_npk, aes(x= log_mswep_ppt, y= log_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("Growing Season Precipitation (mm)") + ylab("Total live mass") +
   theme_bw()
@@ -246,6 +246,16 @@ conditional_r2_npk <- r2_npk$R2_conditional
 marginal_r2_control <- r2_control$R2_marginal
 marginal_r2_npk <- r2_npk$R2_marginal
 
+
+fixed_effects_control <- fixef(model_control)
+fixed_effects_npk <- fixef(model_npk)
+
+slope_control <- fixed_effects_control["log_mswep_ppt"]
+slope_npk <- fixed_effects_npk["log_mswep_ppt"]
+
+# View the result
+slope_log_mass_log_mswep_ppt
+
 # Compare R2 values using Fisher's Z transformation
 z_control <- 0.5 * log((1 + sqrt(conditional_r2_control)) / (1 - sqrt(conditional_r2_control)))
 z_npk <- 0.5 * log((1 + sqrt(conditional_r2_npk)) / (1 - sqrt(conditional_r2_npk)))
@@ -334,7 +344,7 @@ summary(lrr_par_mass_model)
 
 ## Covariate analysis of mass
 
-c_npk_x_model <- lmer(log_mass ~ log_mswep_ppt * trt + (1 | site_code / year_trt), data = mass_ppt_c_npk)
+c_npk_x_model <- lmer(log_mass ~ log_mswep_ppt * trt + (1 | site_code : year_trt), data = mass_ppt_c_npk)
 summary(c_npk_x_model)
 
 mass_ppt_c_npk_edited <- mass_ppt_c_npk %>%
