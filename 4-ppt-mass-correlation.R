@@ -231,6 +231,9 @@ r2_npk <- performance::r2(model_npk)
 conditional_r2_control <- r2_control$R2_conditional
 conditional_r2_npk <- r2_npk$R2_conditional
 
+marginal_r2_control <- r2_control$R2_marginal
+marginal_r2_npk <- r2_npk$R2_marginal
+
 # Compare R2 values using Fisher's Z transformation
 z_control <- 0.5 * log((1 + sqrt(conditional_r2_control)) / (1 - sqrt(conditional_r2_control)))
 z_npk <- 0.5 * log((1 + sqrt(conditional_r2_npk)) / (1 - sqrt(conditional_r2_npk)))
@@ -599,7 +602,27 @@ ggplot(results_with_averages, aes(x = trt, y = slope)) +
 
 ## calculating and graphing variance in log_mass
 
-total_variance <- mass_ppt_c_npk %>%
+variance <- mass_ppt_c_npk %>%
   group_by(trt) %>%
   summarise(total_variance = var(log_mass, na.rm = TRUE))
 
+variance$conditional_r2 <- c(conditional_r2_control, conditional_r2_npk)
+variance$marginal_r2 <- c(marginal_r2_control, marginal_r2_npk)
+
+variance$prop_variance_conditional <- variance$total_variance * variance$conditional_r2
+variance$prop_variance_marginal <- variance$total_variance * variance$marginal_r2
+
+variance$unex_variance_conditional <- variance$total_variance - variance$prop_variance_conditional
+variance$unex_variance_marginal <- variance$total_variance - variance$prop_variance_marginal
+
+ggplot(variance, aes(x = trt)) +
+  geom_bar(aes(y = total_variance), stat = "identity", fill = "darkgrey") +
+  geom_bar(aes(y = prop_variance_marginal), stat = "identity", fill = "lightgrey") +
+  labs(y = "Variance",
+    x = "Treatment",
+    fill = "Variance Type") +
+  theme_bw(14) +
+  scale_fill_manual(
+    values = c("darkgrey", "lightgrey"),  
+    labels = c("Total variance", "Variance explained by ppt")) +
+  theme(legend.position = "right")
