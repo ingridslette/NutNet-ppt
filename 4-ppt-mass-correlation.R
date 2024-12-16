@@ -163,7 +163,8 @@ ggplot(mass_ppt_c_npk, aes(x = mswep_ppt, y = vascular_live_mass, color = site_c
 ggplot(data = mass_ppt_c_npk,aes(x= mswep_ppt, y= vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + 
   geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), linewidth = 1) +
-  xlab("Growing Season Precipitation (mm)") + ylab("live mass") +
+  xlab("Growing Season Precipitation (mm)") + ylab("Biomass (g m-2)") +
+  labs(color = "Treatment", shape = "Treatment") +
   theme_bw()
 
 
@@ -324,8 +325,8 @@ summary(c_npk_x_model)
 
 mass_ppt_c_npk_edited <- mass_ppt_c_npk %>%
   dplyr::select(site_code, block, plot, continent, country, region, habitat, trt, year, 
-                vascular_live_mass,log_mass, mswep_ppt,log_mswep_ppt, prev_ppt, year_trt, 
-                proportion_par, avg_ppt_site, richness_vegan, litter_mass)
+                vascular_live_mass,log_mass, mswep_ppt, log_mswep_ppt, prev_ppt, year_trt, 
+                proportion_par, avg_ppt_site, richness_vegan)
 
 #mass_ppt_c_npk_edited <- mass_ppt_c_npk_edited %>% group_by(site_code) %>% mutate(PercentSand = if_else(is.na(PercentSand), mean(PercentSand, na.rm = TRUE), PercentSand)) %>% ungroup()
 
@@ -337,29 +338,20 @@ mass_ppt_c_npk_edited <- mass_ppt_c_npk_edited %>%
 mass_ppt_c_npk_edited <- na.omit(mass_ppt_c_npk_edited)
 unique(mass_ppt_c_npk_edited$site_code)
 
-full_model_x <- lmer(log_mass ~ trt * (log_mswep_ppt + proportion_par + avg_ppt_site 
-                                     + richness_vegan + prev_ppt + lrr_mass) + (1 | site_code/year_trt), 
+full_model <- lmer(log_mass ~ trt * (log_mswep_ppt + proportion_par + avg_ppt_site 
+                                     + richness_vegan + prev_ppt) + lrr_mass + (1 | site_code/year_trt), 
                      data = mass_ppt_c_npk_edited, REML = FALSE, na.action = "na.fail")
-summary(full_model_x)
-model_set <- dredge(full_model_x)
+summary(full_model)
+model_set <- dredge(full_model)
 best_model <- get.models(model_set, 1)[[1]]
 summary(best_model)
-
-#mass_ppt_c <- subset(mass_ppt_c_npk_edited, trt == 'Control')
-#mass_ppt_npk <- subset(mass_ppt_c_npk_edited, trt == 'NPK')
-
+r2_best_model_mass <- performance::r2(best_model)
 
 mass_map_plot <- ggplot(data = mass_ppt_c_npk_edited, aes(x = avg_ppt_site, y = vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("") + ylab("Live mass") +
   theme_bw()
 mass_map_plot
-
-mass_sand_plot <- ggplot(data = mass_ppt_c_npk_edited, aes(x = PercentSand, y = vascular_live_mass, color = trt, shape = trt)) +
-  geom_point() + geom_smooth(method = lm) +
-  xlab("") + ylab("") +
-  theme_bw()
-mass_sand_plot
 
 mass_par_plot <- ggplot(data = mass_ppt_c_npk_edited, aes(x = proportion_par, y = vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
@@ -426,29 +418,21 @@ averages <- mass_ppt_c_npk_edited %>%
 results_with_averages <- results_long %>%
   left_join(averages, by = c("site_code", "trt"))
 
-#results_with_averages <- results_with_averages %>% left_join(lrr_df, by = "site_code")
+full_r2_model <- lm(r2 ~ trt * (avg_proportion_par + avg_avg_ppt_site + avg_richness) + avg_lrr_mass, 
+                      data = results_with_averages, na.action = "na.fail")
+summary(full_r2_model)
+model_set <- dredge(full_r2_model)
+best_model_r2 <- get.models(model_set, 1)[[1]]
+summary(best_model_r2)
+r2_best_model_r2 <- performance::r2(best_model_r2)
 
-results_with_averages_edited <- na.omit(results_with_averages)
-
-unique(results_with_averages_edited$site_code)
-
-full_r2_model_x <- lm(r2 ~ trt * (avg_proportion_par + avg_avg_ppt_site + avg_lrr_mass + avg_richness), 
-                      data = results_with_averages_edited, na.action = "na.fail")
-summary(full_r2_model_x)
-model_set <- dredge(full_r2_model_x)
-best_model <- get.models(model_set, 1)[[1]]
-summary(best_model)
-
-#results_with_averages_c <- subset(results_with_averages, trt == 'Control')
-#results_with_averages_npk <- subset(results_with_averages, trt == 'NPK')
-
-full_slope_model_x <- lm(slope ~ trt * (avg_proportion_par + avg_avg_ppt_site + avg_lrr_mass + avg_richness), 
+full_slope_model <- lm(slope ~ trt * (avg_proportion_par + avg_avg_ppt_site + avg_richness) + avg_lrr_mass, 
                    data = results_with_averages_edited, na.action = "na.fail")
-summary(full_slope_model_x)
-model_set <- dredge(full_slope_model_x)
-best_model <- get.models(model_set, 1)[[1]]
-summary(best_model)
-
+summary(full_slope_model)
+model_set <- dredge(full_slope_model)
+best_model_slope <- get.models(model_set, 1)[[1]]
+summary(best_model_slope)
+r2_best_model_slope <- performance::r2(best_model_slope)
 
 ggplot(data = mass_ppt_c_npk, aes(x = proportion_par, y = vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
@@ -460,12 +444,14 @@ ggplot(data = results_with_averages, aes(x = avg_avg_ppt_site, y = avg_proportio
   xlab("MAP") + ylab("Proportion PAR") +
   theme_bw()
 
-ggplot(data = results_with_averages, aes(x = avg_avg_ppt_site, y = avg_PercentSand, color = trt, shape = trt)) +
-  geom_point() + geom_smooth(method = lm, se = FALSE) +
-  xlab("MAP") + ylab("Percent Sand") +
+ggplot(results_with_averages, aes(x = avg_lrr_mass, y = slope, color = trt)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(x = "Slope of ppt vs. mass",
+       y = "LRR mass") +
   theme_bw()
 
-ggplot(results_with_averages, aes(x = lrr_mass, y = slope, color = trt)) +
+ggplot(results_with_averages, aes(x = avg_lrr_mass, y = avg_lrr_mass)) +
   geom_point() +
   geom_smooth(method = "lm") +
   labs(x = "Slope of ppt vs. mass",
@@ -485,12 +471,6 @@ r2_map_plot <- ggplot(data = results_with_averages, aes(x = avg_avg_ppt_site, y 
   theme_bw()
 r2_map_plot
 
-r2_sand_plot <- ggplot(data = results_with_averages, aes(x = avg_PercentSand, y = r2, color = trt, shape = trt)) +
-  geom_point() + geom_smooth(method = lm, se = FALSE) +
-  xlab("") + ylab("") +
-  theme_bw()
-r2_sand_plot
-
 r2_par_plot <- ggplot(data = results_with_averages, aes(x = avg_proportion_par, y = r2, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
   xlab("") + ylab("") +
@@ -509,12 +489,6 @@ slope_map_plot <- ggplot(data = results_with_averages, aes(x = avg_avg_ppt_site,
   theme_bw()
 slope_map_plot
 
-slope_sand_plot <- ggplot(data = results_with_averages, aes(x = avg_PercentSand, y = slope, color = trt, shape = trt)) +
-  geom_point() + geom_smooth(method = lm, se = FALSE) +
-  xlab("Percent Sand") + ylab("") +
-  theme_bw()
-slope_sand_plot
-
 slope_par_plot <- ggplot(data = results_with_averages, aes(x = avg_proportion_par, y = slope, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
   xlab("Proportion Par") + ylab("") +
@@ -527,10 +501,10 @@ slope_rich_plot <- ggplot(data = results_with_averages, aes(x = avg_richness, y 
   theme_bw()
 slope_rich_plot
 
-figure <- ggarrange(mass_map_plot, mass_sand_plot, mass_par_plot, mass_rich_plot,
-                    r2_map_plot, r2_sand_plot, r2_par_plot, r2_rich_plot,
-                    slope_map_plot, slope_sand_plot, slope_par_plot, slope_rich_plot,
-                    ncol = 4, nrow = 3, common.legend = TRUE, legend = "bottom", align = 'hv')
+figure <- ggarrange(mass_map_plot, mass_par_plot, mass_rich_plot,
+                    r2_map_plot, r2_par_plot, r2_rich_plot,
+                    slope_map_plot, slope_par_plot, slope_rich_plot,
+                    ncol = 3, nrow = 3, common.legend = TRUE, legend = "bottom", align = 'hv')
 figure
 
 
@@ -631,5 +605,9 @@ ggplot(results_with_averages, aes(x = trt, y = slope)) +
 
 
 
+## calculating and graphing variance in log_mass
 
+total_variance <- mass_ppt_c_npk %>%
+  group_by(trt) %>%
+  summarise(total_variance = var(log_mass, na.rm = TRUE))
 
