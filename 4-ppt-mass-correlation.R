@@ -621,9 +621,21 @@ ggplot(variance, aes(x = trt)) +
   labs(y = "Variance",
        x = "Treatment",
        fill = "Variance Type") +
-  theme_bw(14) +
-  scale_fill_manual(
-    values = c("darkgrey", "lightgrey"),  
-    labels = c("Total variance", "Variance explained by ppt")) +
-  theme(legend.position = "right")
+  theme_bw(14)
+
+
+## graphs
+
+ggplot(results_with_averages, aes(x = trt, y = r2, color = trt)) +
+  geom_boxplot(notch = TRUE) +
+  geom_jitter(width = 0.2) +
+  labs(x = "Treatment", y = "R2 of ppt vs. mass") +
+  theme_bw(14)
+
+ggplot(results_with_averages, aes(x = trt, y = slope, color = trt)) +
+  geom_boxplot(notch = TRUE) +
+  geom_jitter(width = 0.2) +
+  labs(x = "Treatment", y = "Slope of ppt vs. mass") +
+  theme_bw(14)
+
 
