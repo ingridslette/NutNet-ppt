@@ -6,7 +6,6 @@ library(MuMIn)
 library(performance)
 library(MASS)
 library(broom)
-library(purrr)
 library(emmeans)
 library(ggpubr)
 
@@ -328,8 +327,6 @@ mass_ppt_c_npk_edited <- mass_ppt_c_npk %>%
                 vascular_live_mass,log_mass, mswep_ppt, log_mswep_ppt, prev_ppt, year_trt, 
                 proportion_par, avg_ppt_site, richness_vegan)
 
-#mass_ppt_c_npk_edited <- mass_ppt_c_npk_edited %>% group_by(site_code) %>% mutate(PercentSand = if_else(is.na(PercentSand), mean(PercentSand, na.rm = TRUE), PercentSand)) %>% ungroup()
-
 unique(mass_ppt_c_npk_edited$site_code)
 
 mass_ppt_c_npk_edited <- mass_ppt_c_npk_edited %>% 
@@ -418,6 +415,9 @@ averages <- mass_ppt_c_npk_edited %>%
 results_with_averages <- results_long %>%
   left_join(averages, by = c("site_code", "trt"))
 
+r2_lrr_model <- lm(r2 ~ avg_lrr_mass, data = results_with_averages)
+summary(r2_lrr_model)
+
 full_r2_model <- lm(r2 ~ trt * (avg_proportion_par + avg_avg_ppt_site + avg_richness) + avg_lrr_mass, 
                       data = results_with_averages, na.action = "na.fail")
 summary(full_r2_model)
@@ -425,6 +425,9 @@ model_set <- dredge(full_r2_model)
 best_model_r2 <- get.models(model_set, 1)[[1]]
 summary(best_model_r2)
 r2_best_model_r2 <- performance::r2(best_model_r2)
+
+slope_lrr_model <- lm(slope ~ avg_lrr_mass, data = results_with_averages)
+summary(slope_lrr_model)
 
 full_slope_model <- lm(slope ~ trt * (avg_proportion_par + avg_avg_ppt_site + avg_richness) + avg_lrr_mass, 
                    data = results_with_averages_edited, na.action = "na.fail")
@@ -446,24 +449,11 @@ ggplot(data = results_with_averages, aes(x = avg_avg_ppt_site, y = avg_proportio
 
 ggplot(results_with_averages, aes(x = avg_lrr_mass, y = slope, color = trt)) +
   geom_point() +
-  geom_smooth(method = "lm", se = FALSE) +
-  labs(x = "Slope of ppt vs. mass",
-       y = "LRR mass") +
-  theme_bw()
-
-ggplot(results_with_averages, aes(x = avg_lrr_mass, y = avg_lrr_mass)) +
-  geom_point() +
   geom_smooth(method = "lm") +
-  labs(x = "Slope of ppt vs. mass",
-       y = "LRR mass") +
+  labs(x = "Slope of PPT vs. Mass",
+       y = "Log Response Ratio of Mass") +
   theme_bw()
 
-ggplot(results, aes(x = LRR, y = r2_difference)) +
-  geom_point() +
-  geom_smooth(method = "lm", color = "darkgrey") +
-  labs(x = "LRR mass",
-       y = "Difference in R2 of ppt vs. mass") +
-  theme_bw(14)
 
 r2_map_plot <- ggplot(data = results_with_averages, aes(x = avg_avg_ppt_site, y = r2, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
@@ -483,6 +473,7 @@ r2_rich_plot <- ggplot(data = results_with_averages, aes(x = avg_richness, y = r
   theme_bw()
 r2_rich_plot
 
+
 slope_map_plot <- ggplot(data = results_with_averages, aes(x = avg_avg_ppt_site, y = slope, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
   xlab("MAP") + ylab("Slope of ppt vs. mass") +
@@ -500,6 +491,7 @@ slope_rich_plot <- ggplot(data = results_with_averages, aes(x = avg_richness, y 
   xlab("Richness") + ylab("") +
   theme_bw()
 slope_rich_plot
+
 
 figure <- ggarrange(mass_map_plot, mass_par_plot, mass_rich_plot,
                     r2_map_plot, r2_par_plot, r2_rich_plot,
