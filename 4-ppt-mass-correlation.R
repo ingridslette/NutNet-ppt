@@ -157,14 +157,14 @@ ggplot(mass_ppt_c_npk, aes(x = mswep_ppt, y = vascular_live_mass, color = site_c
             linewidth = 1, color = "black") +
   labs(x = "Growing Season Precipitation (mm)", y = "Live Mass") +
   facet_wrap(~ trt) +
-  theme_bw()
+  theme_bw(14)
 
 ggplot(data = mass_ppt_c_npk,aes(x= mswep_ppt, y= vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + 
   geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), linewidth = 1) +
   xlab("Growing Season Precipitation (mm)") + ylab("Biomass (g m-2)") +
   labs(color = "Treatment", shape = "Treatment") +
-  theme_bw()
+  theme_bw(14)
 
 
 ### Comparing control vs. NPK R2 - Approach 1: calculate and compare difference at each site
@@ -204,24 +204,36 @@ for (site in site_codes) {
   ))
 }
 
-# t-test on the r2_difference values
+# t-test on r2 differences
 t_test_r2_diff <- t.test(results$r2_difference)
 print(t_test_r2_diff)
 
-# paired t-test on the R2 values for Control and NPK
-paired_t_test_result <- t.test(results$control_r2, results$npk_r2, paired = TRUE)
-print(paired_t_test_result)
+# paired t-test on r2 differences
+paired_t_test_r2 <- t.test(results$control_r2, results$npk_r2, paired = TRUE)
+print(paired_t_test_r2)
 
-# sites with higher R2 in NPK plots
+# sites with higher r2 in NPK plots
 sites_higher_r2_npk <- filter(results, r2_difference < 0)
+
+
+# t-test on slope differences 
+t_test_slope_diff <- t.test(results$slope_difference)
+print(t_test_slope_diff)
+
+# paired t-test on slope differences 
+paired_t_test_slope <- t.test(results$control_slop, results$npk_slope, paired = TRUE)
+print(paired_t_test_slope)
 
 
 ### Comparing control vs. NPK R2 - Approach 2: fit separate models for control and NPK data, calculate and compare z scores
 
-model_control <- lmer(log_mass ~ log_mswep_ppt + (1 | site_code / year_trt), 
+model_control <- lmer(log_mass ~ log_mswep_ppt + (1 | site_code : year_trt), 
                       data = subset(mass_ppt_c_npk, trt == "Control"))
-model_npk <- lmer(log_mass ~ log_mswep_ppt + (1 | site_code / year_trt), 
+model_npk <- lmer(log_mass ~ log_mswep_ppt + (1 | site_code : year_trt), 
                   data = subset(mass_ppt_c_npk, trt == "NPK"))
+
+summary(model_control)
+summary(model_npk)
 
 AIC(model_control, model_npk)
 
@@ -626,14 +638,14 @@ ggplot(variance, aes(x = trt)) +
 
 ## graphs
 
-ggplot(results_with_averages, aes(x = trt, y = r2, color = trt)) +
-  geom_boxplot(notch = TRUE) +
+ggplot(results_with_averages_edited, aes(x = trt, y = r2, color = trt)) +
+  geom_boxplot() +
   geom_jitter(width = 0.2) +
   labs(x = "Treatment", y = "R2 of ppt vs. mass") +
   theme_bw(14)
 
-ggplot(results_with_averages, aes(x = trt, y = slope, color = trt)) +
-  geom_boxplot(notch = TRUE) +
+ggplot(results_with_averages_edited, aes(x = trt, y = slope, color = trt)) +
+  geom_boxplot() +
   geom_jitter(width = 0.2) +
   labs(x = "Treatment", y = "Slope of ppt vs. mass") +
   theme_bw(14)
