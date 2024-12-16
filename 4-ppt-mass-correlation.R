@@ -627,5 +627,3 @@ ggplot(variance, aes(x = trt)) +
     labels = c("Total variance", "Variance explained by ppt")) +
   theme(legend.position = "right")
 
-
-
