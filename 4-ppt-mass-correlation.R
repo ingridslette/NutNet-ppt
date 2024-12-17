@@ -75,7 +75,7 @@ mass_ppt_c_npk <- mass_ppt_c_npk %>%
 
 unique(mass_ppt_c_npk$site_code)
 
-ggplot(data = mass_ppt_c_npk, aes(x= log_mswep_ppt, y= log_mass, color = trt, shape = trt)) +
+ggplot(data = mass_ppt_c_npk, aes(x = mswep_ppt, y = log_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("Growing Season Precipitation (mm)") + ylab("Total live mass") +
   theme_bw()
@@ -344,8 +344,19 @@ summary(lrr_par_mass_model)
 
 ## Covariate analysis of mass
 
-c_npk_x_model <- lmer(log_mass ~ log_mswep_ppt * trt + (1 | site_code : year_trt), data = mass_ppt_c_npk)
+c_npk_x_model <- lmer(log_mass ~ log_mswep_ppt * trt + (1 | site_code / year_trt), data = mass_ppt_c_npk)
 summary(c_npk_x_model)
+
+### Test model assumptions
+plot(c_npk_x_model)
+
+resid <- residuals(c_npk_x_model)
+hist(resid, breaks = 30, main = "Histogram of Residuals")
+qqnorm(resid)
+qqline(resid)
+
+plot(fitted(c_npk_x_model), resid, main = "Residuals vs Fitted")
+
 
 mass_ppt_c_npk_edited <- mass_ppt_c_npk %>%
   dplyr::select(site_code, block, plot, continent, country, region, habitat, trt, year, 
