@@ -172,10 +172,11 @@ ggplot(data = mass_ppt_c_npk,aes(x= mswep_ppt, y= vascular_live_mass, color = tr
 
 
 ### Initial model
+
 c_npk_x_model <- lmer(log_mass ~ log_mswep_ppt * trt + (1 | site_code / year_trt), data = mass_ppt_c_npk)
 summary(c_npk_x_model)
 
-# Model assumptions
+# Model assumptions check 
 plot(c_npk_x_model)
 
 resid <- residuals(c_npk_x_model)
@@ -244,9 +245,9 @@ print(paired_t_test_slope)
 
 ### Comparing control vs. NPK R2 - Approach 2: fit separate models for control and NPK data, calculate and compare z scores
 
-model_control <- lmer(log_mass ~ log_mswep_ppt + (1 | site_code : year_trt), 
+model_control <- lmer(log_mass ~ log_mswep_ppt + (1 | site_code / year_trt), 
                       data = subset(mass_ppt_c_npk, trt == "Control"))
-model_npk <- lmer(log_mass ~ log_mswep_ppt + (1 | site_code : year_trt), 
+model_npk <- lmer(log_mass ~ log_mswep_ppt + (1 | site_code / year_trt), 
                   data = subset(mass_ppt_c_npk, trt == "NPK"))
 
 summary(model_control)
@@ -659,16 +660,59 @@ ggplot(variance, aes(x = trt)) +
 
 ### Additional graphs
 
-ggplot(results_with_averages, aes(x = trt, y = r2, color = trt)) +
+# Graphing mean, r2, and slope on absolute scale (not log transformed)
+results_graphing <- data.frame(site_code = character(), 
+                           trt = character(), 
+                           r2 = numeric(), 
+                           slope = numeric(),
+                           mean = numeric(),
+                           stringsAsFactors = FALSE)
+
+for (site in site_codes) {
+  site_data_control <- subset(mass_ppt_c_npk, site_code == site & trt == "Control")
+  site_data_npk <- subset(mass_ppt_c_npk, site_code == site & trt == "NPK")
+  control_model <- lm(vascular_live_mass ~ mswep_ppt, data = site_data_control)
+  npk_model <- lm(vascular_live_mass ~ mswep_ppt, data = site_data_npk)
+  control_r2 <- summary(control_model)$r.squared
+  npk_r2 <- summary(npk_model)$r.squared
+  control_slope <- coef(control_model)["mswep_ppt"]
+  npk_slope <- coef(npk_model)["mswep_ppt"]
+  control_mean <- mean(site_data_control$vascular_live_mass, na.rm = TRUE)
+  npk_mean <- mean(site_data_npk$vascular_live_mass, na.rm = TRUE)
+  results_graphing <- rbind(results_graphing, data.frame(
+    site_code = site,
+    trt = "Control",
+    r2 = control_r2,
+    slope = control_slope,
+    mean = control_mean
+  ))
+  results_graphing <- rbind(results_graphing, data.frame(
+    site_code = site,
+    trt = "NPK",
+    r2 = npk_r2,
+    slope = npk_slope,
+    mean = npk_mean
+  ))
+}
+
+r2_boxplot <- ggplot(results_graphing, aes(x = trt, y = r2, color = trt)) +
   geom_boxplot() +
   geom_jitter(width = 0.2) +
-  labs(x = "Treatment", y = "R2 of ppt vs. mass") +
+  labs(x = "", y = "R2 of ppt vs. mass") +
   theme_bw(14)
 
-ggplot(results_with_averages, aes(x = trt, y = slope, color = trt)) +
+slope_boxplot <- ggplot(results_graphing, aes(x = trt, y = slope, color = trt)) +
   geom_boxplot() +
   geom_jitter(width = 0.2) +
-  labs(x = "Treatment", y = "Slope of ppt vs. mass") +
+  labs(x = "", y = "Slope of ppt vs. mass") +
   theme_bw(14)
 
+mean_boxplot <- ggplot(results_graphing, aes(x = trt, y = mean, color = trt)) +
+  geom_boxplot() +
+  geom_jitter(width = 0.2) +
+  labs(x = "", y = "Mean mass") +
+  theme_bw(14)
 
+boxplots <- ggarrange(mean_boxplot, slope_boxplot, r2_boxplot, 
+                      ncol = 3, common.legend = TRUE, legend = "none", align = 'hv')
+boxplots
