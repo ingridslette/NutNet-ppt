@@ -480,67 +480,61 @@ best_model_slope <- get.models(model_set, 1)[[1]]
 summary(best_model_slope)
 r2_best_model_slope <- performance::r2(best_model_slope)
 
-ggplot(data = mass_ppt_c_npk, aes(x = proportion_par, y = vascular_live_mass, color = trt, shape = trt)) +
-  geom_point() + geom_smooth(method = lm, se = FALSE) +
-  xlab("Proportion PAR") + ylab("Live Mass") +
-  theme_bw()
-
-ggplot(data = results_with_averages, aes(x = avg_avg_ppt_site, y = avg_proportion_par, color = trt, shape = trt)) +
-  geom_point() + geom_smooth(method = lm, se = FALSE) +
-  xlab("MAP") + ylab("Proportion PAR") +
-  theme_bw()
-
-ggplot(results_with_averages, aes(x = slope, y = avg_lrr_mass, color = trt)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = FALSE) +
-  labs(x = "Slope of PPT vs. Mass",
-       y = "Log Response Ratio of Mass") +
-  theme_bw()
-
-
 r2_map_plot <- ggplot(data = results_with_averages, aes(x = avg_avg_ppt_site, y = r2, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
-  xlab("") + ylab("R2 of ppt vs. mass") +
-  theme_bw()
+  xlab("MAP (mm)") + ylab("R2 of ppt vs. mass") +
+  theme_bw(12)
 r2_map_plot
 
 r2_par_plot <- ggplot(data = results_with_averages, aes(x = avg_proportion_par, y = r2, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
-  xlab("") + ylab("") +
-  theme_bw()
+  xlab("Proportion PAR") + ylab("") +
+  theme_bw(12)
 r2_par_plot
 
 r2_rich_plot <- ggplot(data = results_with_averages, aes(x = avg_richness, y = r2, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
-  xlab("") + ylab("") +
-  theme_bw()
+  xlab("Richness") + ylab("") +
+  theme_bw(12)
 r2_rich_plot
 
+r2_lrr_mass_plot <- ggplot(data = results_with_averages, aes(x = avg_lrr_mass, y = r2, color = trt, shape = trt)) +
+  geom_point() + geom_smooth(method = lm, se = FALSE) +
+  xlab("Log Response Ratio of Mass") + ylab("") +
+  theme_bw(12)
+r2_lrr_mass_plot
+
+r2_covar_figure <- ggarrange(r2_map_plot, r2_par_plot, r2_rich_plot, r2_lrr_mass_plot,
+                             ncol = 4, common.legend = TRUE, legend = "bottom", align = 'hv')
+r2_covar_figure
 
 slope_map_plot <- ggplot(data = results_with_averages, aes(x = avg_avg_ppt_site, y = slope, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
   xlab("MAP") + ylab("Slope of ppt vs. mass") +
-  theme_bw()
+  theme_bw(12)
 slope_map_plot
 
 slope_par_plot <- ggplot(data = results_with_averages, aes(x = avg_proportion_par, y = slope, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
   xlab("Proportion Par") + ylab("") +
-  theme_bw()
+  theme_bw(12)
 slope_par_plot
 
 slope_rich_plot <- ggplot(data = results_with_averages, aes(x = avg_richness, y = slope, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
   xlab("Richness") + ylab("") +
-  theme_bw()
+  theme_bw(12)
 slope_rich_plot
 
+slope_lrr_mass_plot <- ggplot(data = results_with_averages, aes(x = avg_lrr_mass, y = slope, color = trt, shape = trt)) +
+  geom_point() + geom_smooth(method = lm, se = FALSE) +
+  xlab("Log Response Ratio of Mass") + ylab("") +
+  theme_bw(12)
+slope_lrr_mass_plot
 
-figure <- ggarrange(mass_map_plot, mass_par_plot, mass_rich_plot,
-                    r2_map_plot, r2_par_plot, r2_rich_plot,
-                    slope_map_plot, slope_par_plot, slope_rich_plot,
-                    ncol = 3, nrow = 3, common.legend = TRUE, legend = "bottom", align = 'hv')
-figure
+slope_covar_figure <- ggarrange(slope_map_plot, slope_par_plot, slope_rich_plot, slope_lrr_mass_plot,
+                             ncol = 4, common.legend = TRUE, legend = "bottom", align = 'hv')
+slope_covar_figure
 
 
 ## testing for habitat effect
@@ -639,8 +633,7 @@ ggplot(results_with_averages, aes(x = trt, y = slope)) +
        y = "Slope of precipitation-mass")
 
 
-
-## calculating and graphing variance in log_mass
+### Calculating and graphing variance in log_mass
 
 variance <- mass_ppt_c_npk %>%
   group_by(trt) %>%
@@ -664,7 +657,7 @@ ggplot(variance, aes(x = trt)) +
   theme_bw(14)
 
 
-## graphs
+### Additional graphs
 
 ggplot(results_with_averages, aes(x = trt, y = r2, color = trt)) +
   geom_boxplot() +
