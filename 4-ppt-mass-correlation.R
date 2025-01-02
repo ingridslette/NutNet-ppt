@@ -371,7 +371,7 @@ mass_ppt_c_npk_edited <- na.omit(mass_ppt_c_npk_edited)
 unique(mass_ppt_c_npk_edited$site_code)
 
 full_model <- lmer(log_mass ~ trt * (log_mswep_ppt + proportion_par + avg_ppt_site 
-                                     + richness_vegan + prev_ppt) + lrr_mass + (1 | site_code/year_trt), 
+                                     + richness_vegan + prev_ppt + lrr_mass) + (1 | site_code/year_trt), 
                    data = mass_ppt_c_npk_edited, REML = FALSE, na.action = "na.fail")
 summary(full_model)
 model_set <- dredge(full_model)
@@ -381,13 +381,13 @@ r2_best_model_mass <- performance::r2(best_model)
 
 mass_map_plot <- ggplot(data = mass_ppt_c_npk_edited, aes(x = avg_ppt_site, y = vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
-  xlab("MAP (mm)") + ylab("Live mass (g m-2)") +
+  xlab("MAP (mm)") + ylab("") +
   theme_bw(12)
 mass_map_plot
 
 mass_par_plot <- ggplot(data = mass_ppt_c_npk_edited, aes(x = proportion_par, y = vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
-  xlab("Proportion PAR") + ylab("") +
+  xlab("Proportion PAR") + ylab("Bimass (g m-2)") +
   theme_bw(12)
 mass_par_plot
 
@@ -409,7 +409,7 @@ mass_lrr_mass_plot <- ggplot(data = mass_ppt_c_npk_edited, aes(x = lrr_mass, y =
   theme_bw(12)
 mass_lrr_mass_plot
 
-mass_covar_figure <- ggarrange(mass_map_plot, mass_par_plot, mass_rich_plot, mass_prev_ppt_plot, mass_lrr_mass_plot,
+mass_covar_figure <- ggarrange(mass_par_plot, mass_rich_plot, mass_lrr_mass_plot, mass_map_plot, mass_prev_ppt_plot, 
                                ncol = 5, common.legend = TRUE, legend = "bottom", align = 'hv')
 mass_covar_figure
 
@@ -462,7 +462,7 @@ results_with_averages <- results_long %>%
 r2_lrr_model <- lm(r2 ~ avg_lrr_mass, data = results_with_averages)
 summary(r2_lrr_model)
 
-full_r2_model <- lm(r2 ~ trt * (avg_proportion_par + avg_avg_ppt_site + avg_richness) + avg_lrr_mass, 
+full_r2_model <- lm(r2 ~ trt * (avg_proportion_par + avg_avg_ppt_site + avg_richness + avg_lrr_mass), 
                     data = results_with_averages, na.action = "na.fail")
 summary(full_r2_model)
 model_set <- dredge(full_r2_model)
@@ -473,7 +473,7 @@ r2_best_model_r2 <- performance::r2(best_model_r2)
 slope_lrr_model <- lm(slope ~ avg_lrr_mass, data = results_with_averages)
 summary(slope_lrr_model)
 
-full_slope_model <- lm(slope ~ trt * (avg_proportion_par + avg_avg_ppt_site + avg_richness) + avg_lrr_mass, 
+full_slope_model <- lm(slope ~ trt * (avg_proportion_par + avg_avg_ppt_site + avg_richness + avg_lrr_mass), 
                        data = results_with_averages, na.action = "na.fail")
 summary(full_slope_model)
 model_set <- dredge(full_slope_model)
@@ -651,7 +651,7 @@ variance$unex_variance_marginal <- variance$total_variance - variance$prop_varia
 
 ggplot(variance, aes(x = trt)) +
   geom_bar(aes(y = total_variance), stat = "identity", fill = "darkgrey") +
-  geom_bar(aes(y = prop_variance_marginal), stat = "identity", fill = "lightgrey") +
+  geom_bar(aes(y = prop_variance_conditional), stat = "identity", fill = "lightgrey") +
   labs(y = "Variance",
        x = "Treatment",
        fill = "Variance Type") +
