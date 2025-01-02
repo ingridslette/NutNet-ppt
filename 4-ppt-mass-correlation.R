@@ -81,18 +81,18 @@ unique(mass_ppt_c_npk$site_code)
 ### Initial graphs
 ggplot(data = mass_ppt_c_npk, aes(x = mswep_ppt, y = vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
-  xlab("Growing Season Precipitation (mm)") + ylab("Total live mass") +
+  xlab("Growing Season Precipitation (mm)") + ylab("Biomass (g/m2)") +
   theme_bw()
 
 ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x= mswep_ppt, y= vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
-  xlab("Growing Season Precipitation (mm)") + ylab("Total live mass") +
+  xlab("Growing Season Precipitation (mm)") + ylab("Biomass (g/m2)") +
   facet_wrap(vars(site_code), scales = "free") +
   theme_bw()
 
 ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x=year_trt, y=vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
-  xlab("Treatment Year") + ylab("Total live mass") +
+  xlab("Treatment Year") + ylab("Biomass (g/m2)") +
   facet_wrap(vars(site_code), scales = "free") +
   theme_bw()
 
@@ -101,8 +101,8 @@ ggplot(data = subset(mass_ppt_c_npk, !is.na(vascular_live_mass)), aes(x= mswep_p
   geom_smooth(method = "lm", se = FALSE, color = "black") +
   facet_wrap(~ trt, nrow = 2) +
   theme_bw() +
-  labs(x = "Growing Season Precipitation",
-       y = "Total live mass",
+  labs(x = "Growing Season Precipitation (mm)",
+       y = "Biomass (g/m2)",
        color = "Site Code") +
   theme(legend.position = "right")
 
@@ -128,14 +128,14 @@ predictions <- mass_ppt_c_npk %>%
 
 ggplot(mass_ppt_c_npk, aes(x = mswep_ppt, y = vascular_live_mass, color = site_code)) +
   geom_line(data = predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass), linewidth = 1) +
-  labs(x = "Total Growing Season Precipitation (mm)", y = "Live Mass") +
+  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)") +
   facet_wrap(~ trt) +
   theme_bw()
 
 ggplot(mass_ppt_c_npk, aes(x = mswep_ppt, y = vascular_live_mass, color = trt)) +
   geom_point() +
   geom_line(data = predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass), linewidth = 1) +
-  labs(x = "Total Growing Season Precipitation (mm)", y = "Live Mass") +
+  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)") +
   facet_wrap(~ site_code, scales = "free") +
   theme_bw()
 
@@ -159,14 +159,14 @@ ggplot(mass_ppt_c_npk, aes(x = mswep_ppt, y = vascular_live_mass, color = site_c
   geom_line(data = predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass), linewidth = 1) +
   geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), 
             linewidth = 1, color = "black") +
-  labs(x = "Growing Season Precipitation (mm)", y = "Live Mass") +
+  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)") +
   facet_wrap(~ trt) +
   theme_bw(14)
 
 ggplot(data = mass_ppt_c_npk,aes(x= mswep_ppt, y= vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + 
   geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), linewidth = 1) +
-  xlab("Growing Season Precipitation (mm)") + ylab("Biomass (g m-2)") +
+  xlab("Growing Season Precipitation (mm)") + ylab("Biomass (g/m2)") +
   labs(color = "Treatment", shape = "Treatment") +
   theme_bw(14)
 
@@ -327,10 +327,10 @@ ggplot(predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass, colour = site_
   geom_line() +
   scale_color_manual(values = pal2) +
   geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), 
-            color = "black", linetype = "dashed") +
-  labs(x = "Growing Season Precipitation (mm)", y = "Live Mass") +
+            color = "black", linewidth = 1, linetype = "dashed") +
+  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)") +
   facet_wrap(~ trt) +
-  theme_bw()
+  theme_bw(14)
 
 
 ### Calculating log response ratios
@@ -716,3 +716,19 @@ mean_boxplot <- ggplot(results_graphing, aes(x = trt, y = mean, color = trt)) +
 boxplots <- ggarrange(mean_boxplot, slope_boxplot, r2_boxplot, 
                       ncol = 3, common.legend = TRUE, legend = "none", align = 'hv')
 boxplots
+
+
+mass_ppt_c_npk_edited <- mass_ppt_c_npk_edited %>%
+  left_join(results_long, by = c("site_code", "trt"))
+
+ggplot(data = mass_ppt_c_npk_edited, aes(x = mswep_ppt, y = r2, color = trt, shape = trt)) +
+  geom_point() + geom_smooth(method = lm) +
+  xlab("Growing Season Precipitation (mm)") + ylab("R2 of precipitation vs. biomass") +
+  theme_bw(14)
+
+ggplot(data = mass_ppt_c_npk_edited, aes(x = mswep_ppt, y = slope, color = trt, shape = trt)) +
+  geom_point() + geom_smooth(method = lm) +
+  xlab("Growing Season Precipitation (mm)") + ylab("Slope of precipitation vs. biomass") +
+  theme_bw(14)
+
+
