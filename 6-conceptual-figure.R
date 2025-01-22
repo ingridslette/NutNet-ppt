@@ -45,8 +45,8 @@ fig1 <- ggplot(final_data, aes(x = x, y = y, ymin = ymin, ymax = ymax)) +
   geom_line(aes(color = line_type), size = 1.2, show.legend = FALSE) +
   facet_wrap(~panel, nrow = 2, ncol = 2) +
   theme_bw() +
-  scale_color_manual(values = c("blue", "purple")) +
-  scale_fill_manual(values = c("blue", "purple")) +
+  scale_color_manual(values = c("#1982c4", "#af7ab3")) +
+  scale_fill_manual(values = c("#1982c4", "#af7ab3")) +
   theme(
     strip.text = element_blank(),
     axis.title = element_blank(),
