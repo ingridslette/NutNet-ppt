@@ -1,24 +1,23 @@
-# Load necessary library
 library(ggplot2)
 
 # Create a data frame for plotting
 x <- seq(0, 10, length.out = 25)
-y1 <- 2 + 0.5 * x  # First line
+y1 <- 2 + 0.5 * x  
 y1.2 <- 2 + 0.5 * x
 y1.3 <- 2 + 0.5 * x
 y1.4 <- 2 + 0.5 * x
-y2 <- 3.5 + 1 * x  # Second line, steeper slope
-y3 <- 3.8 + 0.5 * x  # Third line, same slope, higher intercept
-y4 <- 3.5 + 1 * x  # Fourth line, steeper slope
+y2 <- 3.5 + 1 * x  # Steeper slope
+y3 <- 3.8 + 0.5 * x  
+y4 <- 3.5 + 1 * x  # Steeper slope
 
 # Standard errors
-se1 <- 1.2 * x / 10   # Standard error for line 1
+se1 <- 1.2 * x / 10
 se1.2 <- 1.2 * x / 10
 se1.3 <- 1.2 * x / 10
 se1.4 <- 1.2 * x / 10
-se2 <- 1.2 * x / 10   # Same as se1
-se3 <- 0.6 * x / 10   # Smaller standard error for line 3
-se4 <- 0.6 * x / 10   # Smaller standard error for line 4
+se2 <- 1.2 * x / 10   
+se3 <- 0.6 * x / 10   # Smaller standard error
+se4 <- 0.6 * x / 10   # Smaller standard error
 
 data_main_line <- data.frame(
   x = rep(x, 4),
@@ -40,30 +39,25 @@ data_unique_line <- data.frame(
 
 final_data <- rbind(data_main_line, data_unique_line)
 
-annotations <- data.frame(
-  x = c(1, 1, 1, 1),
-  y = c(10, 10, 10, 10),
-  panel = c(1, 2, 3, 4),
-  label = c("a", "b", "c", "d")
-)
-
-fig1 <- ggplot(final_data, aes(x = x, y = y, ymin = ymin, ymax = ymax)) +
-  geom_ribbon(aes(fill = Treatment), alpha = 0.3, show.legend = FALSE) +
-  geom_line(aes(color = Treatment), size = 1.2) +
-  facet_wrap(~panel, nrow = 2, ncol = 2) +
+fig1 <- ggplot(final_data, aes(x = x, y = y)) +
+  geom_ribbon(aes(ymin = ymin, ymax = ymax, fill = Treatment), alpha = 0.3, show.legend = FALSE) +
+  geom_line(aes(color = Treatment), linewidth = 1.2) +
+  facet_wrap(.~panel, nrow = 2, ncol = 2) +
   theme_bw(14) +
   scale_color_manual(values = c("#1982c4", "#af7ab3")) +
   scale_fill_manual(values = c("#1982c4", "#af7ab3")) +
   labs(x = "Precipitation", y = "Biomass") +
   theme(
+    axis.ticks = element_blank(),
     axis.text = element_blank(),
     strip.text = element_blank(),
-    axis.ticks = element_blank(),
     panel.grid = element_blank()
   )
 
 fig1
 
-fig1 + geom_text(data = annotations, aes(x = x, y = y, label = label))
+fig1_labels <- data.frame(panel = c(1,2,3,4), label = c("a", "b", "c", "d"))
+
+fig1 + geom_text(x = 0.5, y = 14, aes(label = label), data = fig1_labels)
 
 
