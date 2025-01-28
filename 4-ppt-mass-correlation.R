@@ -168,6 +168,7 @@ ggplot(data = mass_ppt_c_npk,aes(x= mswep_ppt, y= vascular_live_mass, color = tr
   geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), linewidth = 1) +
   xlab("Growing Season Precipitation (mm)") + ylab("Biomass (g/m2)") +
   labs(color = "Treatment", shape = "Treatment") +
+  scale_color_manual(values = c("#245675", "#bc85e0")) +
   theme_bw(14)
 
 
