@@ -44,8 +44,8 @@ fig1 <- ggplot(final_data, aes(x = x, y = y)) +
   geom_line(aes(color = Treatment), linewidth = 1.2) +
   facet_wrap(.~panel, nrow = 2, ncol = 2) +
   theme_bw(14) +
-  scale_color_manual(values = c("#1982c4", "#af7ab3")) +
-  scale_fill_manual(values = c("#1982c4", "#af7ab3")) +
+  scale_color_manual(values = c("#4267ac", "#ff924c")) +
+  scale_fill_manual(values = c("#4267ac", "#ff924c")) +
   labs(x = "Precipitation", y = "Biomass") +
   theme(
     axis.ticks = element_blank(),
