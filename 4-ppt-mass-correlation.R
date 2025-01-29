@@ -733,3 +733,19 @@ ggplot(data = mass_ppt_c_npk_edited, aes(x = mswep_ppt, y = slope, color = trt, 
   theme_bw(14)
 
 
+## calculating and graphing effect sizes
+
+library(effsize)
+
+cohen.d(r2 ~ trt, data = results_graphing)
+cohen.d(slope ~ trt, data = results_graphing)
+cohen.d(mean ~ trt, data = results_graphing)
+
+effect_sizes <- data.frame(variable = c("Avg Mass", "R2", "Slope"),
+                           effect_size = c(-0.7480263, 0.05723029, -0.5398514))
+
+# Plot the effect sizes as a boxplot
+ggplot(effect_sizes, aes(x = variable, y = effect_size)) +
+  geom_boxplot()
+
+
