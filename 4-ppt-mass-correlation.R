@@ -809,6 +809,8 @@ cohen_d_df <- data.frame(
 )
 
 # Plot Cohen's d with confidence intervals
+cohen_d_df$Variable <- factor(cohen_d_df$Variable, levels = c("Slope", "R²", "Mean"))
+
 ggplot(cohen_d_df, aes(x = Cohen_d, y = Variable)) +
   geom_point(size = 4) +
   geom_errorbar(aes(xmin = Lower_CI, xmax = Upper_CI), width = 0.2) +
