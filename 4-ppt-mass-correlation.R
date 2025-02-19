@@ -324,15 +324,29 @@ pal2 <- c("#800000","#c00000","#ff0000","#ff4040","#ff8080","#a83a01","#e04d01",
           "#1abc9c","#03045e","#125d93","#057dcd","#43b0f1","#96cff1","#503658","#80558c","#af7ab3","#c497b0",
           "#808080")
 
+pal3 <- c("#808080","#808080","#808080","#808080","#808080","#808080","#808080","#808080","#808080","#808080",
+          "#808080","#808080","#808080","#808080","#808080","#808080","#808080","#808080","#808080","#808080",
+          "#808080","#808080","#808080","#808080","#808080","#808080","#808080","#808080","#808080","#808080",
+          "#808080")
+
 ggplot(predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass, colour = site_code)) +
   geom_line() +
   scale_color_manual(values = pal2) +
   geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), 
-            color = "black", linewidth = 1, linetype = "dashed") +
+            color = "black", linewidth = 1) +
   labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)") +
   facet_wrap(~ trt) +
   theme_bw(14)
 
+ggplot(predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass, colour = site_code)) +
+  geom_line() +
+  scale_color_manual(values = pal3) +
+  geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), 
+            color = "black", linewidth = 1) +
+  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)") +
+  facet_wrap(~ trt) +
+  theme_bw(14) +
+  theme(legend.position = "none")
 
 ### Calculating log response ratios
 
@@ -735,21 +749,6 @@ ggplot(data = mass_ppt_c_npk_edited, aes(x = mswep_ppt, y = slope, color = trt, 
 
 ## calculating and graphing effect sizes
 
-library(effectsize)
-
-cohens_d(mean ~ trt, data = results_graphing)
-cohens_d(r2 ~ trt, data = results_graphing)
-cohens_d(slope ~ trt, data = results_graphing)
-
-
-effect_sizes <- data.frame(variable = c("Avg Mass", "R2", "Slope"),
-                           effect_size = c(-0.7480263, 0.05723029, -0.5398514))
-
-# Plot the effect sizes as a boxplot
-ggplot(effect_sizes, aes(x = variable, y = effect_size)) +
-  geom_boxplot()
-
-
 mean_model2 <- lmer(log_mass ~ trt + (1 | site_code / year_trt), data = mass_ppt_c_npk)
 summary(mean_model)
 
@@ -762,11 +761,6 @@ summary(slope_model)
 r2_model <- lmer(r2 ~ trt + (1| site_code), data = results_graphing)
 summary(r2_model)
 
-
-# Load necessary libraries
-library(lme4)
-library(ggplot2)
-library(dplyr)
 
 # Extract values from model summaries
 mean_estimate <- 0.1961    # Estimate for trtNPK from mean_model
@@ -809,7 +803,7 @@ cohen_d_df <- data.frame(
 )
 
 # Plot Cohen's d with confidence intervals
-cohen_d_df$Variable <- factor(cohen_d_df$Variable, levels = c("Slope", "R²", "Mean"))
+cohen_d_df$Variable <- factor(cohen_d_df$Variable, levels = c("R²", "Slope", "Mean"))
 
 ggplot(cohen_d_df, aes(x = Cohen_d, y = Variable)) +
   geom_point(size = 4) +
@@ -821,4 +815,4 @@ ggplot(cohen_d_df, aes(x = Cohen_d, y = Variable)) +
   theme(axis.text.y = element_text(size = 14))
   
 
-
+unique(mass_ppt_c_npk$site_code)
