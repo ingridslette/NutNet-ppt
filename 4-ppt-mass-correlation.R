@@ -747,7 +747,7 @@ ggplot(data = mass_ppt_c_npk_edited, aes(x = mswep_ppt, y = slope, color = trt, 
   theme_bw(14)
 
 
-## calculating and graphing effect sizes
+## Clculating and graphing effect sizes
 
 mean_model2 <- lmer(log_mass ~ trt + (1 | site_code / year_trt), data = mass_ppt_c_npk)
 summary(mean_model)
@@ -762,39 +762,35 @@ r2_model <- lmer(r2 ~ trt + (1| site_code), data = results_graphing)
 summary(r2_model)
 
 
-# Extract values from model summaries
-mean_estimate <- 0.1961    # Estimate for trtNPK from mean_model
-mean_se <- 0.008463        # SE of trtNPK from mean_model
-mean_resid_sd <- 0.2065    # Residual SD from mean_model
-n_mean <- 2415             # Total sample size
+mean_estimate <- 0.1961    
+mean_se <- 0.008463        
+mean_resid_sd <- 0.2065    
+n_mean <- 2415             
 
-slope_estimate <- 0.3570   # Estimate for trtNPK from slope_model
-slope_se <- 0.1262         # SE of trtNPK from slope_model
-slope_resid_sd <- 0.4968   # Residual SD from slope_model
-n_slope <- 62              # Total sample size
+slope_estimate <- 0.3570   
+slope_se <- 0.1262         
+slope_resid_sd <- 0.4968   
+n_slope <- 62              
 
-r2_estimate <- -0.006608   # Estimate for trtNPK from r2_model
-r2_se <- 0.020012          # SE of trtNPK from r2_model
-r2_resid_sd <- 0.07879     # Residual SD from r2_model
-n_r2 <- 62                 # Total sample size
+r2_estimate <- -0.006608   
+r2_se <- 0.020012          
+r2_resid_sd <- 0.07879     
+n_r2 <- 62                 
 
-# Function to calculate Cohen's d and its confidence interval
 calc_cohen_d <- function(estimate, resid_sd, n) {
-  d <- estimate / resid_sd  # Compute Cohen's d
-  n1 <- n / 2  # Assuming equal group sizes
+  d <- estimate / resid_sd
+  n1 <- n / 2
   n2 <- n / 2
-  SE_d <- sqrt((n1 + n2) / (n1 * n2) + (d^2) / (2 * (n1 + n2)))  # SE of Cohen's d
-  lower_CI <- d - 1.96 * SE_d  # 95% CI lower bound
-  upper_CI <- d + 1.96 * SE_d  # 95% CI upper bound
+  SE_d <- sqrt((n1 + n2) / (n1 * n2) + (d^2) / (2 * (n1 + n2))) 
+  lower_CI <- d - 1.96 * SE_d
+  upper_CI <- d + 1.96 * SE_d
   return(c(d, lower_CI, upper_CI))
 }
 
-# Calculate Cohen's d and CI for each model
 mean_results <- calc_cohen_d(mean_estimate, mean_resid_sd, n_mean)
 slope_results <- calc_cohen_d(slope_estimate, slope_resid_sd, n_slope)
 r2_results <- calc_cohen_d(r2_estimate, r2_resid_sd, n_r2)
 
-# Create a dataframe for plotting
 cohen_d_df <- data.frame(
   Variable = c("Mean", "Slope", "R²"),
   Cohen_d = c(mean_results[1], slope_results[1], r2_results[1]),
@@ -802,7 +798,6 @@ cohen_d_df <- data.frame(
   Upper_CI = c(mean_results[3], slope_results[3], r2_results[3])
 )
 
-# Plot Cohen's d with confidence intervals
 cohen_d_df$Variable <- factor(cohen_d_df$Variable, levels = c("R²", "Slope", "Mean"))
 
 ggplot(cohen_d_df, aes(x = Cohen_d, y = Variable)) +
