@@ -137,7 +137,8 @@ ggplot(mass_ppt_c_npk, aes(x = mswep_ppt, y = vascular_live_mass, color = trt)) 
   geom_line(data = predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass), linewidth = 1) +
   labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)") +
   facet_wrap(~ site_code, scales = "free") +
-  theme_bw()
+  theme_bw() +
+  scale_color_manual(values = c("#4267ac", "#ff924c"))
 
 fit_model_and_predict_allsites <- function(data) {
   model <- lm(log_mass ~ log_mswep_ppt, data = data)
@@ -331,12 +332,22 @@ pal3 <- c("#808080","#808080","#808080","#808080","#808080","#808080","#808080",
 
 ggplot(predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass, colour = site_code)) +
   geom_line() +
+  geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), 
+            color = "black", linewidth = 1) +
+  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)") +
+  facet_wrap(~ trt) +
+  theme_bw(14) +
+  theme(legend.position = "none")
+
+ggplot(predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass, colour = site_code)) +
+  geom_line() +
   scale_color_manual(values = pal2) +
   geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), 
             color = "black", linewidth = 1) +
   labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)") +
   facet_wrap(~ trt) +
-  theme_bw(14)
+  theme_bw(14) +
+  theme(legend.position = "none")
 
 ggplot(predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass, colour = site_code)) +
   geom_line() +
@@ -347,6 +358,7 @@ ggplot(predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass, colour = site_
   facet_wrap(~ trt) +
   theme_bw(14) +
   theme(legend.position = "none")
+
 
 ### Calculating log response ratios
 
@@ -370,12 +382,33 @@ lrr_par_mass_model <- lm(lrr_mass ~ lrr_prop_par, data = lrr_df)
 summary(lrr_par_mass_model)
 
 
+## incorporating C3/C4 and annual/perennial information
+
+cover <- read.csv("/Users/ingridslette/Desktop/NutNet/full-cover_2025-01-31.csv",
+                 na.strings = c("NULL","NA"))
+
+
+cover_summary <- cover %>%
+  group_by(site_code, trt) %>%
+  summarise(
+    c4_count = sum(ps_path == "C4", na.rm = TRUE),
+    c3_count = sum(ps_path == "C3", na.rm = TRUE),
+    c4_c3 = ifelse(c3_count == 0, NA, c4_count / c3_count),
+    annual_count = sum(local_lifespan == "ANNUAL", na.rm = TRUE),
+    perennial_count = sum(local_lifespan == "PERENNIAL", na.rm = TRUE),
+    annual_perennial = ifelse(perennial_count == 0, NA, annual_count / perennial_count)
+  ) %>%
+  ungroup()
+
+
+
+
 ### Covariate analysis of mass
 
 mass_ppt_c_npk_edited <- mass_ppt_c_npk %>%
   dplyr::select(site_code, block, plot, continent, country, region, habitat, trt, year, 
-                vascular_live_mass,log_mass, mswep_ppt, log_mswep_ppt, prev_ppt, year_trt, 
-                proportion_par, avg_ppt_site, richness_vegan)
+                vascular_live_mass, log_mass, mswep_ppt, log_mswep_ppt, prev_ppt, year_trt, 
+                proportion_par, avg_ppt_site, richness_vegan, MAT_v2, AI)
 
 unique(mass_ppt_c_npk_edited$site_code)
 
@@ -747,7 +780,7 @@ ggplot(data = mass_ppt_c_npk_edited, aes(x = mswep_ppt, y = slope, color = trt, 
   theme_bw(14)
 
 
-## Clculating and graphing effect sizes
+## Calculating and graphing effect sizes
 
 mean_model2 <- lmer(log_mass ~ trt + (1 | site_code / year_trt), data = mass_ppt_c_npk)
 summary(mean_model)
