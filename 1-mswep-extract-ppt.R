@@ -5,7 +5,7 @@
 # request access to MSWEP data, which is shared via Google Drive
 # install and set up rclone to acess MSWEP Google Drive
 
-# I copied all years of monthly MSWEP data into a file on my Desktop using the R terminal using the following code
+# I copied all years of monthly MSWEP data into a file on my Desktop using the R terminal and the following code
 # MacBook-Pro-169:~ ingridslette$ rclone  copy --drive-shared-with-me gdrive:MSWEP_V280/Past/Monthly /Users/ingridslette/Desktop/mswep
 # MacBook-Pro-169:~ ingridslette$ rclone  copy --drive-shared-with-me gdrive:MSWEP_V280/NRT/Monthly /Users/ingridslette/Desktop/mswep
 
