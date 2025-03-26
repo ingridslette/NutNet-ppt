@@ -382,7 +382,7 @@ lrr_par_mass_model <- lm(lrr_mass ~ lrr_prop_par, data = lrr_df)
 summary(lrr_par_mass_model)
 
 
-## incorporating C3/C4 and annual/perennial information
+## incorporating C3/C4 and annual/perennial information from cover data
 
 cover <- read.csv("/Users/ingridslette/Desktop/NutNet/full-cover_2025-01-31.csv",
                  na.strings = c("NULL","NA"))
@@ -400,8 +400,9 @@ cover_summary <- cover %>%
   ) %>%
   ungroup()
 
-
-
+cover_summary <- cover_summary %>%
+  mutate(log_c4_c3 = log10(c4_c3),
+         log_annual_perennial = log10(annual_perennial))
 
 ### Covariate analysis of mass
 
@@ -415,17 +416,29 @@ unique(mass_ppt_c_npk_edited$site_code)
 mass_ppt_c_npk_edited <- mass_ppt_c_npk_edited %>% 
   left_join(lrr_df, by = "site_code")
 
+mass_ppt_c_npk_edited <- mass_ppt_c_npk_edited %>% 
+  left_join(cover_summary, by = c("site_code", "trt"))
+
 mass_ppt_c_npk_edited <- na.omit(mass_ppt_c_npk_edited)
 unique(mass_ppt_c_npk_edited$site_code)
+unique(mass_ppt_c_npk_edited$trt)
 
-full_model <- lmer(log_mass ~ trt * (log_mswep_ppt + proportion_par + avg_ppt_site 
-                                     + richness_vegan + prev_ppt + lrr_mass) + (1 | site_code/year_trt), 
+full_model <- lmer(log_mass ~ trt * (log_mswep_ppt + proportion_par + avg_ppt_site + AI + MAT_v2
+                                     + richness_vegan + prev_ppt + lrr_mass + c4_c3 + annual_perennial) 
+                   + (1 | site_code/year_trt), 
                    data = mass_ppt_c_npk_edited, REML = FALSE, na.action = "na.fail")
+
 summary(full_model)
-model_set <- dredge(full_model)
-best_model <- get.models(model_set, 1)[[1]]
+full_model_table <- dredge(full_model, m.lim=c(NA, 5), fixed = c("c.Control", "c.NPK"))
+full_model_avg <- model.avg(get.models(full_model_table, subset = delta < 20))
+
+summary(full_model_avg); sw(full_model_avg)
+
+best_model <- get.models(full_model_table, 1)[[1]]
 summary(best_model)
 r2_best_model_mass <- performance::r2(best_model)
+
+
 
 mass_map_plot <- ggplot(data = mass_ppt_c_npk_edited, aes(x = avg_ppt_site, y = vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
