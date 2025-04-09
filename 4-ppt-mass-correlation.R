@@ -409,7 +409,7 @@ cover_summary <- cover_summary %>%
 mass_ppt_c_npk_edited <- mass_ppt_c_npk %>%
   dplyr::select(site_code, block, plot, continent, country, region, habitat, trt, year, 
                 vascular_live_mass, log_mass, mswep_ppt, log_mswep_ppt, prev_ppt, year_trt, 
-                proportion_par, avg_ppt_site, richness_vegan, MAT_v2, AI)
+                proportion_par, avg_ppt_site, richness_vegan, MAT_v2, AI, PET)
 
 unique(mass_ppt_c_npk_edited$site_code)
 
@@ -421,16 +421,18 @@ mass_ppt_c_npk_edited <- mass_ppt_c_npk_edited %>%
 
 mass_ppt_c_npk_edited <- na.omit(mass_ppt_c_npk_edited)
 unique(mass_ppt_c_npk_edited$site_code)
-unique(mass_ppt_c_npk_edited$trt)
 
-full_model <- lmer(log_mass ~ trt * (log_mswep_ppt + proportion_par + avg_ppt_site + AI + MAT_v2
+mass_ppt_c_npk_edited <- mass_ppt_c_npk_edited %>% 
+  mutate(AI2 = avg_ppt_site/PET)
+
+full_model <- lmer(log_mass ~ trt * (log_mswep_ppt + proportion_par + avg_ppt_site + AI2 + MAT_v2
                                      + richness_vegan + prev_ppt + lrr_mass + c4_c3 + annual_perennial) 
                    + (1 | site_code/year_trt), 
                    data = mass_ppt_c_npk_edited, REML = FALSE, na.action = "na.fail")
 
 summary(full_model)
-full_model_table <- dredge(full_model, m.lim=c(NA, 5), fixed = c("c.Control", "c.NPK"))
-full_model_avg <- model.avg(get.models(full_model_table, subset = delta < 20))
+full_model_table <- dredge(full_model, m.lim=c(NA, 7), fixed = c("c.Control", "c.NPK"))
+full_model_avg <- model.avg(get.models(full_model_table, subset = delta < 5))
 
 summary(full_model_avg); sw(full_model_avg)
 
