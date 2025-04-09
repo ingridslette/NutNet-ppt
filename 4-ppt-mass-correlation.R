@@ -387,22 +387,53 @@ summary(lrr_par_mass_model)
 cover <- read.csv("/Users/ingridslette/Desktop/NutNet/full-cover_2025-01-31.csv",
                  na.strings = c("NULL","NA"))
 
+cover <- cover %>%
+  filter(site_code %in% site_codes)
 
-cover_summary <- cover %>%
+dat1 <- subset(cover, is.na(ps_path) == TRUE)%>%
+  separate(Taxon, into = c("Genus", "Species"), remove = FALSE, sep = " ")
+
+
+dat1$ps_path <- ifelse(dat1$Genus == "BINERTIA" | dat1$Genus == "TIDESTROMIA" | dat1$Genus == "PECTIS" | dat1$Genus == "EUPLOCA" | dat1$Genus == "BULBOSTYLIS" | dat1$Genus == "CYPERUS" | dat1$Genus == "FIMBRISTYLIS" | dat1$Genus == "CHAMAESYCE" | dat1$Genus == "ALLIONIA" | dat1$Genus == "CALLIGONUM" | dat1$Genus == "PORTULACA" | dat1$Genus == "EUPHORBIA", "C4",
+                       ifelse(dat1$Genus == "BELAPHARIS" | dat1$Genus == "AERVA" | dat1$Genus == "ALTERNANTHERA" | dat1$Genus == "ATRIPLEX" | dat1$Genus == "SUAEDA" | dat1$Genus == "TECTICORNIA" | dat1$Genus == "FLAVERIA" | dat1$Genus == "POLYCARPOREA" | dat1$Genus == "ELEOCHARS" | dat1$Genus == "RHYNCHOSPORA" | dat1$Genus == "EUPHORBIA" | dat1$Genus == "MOLLUGO" | dat1$Genus == "BOERHAVIA" | dat1$Genus == "BASSIA" | dat1$Family == "Poaceae", NA,
+                              "C3"))
+unique(dat1$ps_path)
+
+dat1 <- dat1 %>%
+  rename(ps_path2 = ps_path)
+
+names(dat1)
+names(cover)
+
+cover <- cover %>% 
+  left_join(dat1, by = c("year", "site_name", "site_code", "block", "plot", "subplot", "year_trt", "trt", 
+                         "Family", "Taxon", "live", "local_provenance", "local_lifeform", "local_lifespan", 
+                         "functional_group", "max_cover"))
+
+cover <- cover %>%
+  mutate(ps_path2 = if_else(is.na(ps_path2) & !is.na(ps_path), ps_path, ps_path2))
+
+cover_by_site_plot <- cover %>%
+  group_by(site_code, plot, trt) %>%
+  summarise(
+    total_cover = sum(max_cover, na.rm = TRUE),
+    c4_cover = if (any(ps_path2 == "C4", na.rm = TRUE)) {
+      sum(max_cover[ps_path2 == "C4"], na.rm = TRUE)} else {0},
+    c4_proportion = c4_cover / total_cover,
+    annual_cover = if (any(local_lifespan == "ANNUAL", na.rm = TRUE)) {
+      sum(max_cover[local_lifespan == "ANNUAL"], na.rm = TRUE)} else {0},
+    annual_proportion = annual_cover / total_cover,
+    .groups = "drop"
+  )
+
+cover_by_site_trt <- cover_by_site_plot %>%
   group_by(site_code, trt) %>%
   summarise(
-    c4_count = sum(ps_path == "C4", na.rm = TRUE),
-    c3_count = sum(ps_path == "C3", na.rm = TRUE),
-    c4_c3 = ifelse(c3_count == 0, NA, c4_count / c3_count),
-    annual_count = sum(local_lifespan == "ANNUAL", na.rm = TRUE),
-    perennial_count = sum(local_lifespan == "PERENNIAL", na.rm = TRUE),
-    annual_perennial = ifelse(perennial_count == 0, NA, annual_count / perennial_count)
-  ) %>%
-  ungroup()
+    avg_c4_proportion = mean(c4_proportion, na.rm = TRUE),
+    avg_annual_proportion = mean(annual_proportion, na.rm = TRUE),
+    .groups = "drop"
+  )
 
-cover_summary <- cover_summary %>%
-  mutate(log_c4_c3 = log10(c4_c3),
-         log_annual_perennial = log10(annual_perennial))
 
 ### Covariate analysis of mass
 
@@ -417,7 +448,7 @@ mass_ppt_c_npk_edited <- mass_ppt_c_npk_edited %>%
   left_join(lrr_df, by = "site_code")
 
 mass_ppt_c_npk_edited <- mass_ppt_c_npk_edited %>% 
-  left_join(cover_summary, by = c("site_code", "trt"))
+  left_join(cover_by_site_trt, by = c("site_code", "trt"))
 
 mass_ppt_c_npk_edited <- na.omit(mass_ppt_c_npk_edited)
 unique(mass_ppt_c_npk_edited$site_code)
@@ -425,21 +456,16 @@ unique(mass_ppt_c_npk_edited$site_code)
 mass_ppt_c_npk_edited <- mass_ppt_c_npk_edited %>% 
   mutate(AI2 = avg_ppt_site/PET)
 
-full_model <- lmer(log_mass ~ trt * (log_mswep_ppt + proportion_par + avg_ppt_site + AI2 + MAT_v2
-                                     + richness_vegan + prev_ppt + lrr_mass + c4_c3 + annual_perennial) 
+full_model <- lmer(log_mass ~ trt * (log_mswep_ppt + proportion_par + avg_ppt_site + AI2 + MAT_v2 + richness_vegan 
+                                     + prev_ppt + lrr_mass + avg_c4_proportion + avg_annual_proportion)
                    + (1 | site_code/year_trt), 
                    data = mass_ppt_c_npk_edited, REML = FALSE, na.action = "na.fail")
 
 summary(full_model)
-full_model_table <- dredge(full_model, m.lim=c(NA, 7), fixed = c("c.Control", "c.NPK"))
-full_model_avg <- model.avg(get.models(full_model_table, subset = delta < 5))
+full_model_table <- dredge(full_model, m.lim=c(NA, 6), fixed = c("c.Control", "c.NPK"))
+full_model_avg <- model.avg(get.models(full_model_table, subset = delta < 10))
 
 summary(full_model_avg); sw(full_model_avg)
-
-best_model <- get.models(full_model_table, 1)[[1]]
-summary(best_model)
-r2_best_model_mass <- performance::r2(best_model)
-
 
 
 mass_map_plot <- ggplot(data = mass_ppt_c_npk_edited, aes(x = avg_ppt_site, y = vascular_live_mass, color = trt, shape = trt)) +
@@ -514,18 +540,16 @@ averages <- mass_ppt_c_npk_edited %>%
     avg_avg_ppt_site = mean(avg_ppt_site, na.rm = TRUE),
     avg_richness = mean(richness_vegan, na.rm = TRUE),
     avg_lrr_mass = mean(lrr_mass, na.rm = TRUE),
-    region = first(region),
-    country = first(country),
-    habitat = first(habitat)
+    avg_avg_c4_proportion = mean(avg_c4_proportion, na.rm = TRUE),
+    avg_avg_annual_proportion = mean(avg_annual_proportion, na.rm = TRUE),
+    region = first(region)
   )
 
 results_with_averages <- results_long %>%
   left_join(averages, by = c("site_code", "trt"))
 
-r2_lrr_model <- lm(r2 ~ avg_lrr_mass, data = results_with_averages)
-summary(r2_lrr_model)
-
-full_r2_model <- lm(r2 ~ trt * (avg_proportion_par + avg_avg_ppt_site + avg_richness + avg_lrr_mass), 
+full_r2_model <- lm(r2 ~ trt * (avg_proportion_par + avg_avg_ppt_site + avg_richness + avg_lrr_mass
+                                + avg_avg_c4_proportion + avg_avg_annual_proportion), 
                     data = results_with_averages, na.action = "na.fail")
 summary(full_r2_model)
 model_set <- dredge(full_r2_model)
@@ -630,70 +654,6 @@ ggplot(results_with_averages, aes(x = trt, y = slope)) +
   facet_wrap(~ habitat) +
   theme_bw(14) +
   labs(x = "Habitat",
-       y = "Slope of precipitation-mass")
-
-
-## testing for regional effect
-
-mass_aov_reg <- aov(log_mass ~ region * trt, data = mass_ppt_c_npk)
-summary(mass_aov_reg)
-
-r2_aov_reg <- aov(r2 ~ region * trt, data = results_with_averages)
-summary(r2_aov_reg)
-r2_emm_reg <- emmeans(r2_aov_reg, ~ trt | region)
-pairwise_results_reg <- pairs(r2_emm_reg)
-print(pairwise_results_reg)
-
-ggplot(results_with_averages, aes(x = trt, y = r2)) +
-  geom_point() +
-  facet_wrap(~ region) +
-  theme_bw() +
-  labs(x = "Region",
-       y = "R2 of precipitation-mass")
-
-slope_aov_reg <- aov(slope ~ region * trt, data = results_with_averages)
-summary(slope_aov_reg)
-slope_emm_reg <- emmeans(slope_aov_reg, ~ trt | region)
-pairwise_results_slope_reg <- pairs(slope_emm_reg)
-print(pairwise_results_slope_reg)
-
-ggplot(results_with_averages, aes(x = trt, y = slope)) +
-  geom_point() +
-  facet_wrap(~ region) +
-  theme_bw() +
-  labs(x = "Region",
-       y = "Slope of precipitation-mass")
-
-
-## testing for country effect
-
-mass_aov_cou <- aov(log_mass ~ country * trt, data = mass_ppt_c_npk)
-summary(mass_aov_cou)
-
-r2_aov_cou <- aov(r2 ~ country * trt, data = results_with_averages)
-summary(r2_aov_cou)
-r2_emm_cou <- emmeans(r2_aov_cou, ~ trt | country)
-pairwise_results_cou <- pairs(r2_emm_cou)
-print(pairwise_results_cou)
-
-ggplot(results_with_averages, aes(x = trt, y = r2)) +
-  geom_point() +
-  facet_wrap(~ country) +
-  theme_bw() +
-  labs(x = "Country",
-       y = "R2 of precipitation-mass")
-
-slope_aov_cou <- aov(slope ~ country * trt, data = results_with_averages)
-summary(slope_aov_cou)
-slope_emm_cou <- emmeans(slope_aov_cou, ~ trt | country)
-pairwise_results_slope_cou <- pairs(slope_emm_cou)
-print(pairwise_results_slope_cou)
-
-ggplot(results_with_averages, aes(x = trt, y = slope)) +
-  geom_point() +
-  facet_wrap(~ country) +
-  theme_bw() +
-  labs(x = "Country",
        y = "Slope of precipitation-mass")
 
 
