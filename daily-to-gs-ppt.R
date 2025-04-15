@@ -5,6 +5,7 @@
 library(tidyverse)
 
 ppt <- read.csv('/Users/ingridslette/Library/CloudStorage/GoogleDrive-slett152@umn.edu/Shared drives/NutNet_DRAGNet_Shared/NutNet Shared/NutNet Non-Core Data/weather/MSWEP/precip-daily-mswep.csv')
+unique(ppt$site_code)
 
 # for sites where the growing season spans multiple calendar years:
 ppt$gs_year <- ppt$year 
@@ -38,8 +39,7 @@ ppt <- ppt %>%
   ))
 
 # keep only growing season months at each site (there is definitely a better way to do this...)
-ppt_gs_only <- filter(ppt, 
-                         site_code == "arch.us" & month %in% c(5, 6, 7, 8, 9, 10) |
+ppt_gs_only <- filter(ppt, site_code == "arch.us" & month %in% c(5, 6, 7, 8, 9, 10) |
                            site_code =="badlau.de" & month %in% c(4, 5, 6, 7, 8, 9, 10) |
                            site_code =="bayr.de" & month %in% c(3, 4, 5, 6, 7, 8, 9) |
                            site_code =="bldr.us" & month %in% c(3, 4, 5, 6, 7, 8) |
@@ -110,6 +110,8 @@ ppt_gs_only <- filter(ppt,
                            
 )
 
+unique(ppt_gs_only$site_code)
+
 # sum to get total growing season precip per year per site
 ppt_annual_gs_only <- aggregate(precip ~ site_code + gs_year, data = ppt_gs_only, sum)
 
@@ -119,7 +121,9 @@ ppt_annual_gs_only <- ppt_annual_gs_only %>%
 ppt_annual_gs_only <- ppt_annual_gs_only %>%
   rename(mswep_ppt = precip)
 
-write.csv(ppt_annual_gs_only, file = "/Users/ingridslette/Desktop/NutNet/mswep_ppt_annual_gs_only_2025-04-15.csv")
+unique(ppt_annual_gs_only$site_code)
+
+write.csv(ppt_annual_gs_only, file = "/Users/ingridslette/Desktop/NutNet/mswep_ppt_annual_gs_only_2025-04-15.csv", row.names=FALSE)
 
 
 
