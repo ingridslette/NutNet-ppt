@@ -44,6 +44,8 @@ out <- pivot_longer(df, -"site_code", names_to = "date",
                     values_to = "precip") %>% 
   mutate(date = str_replace(date, "^precip_", ""))
 
+unique(out$site_code)
+
 # create a new column for the year
 out$year <- substr(out$date, 1, 4)
 
@@ -53,5 +55,5 @@ out$month <- substr(out$date, 6, 7)
 # create a new column for the day
 out$day <- substr(out$date, 9, 10)
 
-write.csv(out, file = '/Users/ingridslette/Library/CloudStorage/GoogleDrive-slett152@umn.edu/Shared drives/NutNet_DRAGNet_Shared/NutNet Shared/NutNet Non-Core Data/weather/MSWEP/precip-daily-mswep2.csv')
+write.csv(out, file = '/Users/ingridslette/Library/CloudStorage/GoogleDrive-slett152@umn.edu/Shared drives/NutNet_DRAGNet_Shared/NutNet Shared/NutNet Non-Core Data/weather/MSWEP/precip-daily-mswep.csv', row.names=FALSE)
 
