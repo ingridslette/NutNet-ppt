@@ -72,7 +72,7 @@ mswep <- mswep %>%
   ungroup()
 
 
-mass_ppt <- inner_join(mass1, mswep, by=c("site_code", "year"))
+mass_ppt <- left_join(mass2, mswep, by=c("site_code", "year"))
 
 unique(mass_ppt$site_code)
 
