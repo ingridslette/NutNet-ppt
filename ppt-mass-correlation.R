@@ -51,9 +51,11 @@ mass2 <- mass1 %>%
 
 unique(mass2$site_code)
 
-## popped over to script "daily-to-gs-ppt.R" here, to get growing season ppt for the sites in that list
+## popped over to script "daily-to-gs-ppt.R" here, to get growing season ppt for the sites included in mass2
 
 mswep <- read.csv("/Users/ingridslette/Desktop/NutNet/mswep_ppt_annual_gs_only_2025-04-15.csv")
+
+unique(mswep$site_code)
 
 mswep <- mswep %>%
   arrange(site_code, year) %>% 
@@ -62,6 +64,9 @@ mswep <- mswep %>%
   ungroup()
 
 mswep <- filter(mswep, year >= 1983)
+
+mswep <- filter(mswep, year < 2025) 
+unique(mswep$year)
 
 mswep <- mswep %>%
   group_by(site_code) %>%
@@ -74,6 +79,8 @@ mswep <- mswep %>%
 
 mass_ppt <- left_join(mass2, mswep, by=c("site_code", "year"))
 
+unique(mass2$site_code)
+unique(mswep$site_code)
 unique(mass_ppt$site_code)
 
 mass_ppt <- mass_ppt %>%
