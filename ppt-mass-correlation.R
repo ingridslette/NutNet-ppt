@@ -51,9 +51,9 @@ mass2 <- mass1 %>%
 
 unique(mass2$site_code)
 
+## popped over to script "daily-to-gs-ppt.R" here, to get growing season ppt for the sites in that list
 
-
-mswep <- read.csv("/Users/ingridslette/Desktop/NutNet/mswep_ppt_annual_gs_only.csv")
+mswep <- read.csv("/Users/ingridslette/Desktop/NutNet/mswep_ppt_annual_gs_only_2025-04-15.csv")
 
 mswep <- mswep %>%
   arrange(site_code, year) %>% 
