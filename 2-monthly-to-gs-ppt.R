@@ -1,19 +1,20 @@
 # Ingrid Slette
 # started 13 September 2024
+# updated 15 April 2025
 
 library(tidyverse)
 
-ppt_all_months <- read.csv("/Users/ingridslette/Dropbox/NutNet data/climate/mswep/mswep-monthly-ppt-all-nutnet-sites.csv")
+ppt <- read.csv('/Users/ingridslette/Library/CloudStorage/GoogleDrive-slett152@umn.edu/Shared drives/NutNet_DRAGNet_Shared/NutNet Shared/NutNet Non-Core Data/weather/MSWEP/precip-daily-mswep.csv')
 
 # for sites where the growing season spans multiple calendar years:
-ppt_all_months$gs_year <- ppt_all_months$year 
+ppt$gs_year <- ppt$year 
 
-str(ppt_all_months)
-ppt_all_months$gs_year <- as.numeric(ppt_all_months$gs_year)
-ppt_all_months$year <- as.numeric(ppt_all_months$year)
-ppt_all_months$month <- as.numeric(ppt_all_months$month)
+str(ppt)
+ppt$gs_year <- as.numeric(ppt$gs_year)
+ppt$year <- as.numeric(ppt$year)
+ppt$month <- as.numeric(ppt$month)
 
-ppt_all_months <- ppt_all_months %>%
+ppt <- ppt %>%
   mutate(gs_year = case_when(
     site_code == "bogong.au" & month %in% c(10, 11, 12) ~ year + 1,
     site_code == "burrawan.au" & month %in% c(10, 11, 12) ~ year + 1,
@@ -37,8 +38,7 @@ ppt_all_months <- ppt_all_months %>%
   ))
 
 # keep only growing season months at each site (there is definitely a better way to do this...)
-# for now, only doing this for sites included in my ppt-biomass coupling project, not all nutnet sites
-ppt_monthly_gs_only <- filter(ppt_all_months, 
+ppt_gs_only <- filter(ppt, 
                          site_code == "arch.us" & month %in% c(5, 6, 7, 8, 9, 10) |
                            site_code =="badlau.de" & month %in% c(4, 5, 6, 7, 8, 9, 10) |
                            site_code =="bayr.de" & month %in% c(3, 4, 5, 6, 7, 8, 9) |
@@ -102,11 +102,16 @@ ppt_monthly_gs_only <- filter(ppt_all_months,
                            site_code =="ukul.za" & month %in% c(9, 10, 11, 12, 1, 2, 3, 4) |
                            site_code =="valm.ch" & month %in% c(6, 7, 8) |
                            site_code =="veluwe.nl" & month %in% c(3, 4, 5, 6, 7, 8) |
-                           site_code =="yarra.au" & month %in% c(9, 10, 11, 12, 1, 2, 3)
+                           site_code =="yarra.au" & month %in% c(9, 10, 11, 12, 1, 2, 3) |
+                           site_code =="msla_3.us" & month %in% c(4, 5, 6, 7) |
+                           site_code =="msla.us" & month %in% c(4, 5, 6, 7) |
+                           site_code =="msla_2.us" & month %in% c(4, 5, 6, 7) |
+                           site_code =="lubb.us" & month %in% c(3, 4, 5, 6, 7, 8, 9, 10)
+                           
 )
 
-# sum over all growing season months to get total growing season precip per year per site
-ppt_annual_gs_only <- aggregate(precip ~ site_code + gs_year, data = ppt_monthly_gs_only, sum)
+# sum to get total growing season precip per year per site
+ppt_annual_gs_only <- aggregate(precip ~ site_code + gs_year, data = ppt_gs_only, sum)
 
 ppt_annual_gs_only <- ppt_annual_gs_only %>%
   rename(year = gs_year)
@@ -114,7 +119,7 @@ ppt_annual_gs_only <- ppt_annual_gs_only %>%
 ppt_annual_gs_only <- ppt_annual_gs_only %>%
   rename(mswep_ppt = precip)
 
-write.csv(ppt_annual_gs_only, file = "/Users/ingridslette/Desktop/NutNet/mswep_ppt_annual_gs_only.csv")
+write.csv(ppt_annual_gs_only, file = "/Users/ingridslette/Desktop/NutNet/mswep_ppt_annual_gs_only_2025-04-15.csv")
 
 
 
