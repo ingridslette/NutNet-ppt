@@ -12,6 +12,47 @@ library(ggpubr)
 
 ### Loading, viewing, and filtering precipitation and mass data 
 
+mass <- read.csv("/Users/ingridslette/Desktop/NutNet/comb-by-plot-clim-soil_2025-04-14.csv",
+                 na.strings = c("NULL","NA"))
+
+unique(mass$site_code)
+unique(mass$trt)
+unique(mass$year_trt)
+
+mass1 <- filter(mass, year_trt > 0)
+unique(mass1$year_trt)
+unique(mass1$site_code)
+
+mass1 <- filter(mass1, trt %in% c("Control", "NPK")) 
+unique(mass1$trt)
+unique(mass1$site_code)
+
+mass1 <- mass1 %>%
+  mutate(
+    live_mass = if_else(
+      if_all(c(vascular_live_mass, nonvascular_live_mass), is.na),
+      NA_real_,
+      rowSums(across(c(vascular_live_mass, nonvascular_live_mass)), na.rm = TRUE)
+    )
+  )
+
+site_year_counts <- mass1 %>%
+  group_by(site_code, trt) %>%
+  filter(!is.na(live_mass)) %>% 
+  summarise(year_count = n_distinct(year), .groups = 'drop')
+
+sites_with_6_years <- site_year_counts %>%
+  filter(year_count >= 6) %>%
+  group_by(site_code) %>% 
+  filter(n_distinct(trt) == 2) 
+
+mass2 <- mass1 %>%
+  filter(site_code %in% sites_with_6_years$site_code)
+
+unique(mass2$site_code)
+
+
+
 mswep <- read.csv("/Users/ingridslette/Desktop/NutNet/mswep_ppt_annual_gs_only.csv")
 
 mswep <- mswep %>%
@@ -30,15 +71,6 @@ mswep <- mswep %>%
          mswep_ppt_sd = (mswep_ppt - avg_ppt_site) / sd_ppt_site) %>%
   ungroup()
 
-mass <- read.csv("/Users/ingridslette/Desktop/NutNet/comb-by-plot-clim-soil-diversity_2024-05-31.csv",
-                 na.strings = c("NULL","NA"))
-
-unique(mass$site_code)
-unique(mass$trt)
-unique(mass$year_trt)
-
-mass1 <- filter(mass, year_trt > 0)
-unique(mass1$year_trt)
 
 mass_ppt <- inner_join(mass1, mswep, by=c("site_code", "year"))
 
@@ -50,25 +82,6 @@ mass_ppt <- mass_ppt %>%
 
 unique(mass_ppt$trt)
 
-mass_ppt_c_npk <- filter(mass_ppt, trt %in% c("Control", "NPK")) 
-
-unique(mass_ppt_c_npk$site_code)
-unique(mass_ppt_c_npk$trt)
-
-site_year_counts <- mass_ppt_c_npk %>%
-  group_by(site_code, trt) %>%
-  filter(!is.na(vascular_live_mass)) %>% 
-  summarise(year_count = n_distinct(year), .groups = 'drop')
-
-sites_with_6_years <- site_year_counts %>%
-  filter(year_count >= 6) %>%
-  group_by(site_code) %>% 
-  filter(n_distinct(trt) == 2) 
-
-mass_ppt_c_npk <- mass_ppt_c_npk %>%
-  filter(site_code %in% sites_with_6_years$site_code)
-
-unique(mass_ppt_c_npk$site_code)
 
 # Filter to keep only sites with a certain ppt range
 mass_ppt_c_npk <- mass_ppt_c_npk %>%
