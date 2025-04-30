@@ -43,6 +43,7 @@ mass2 <- mass1 %>%
 unique(mass2$site_code)
 
 ## popped over to script "daily-to-gs-ppt.R" here, to get growing season ppt for the sites included in mass2
+## exported that as csv and now loading it here
 
 mswep <- read.csv("/Users/ingridslette/Desktop/NutNet/mswep_ppt_annual_gs_only_2025-04-15.csv")
 
@@ -61,10 +62,8 @@ unique(mswep$year)
 
 mswep <- mswep %>%
   group_by(site_code) %>%
-  mutate(avg_ppt_site = mean(mswep_ppt, na.rm = TRUE),
-         sd_ppt_site = sd(mswep_ppt, na.rm = TRUE),
-         mswep_ppt_per = (mswep_ppt / avg_ppt_site) * 100, 
-         mswep_ppt_sd = (mswep_ppt - avg_ppt_site) / sd_ppt_site) %>%
+  mutate(avg_ppt = mean(mswep_ppt, na.rm = TRUE),
+         sd_ppt = sd(mswep_ppt, na.rm = TRUE)) %>%
   ungroup()
 
 unique(mass2$site_code)
@@ -78,34 +77,43 @@ mass_ppt <- mass_ppt %>%
   mutate(log_mass = log10(vascular_live_mass),
          log_mswep_ppt = log10(mswep_ppt))
 
-
-# Filter to keep only sites with a certain ppt range
 mass_ppt <- mass_ppt %>%
   group_by(site_code) %>%
-  filter(max(mswep_ppt_sd) > 1 & min(mswep_ppt_sd) < -1) %>%
+  mutate(min_ppt = min(mswep_ppt, na.rm = TRUE),
+         max_ppt = max(mswep_ppt, na.rm = TRUE)) %>%
+  ungroup()
+
+# Filter to keep only sites with an observed ppt range that spans at least +- 1 sd of long-term avg
+mass_ppt <- mass_ppt %>%
+  group_by(site_code) %>%
+  filter(min_ppt <= (avg_ppt - sd_ppt), max_ppt >= (avg_ppt + sd_ppt)) %>%
   ungroup()
 
 unique(mass_ppt$site_code)
+
 
 ### Initial graphs
 ggplot(data = mass_ppt, aes(x = mswep_ppt, y = vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("Growing Season Precipitation (mm)") + ylab("Biomass (g/m2)") +
-  theme_bw()
+  theme_bw() +
+  scale_color_manual(values = c("#4267ac", "#ff924c"))
 
-ggplot(data = subset(mass_ppt, !is.na(vascular_live_mass)), aes(x = mswep_ppt, y = vascular_live_mass, color = trt, shape = trt)) +
+ggplot(data = mass_ppt, aes(x = mswep_ppt, y = vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("Growing Season Precipitation (mm)") + ylab("Biomass (g/m2)") +
   facet_wrap(vars(site_code), scales = "free") +
-  theme_bw()
+  theme_bw() +
+  scale_color_manual(values = c("#4267ac", "#ff924c"))
 
-ggplot(data = subset(mass_ppt, !is.na(vascular_live_mass)), aes(x=year_trt, y=vascular_live_mass, color = trt, shape = trt)) +
+ggplot(data = mass_ppt, aes(x=year_trt, y=vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("Treatment Year") + ylab("Biomass (g/m2)") +
   facet_wrap(vars(site_code), scales = "free") +
-  theme_bw()
+  theme_bw() +
+  scale_color_manual(values = c("#4267ac", "#ff924c"))
 
-ggplot(data = subset(mass_ppt, !is.na(vascular_live_mass)), aes(x = mswep_ppt, y = vascular_live_mass)) +
+ggplot(data = mass_ppt, aes(x = mswep_ppt, y = vascular_live_mass)) +
   geom_smooth(aes(group = site_code, color = site_code), method = "lm", se = FALSE) +
   geom_smooth(method = "lm", se = FALSE, color = "black") +
   facet_wrap(~ trt, nrow = 2) +
@@ -116,8 +124,9 @@ ggplot(data = subset(mass_ppt, !is.na(vascular_live_mass)), aes(x = mswep_ppt, y
   theme(legend.position = "right")
 
 
-### Graphing back-transformed data
+### Graphing back-transformed data, to allow non-linear curves on linear scale
 
+# back transform from log-log scale
 fit_model_and_predict <- function(data) {
   model <- lm(log_mass ~ log_mswep_ppt, data = data)
   new_data <- data.frame(log_mswep_ppt = seq(min(data$log_mswep_ppt, na.rm = TRUE),
@@ -135,20 +144,6 @@ predictions <- mass_ppt %>%
   group_modify(~ fit_model_and_predict(.x)) %>%
   ungroup()
 
-ggplot(mass_ppt, aes(x = mswep_ppt, y = vascular_live_mass, color = site_code)) +
-  geom_line(data = predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass), linewidth = 1) +
-  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)") +
-  facet_wrap(~ trt) +
-  theme_bw()
-
-ggplot(mass_ppt, aes(x = mswep_ppt, y = vascular_live_mass, color = trt)) +
-  geom_point() +
-  geom_line(data = predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass), linewidth = 1) +
-  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)") +
-  facet_wrap(~ site_code, scales = "free") +
-  theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
-
 fit_model_and_predict_allsites <- function(data) {
   model <- lm(log_mass ~ log_mswep_ppt, data = data)
   new_data <- data.frame(log_mswep_ppt = seq(min(data$log_mswep_ppt, na.rm = TRUE),
@@ -165,14 +160,6 @@ predictions_allsites <- mass_ppt %>%
   group_modify(~ fit_model_and_predict_allsites(.x)) %>%
   ungroup()
 
-ggplot(mass_ppt, aes(x = mswep_ppt, y = vascular_live_mass, color = site_code)) +
-  geom_line(data = predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass), linewidth = 1) +
-  geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), 
-            linewidth = 1, color = "black") +
-  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)") +
-  facet_wrap(~ trt) +
-  theme_bw(14)
-
 ggplot(data = mass_ppt,aes(x= mswep_ppt, y= vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + 
   geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), linewidth = 1) +
@@ -181,69 +168,59 @@ ggplot(data = mass_ppt,aes(x= mswep_ppt, y= vascular_live_mass, color = trt, sha
   scale_color_manual(values = c("#4267ac", "#ff924c")) +
   theme_bw(14)
 
+ggplot(mass_ppt, aes(x = mswep_ppt, y = vascular_live_mass, color = site_code)) +
+  geom_line(data = predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass), linewidth = 1) +
+  geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), 
+            linewidth = 1, color = "black") +
+  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)") +
+  facet_wrap(~ trt) +
+  theme_bw(14)
 
-### Initial model
-
-c_npk_x_model <- lmer(log_mass ~ log_mswep_ppt * trt + (1 | site_code / year_trt), data = mass_ppt)
-summary(c_npk_x_model)
-
-# Model assumptions check 
-plot(c_npk_x_model)
-
-resid <- residuals(c_npk_x_model)
-hist(resid, breaks = 30, main = "Histogram of Residuals")
-qqnorm(resid)
-qqline(resid)
-
-plot(fitted(c_npk_x_model), resid, main = "Residuals vs Fitted")
+ggplot(mass_ppt, aes(x = mswep_ppt, y = vascular_live_mass, color = trt)) +
+  geom_point() +
+  geom_line(data = predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass), linewidth = 1) +
+  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)") +
+  facet_wrap(~ site_code, scales = "free") +
+  theme_bw() +
+  scale_color_manual(values = c("#4267ac", "#ff924c"))
 
 
 ### Comparing control vs. NPK R2 - Approach 1: calculate and compare difference at each site
 
-# Get unique site codes
 site_codes <- unique(mass_ppt$site_code)
 
 results <- data.frame(site_code = character(), 
                       control_r2 = numeric(), 
-                      npk_r2 = numeric(), 
-                      r2_difference = numeric(),
+                      npk_r2 = numeric(),
                       control_slope = numeric(), 
-                      npk_slope = numeric(), 
-                      slope_difference = numeric(),
+                      npk_slope = numeric(),
                       stringsAsFactors = FALSE)
 
 for (site in site_codes) {
   site_data_control <- subset(mass_ppt, site_code == site & trt == "Control")
   site_data_npk <- subset(mass_ppt, site_code == site & trt == "NPK")
-  control_model <- lm(log_mass ~ log_mswep_ppt, data = site_data_control)
-  npk_model <- lm(log_mass ~ log_mswep_ppt, data = site_data_npk)
-  control_r2 <- summary(control_model)$r.squared
-  npk_r2 <- summary(npk_model)$r.squared
-  r2_difference <- control_r2 - npk_r2
-  control_slope <- coef(control_model)["log_mswep_ppt"]
-  npk_slope <- coef(npk_model)["log_mswep_ppt"]
-  slope_difference <- control_slope - npk_slope
+  
+  control_model <- lmer(log_mass ~ log_mswep_ppt + (1 | block), data = site_data_control)
+  npk_model <- lmer(log_mass ~ log_mswep_ppt + (1 | block), data = site_data_npk)
+  
+  control_r2 <- r2(control_model)$R2_marginal
+  npk_r2 <- r2(control_model)$R2_marginal
+  
+  control_slope <- fixef(control_model)["log_mswep_ppt"]
+  npk_slope <- fixef(npk_model)["log_mswep_ppt"]
+  
   results <- rbind(results, data.frame(
     site_code = site,
     control_r2 = control_r2,
     npk_r2 = npk_r2,
-    r2_difference = r2_difference,
     control_slope = control_slope,
-    npk_slope = npk_slope,
-    slope_difference = slope_difference
+    npk_slope = npk_slope
   ))
 }
-
-# t-test on r2 differences
-t_test_r2_diff <- t.test(results$r2_difference)
-print(t_test_r2_diff)
 
 # paired t-test on r2 differences
 paired_t_test_r2 <- t.test(results$control_r2, results$npk_r2, paired = TRUE)
 print(paired_t_test_r2)
-
-# sites with higher r2 in NPK plots
-sites_higher_r2_npk <- filter(results, r2_difference < 0)
 
 
 ### Comparing control vs. NPK R2 - Approach 2: fit separate models for control and NPK data, calculate and compare z scores
@@ -267,15 +244,9 @@ conditional_r2_npk <- r2_npk$R2_conditional
 marginal_r2_control <- r2_control$R2_marginal
 marginal_r2_npk <- r2_npk$R2_marginal
 
-fixed_effects_control <- fixef(model_control)
-fixed_effects_npk <- fixef(model_npk)
-
-slope_control <- fixed_effects_control["log_mswep_ppt"]
-slope_npk <- fixed_effects_npk["log_mswep_ppt"]
-
 # Compare R2 values using Fisher's Z transformation
-z_control <- 0.5 * log((1 + sqrt(conditional_r2_control)) / (1 - sqrt(conditional_r2_control)))
-z_npk <- 0.5 * log((1 + sqrt(conditional_r2_npk)) / (1 - sqrt(conditional_r2_npk)))
+z_control <- 0.5 * log((1 + sqrt(marginal_r2_control)) / (1 - sqrt(marginal_r2_control)))
+z_npk <- 0.5 * log((1 + sqrt(marginal_r2_npk)) / (1 - sqrt(marginal_r2_npk)))
 
 n_control <- length(unique(subset(mass_ppt, trt == "Control")$site_code))
 n_npk <- length(unique(subset(mass_ppt, trt == "NPK")$site_code))
@@ -287,7 +258,7 @@ z_diff <- (z_control - z_npk) / se_diff
 p_value <- 2 * (1 - pnorm(abs(z_diff)))
 
 cat("Z-score for the difference:", z_diff, "\n")
-cat("P-value for the difference in conditional R-squared values:", p_value, "\n")
+cat("P-value for the difference in marginal R-squared values:", p_value, "\n")
 
 
 ### Comparing control vs. NPK R2 - Approach 3: Bootstrapping to test for difference in R2 between Control and NKP models
