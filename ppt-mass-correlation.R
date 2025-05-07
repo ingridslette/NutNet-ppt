@@ -103,6 +103,20 @@ mass_ppt <- mass_ppt %>%
 unique(mass_ppt$site_code)
 
 
+### Initial model
+
+initial_model <- lmer(log_mass ~ log_mswep_ppt * trt + (1 | site_code / block) + (1 | year_trt), data = mass_ppt)
+summary(initial_model)
+
+# Model assumptions check 
+plot(initial_model)
+resid <- residuals(initial_model)
+hist(resid, breaks = 30, main = "Histogram of Residuals")
+qqnorm(resid)
+qqline(resid)
+plot(fitted(initial_model), resid, main = "Residuals vs Fitted")
+
+
 ### Initial graphs
 ggplot(data = mass_ppt, aes(x = mswep_ppt, y = live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
@@ -489,12 +503,14 @@ results_long <- data.frame(site_code = character(),
 for (site in site_codes) {
   site_data_control <- subset(mass_ppt, site_code == site & trt == "Control")
   site_data_npk <- subset(mass_ppt, site_code == site & trt == "NPK")
+  
   control_model <- lm(log_mass ~ log_mswep_ppt, data = site_data_control)
   npk_model <- lm(log_mass ~ log_mswep_ppt, data = site_data_npk)
   control_r2 <- summary(control_model)$r.squared
   npk_r2 <- summary(npk_model)$r.squared
   control_slope <- coef(control_model)["log_mswep_ppt"]
   npk_slope <- coef(npk_model)["log_mswep_ppt"]
+  
   results_long <- rbind(results_long, data.frame(
     site_code = site,
     trt = "Control",
@@ -620,7 +636,6 @@ slope_annual_plot <- ggplot(data = results_with_averages, aes(x = avg_avg_annual
   theme_bw() +
   scale_color_manual(values = c("#4267ac", "#ff924c"))
 
-
 slope_covar_figure <- ggarrange(slope_lrr_mass_plot, slope_par_plot, slope_ai_plot, slope_rich_plot,
                                 slope_c4_plot, slope_annual_plot,
                                 ncol = 3, nrow = 2, common.legend = TRUE, legend = "bottom", align = 'hv')
@@ -649,66 +664,6 @@ ggplot(variance, aes(x = trt)) +
        x = "Treatment",
        fill = "Variance Type") +
   theme_bw(14)
-
-
-### Additional graphs
-
-# Graphing mean, r2, and slope on absolute scale (not log transformed)
-results_graphing <- data.frame(site_code = character(), 
-                           trt = character(), 
-                           r2 = numeric(), 
-                           slope = numeric(),
-                           mean = numeric(),
-                           stringsAsFactors = FALSE)
-
-for (site in site_codes) {
-  site_data_control <- subset(mass_ppt, site_code == site & trt == "Control")
-  site_data_npk <- subset(mass_ppt, site_code == site & trt == "NPK")
-  control_model <- lm(vascular_live_mass ~ mswep_ppt, data = site_data_control)
-  npk_model <- lm(vascular_live_mass ~ mswep_ppt, data = site_data_npk)
-  control_r2 <- summary(control_model)$r.squared
-  npk_r2 <- summary(npk_model)$r.squared
-  control_slope <- coef(control_model)["mswep_ppt"]
-  npk_slope <- coef(npk_model)["mswep_ppt"]
-  control_mean <- mean(site_data_control$vascular_live_mass, na.rm = TRUE)
-  npk_mean <- mean(site_data_npk$vascular_live_mass, na.rm = TRUE)
-  results_graphing <- rbind(results_graphing, data.frame(
-    site_code = site,
-    trt = "Control",
-    r2 = control_r2,
-    slope = control_slope,
-    mean = control_mean
-  ))
-  results_graphing <- rbind(results_graphing, data.frame(
-    site_code = site,
-    trt = "NPK",
-    r2 = npk_r2,
-    slope = npk_slope,
-    mean = npk_mean
-  ))
-}
-
-r2_boxplot <- ggplot(results_graphing, aes(x = trt, y = r2, color = trt)) +
-  geom_boxplot() +
-  geom_jitter(width = 0.2) +
-  labs(x = "", y = "R2 of ppt vs. mass") +
-  theme_bw(14)
-
-slope_boxplot <- ggplot(results_graphing, aes(x = trt, y = slope, color = trt)) +
-  geom_boxplot() +
-  geom_jitter(width = 0.2) +
-  labs(x = "", y = "Slope of ppt vs. mass") +
-  theme_bw(14)
-
-mean_boxplot <- ggplot(results_graphing, aes(x = trt, y = mean, color = trt)) +
-  geom_boxplot() +
-  geom_jitter(width = 0.2) +
-  labs(x = "", y = "Mean mass") +
-  theme_bw(14)
-
-boxplots <- ggarrange(mean_boxplot, slope_boxplot, r2_boxplot, 
-                      ncol = 3, common.legend = TRUE, legend = "none", align = 'hv')
-boxplots
 
 
 ## Calculating and graphing effect sizes
