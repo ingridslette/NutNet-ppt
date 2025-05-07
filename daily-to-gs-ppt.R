@@ -4,7 +4,7 @@
 
 library(tidyverse)
 
-ppt <- read.csv('/Users/ingridslette/Library/CloudStorage/GoogleDrive-slett152@umn.edu/Shared drives/NutNet_DRAGNet_Shared/NutNet Shared/NutNet Non-Core Data/weather/MSWEP/precip-daily-mswep.csv')
+ppt <- read.csv('/Users/ingridslette/Library/CloudStorage/GoogleDrive-slett152@umn.edu/Shared drives/NutNet_DRAGNet_Shared_External /NutNet Shared/NutNet Non-Core Data/weather/MSWEP/precip-daily-mswep.csv')
 unique(ppt$site_code)
 
 # for sites where the growing season spans multiple calendar years:
@@ -54,7 +54,8 @@ ppt_gs_only <- filter(ppt, site_code =="arch.us" & month %in% c(5, 6, 7, 8, 9, 1
                            site_code =="comp.pt" & month %in% c(10, 11, 12, 1, 2, 3, 4, 5) |
                            site_code =="cowi.ca" & month %in% c(4, 5, 6, 7) |
                            site_code =="elliot.us" & month %in% c(11, 12, 1, 2, 3, 4) |
-                           site_code =="ethamc.au" & month %in% c(5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4, 5) |
+                           site_code =="ethamc.au" & month %in% c(5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4) |
+                        site_code =="ethamc.au" & month %in% c(5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4) |
                            site_code =="frue.ch" & month %in% c(4, 5, 6, 7, 8, 9) |
                            site_code =="hall.us" & month %in% c(4, 5, 6, 7, 8, 9) |
                            site_code =="hopl.us" & month %in% c(11, 12, 1, 2, 3, 4) |
@@ -66,6 +67,7 @@ ppt_gs_only <- filter(ppt, site_code =="arch.us" & month %in% c(5, 6, 7, 8, 9, 1
                            site_code =="koffler.ca" & month %in% c(4, 5, 6, 7, 8) |
                            site_code =="konz.us" & month %in% c(5, 6, 7, 8, 9) |
                            site_code =="lagoas.br" & month %in% c(7, 8, 9, 10, 11, 12, 1, 2) |
+                        site_code =="lancaster.uk" & month %in% c(3, 4, 5, 6, 7, 8) |
                            site_code =="look.us" & month %in% c(3, 4, 5, 6, 7, 8) |
                            site_code =="marc.ar" & month %in% c(4, 5, 6, 7, 8, 9, 10, 11, 12) |
                            site_code =="mcla.us" & month %in% c(11, 12, 1, 2, 3, 4) |
@@ -109,7 +111,7 @@ ppt_annual_gs_only <- ppt_annual_gs_only %>%
 
 unique(ppt_annual_gs_only$site_code)
 
-write.csv(ppt_annual_gs_only, file = "/Users/ingridslette/Desktop/NutNet/mswep_ppt_annual_gs_only_2025-04-15.csv", row.names=FALSE)
+write.csv(ppt_annual_gs_only, file = "/Users/ingridslette/Desktop/NutNet/mswep_ppt_annual_gs_only_2025-05-07.csv", row.names=FALSE)
 
 
 
