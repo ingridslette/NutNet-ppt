@@ -53,11 +53,13 @@ ppt_gs_only <- filter(ppt, site_code =="arch.us" & month %in% c(5, 6, 7, 8, 9, 1
                            site_code =="chilcas.ar" & month %in% c(8, 9, 10, 11, 12, 1, 2, 3) |
                            site_code =="comp.pt" & month %in% c(10, 11, 12, 1, 2, 3, 4, 5) |
                            site_code =="cowi.ca" & month %in% c(4, 5, 6, 7) |
+                        site_code =="doane.us" & month %in% c(5, 6, 7, 8, 9, 10, 11) |
                            site_code =="elliot.us" & month %in% c(11, 12, 1, 2, 3, 4) |
                            site_code =="ethamc.au" & month %in% c(5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4) |
-                        site_code =="ethamc.au" & month %in% c(5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4) |
+                        site_code =="ethass.au" & month %in% c(5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4) |
                            site_code =="frue.ch" & month %in% c(4, 5, 6, 7, 8, 9) |
                            site_code =="hall.us" & month %in% c(4, 5, 6, 7, 8, 9) |
+                        site_code =="hero.uk" & month %in% c(4, 5, 6, 7, 8, 9, 10) |
                            site_code =="hopl.us" & month %in% c(11, 12, 1, 2, 3, 4) |
                            site_code =="jena.de" & month %in% c(3, 4, 5, 6, 7, 8, 9, 10) |
                            site_code =="kbs.us" & month %in% c(4, 5, 6, 7, 8, 9) |
@@ -68,9 +70,13 @@ ppt_gs_only <- filter(ppt, site_code =="arch.us" & month %in% c(5, 6, 7, 8, 9, 1
                            site_code =="konz.us" & month %in% c(5, 6, 7, 8, 9) |
                            site_code =="lagoas.br" & month %in% c(7, 8, 9, 10, 11, 12, 1, 2) |
                         site_code =="lancaster.uk" & month %in% c(3, 4, 5, 6, 7, 8) |
-                           site_code =="look.us" & month %in% c(3, 4, 5, 6, 7, 8) |
+                           site_code =="look.us" & month %in% c(3, 4, 5, 6, 7, 8) | 
+                        site_code =="lubb.us" & month %in% c(3, 4, 5, 6, 7, 8, 9, 10) |
                            site_code =="marc.ar" & month %in% c(4, 5, 6, 7, 8, 9, 10, 11, 12) |
                            site_code =="mcla.us" & month %in% c(11, 12, 1, 2, 3, 4) |
+                        site_code =="msla_3.us" & month %in% c(4, 5, 6, 7) |
+                        site_code =="msla.us" & month %in% c(4, 5, 6, 7) |
+                        site_code =="msla_2.us" & month %in% c(4, 5, 6, 7) |
                            site_code =="mtca.au" & month %in% c(8, 9, 10) |
                            site_code =="nilla.au" & month %in% c(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12) |
                            site_code =="pape.de" & month %in% c(6, 7, 8, 9) |
@@ -90,11 +96,7 @@ ppt_gs_only <- filter(ppt, site_code =="arch.us" & month %in% c(5, 6, 7, 8, 9, 1
                            site_code =="ukul.za" & month %in% c(9, 10, 11, 12, 1, 2, 3, 4) |
                            site_code =="valm.ch" & month %in% c(6, 7, 8) |
                            site_code =="veluwe.nl" & month %in% c(3, 4, 5, 6, 7, 8) |
-                           site_code =="yarra.au" & month %in% c(9, 10, 11, 12, 1, 2, 3) |
-                           site_code =="msla_3.us" & month %in% c(4, 5, 6, 7) |
-                           site_code =="msla.us" & month %in% c(4, 5, 6, 7) |
-                           site_code =="msla_2.us" & month %in% c(4, 5, 6, 7) |
-                           site_code =="lubb.us" & month %in% c(3, 4, 5, 6, 7, 8, 9, 10)
+                           site_code =="yarra.au" & month %in% c(9, 10, 11, 12, 1, 2, 3)
                            
 )
 
