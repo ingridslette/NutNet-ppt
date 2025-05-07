@@ -332,27 +332,14 @@ ggplot(predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass, colour = site_
   theme(legend.position = "none")
 
 
-### Calculating log response ratios
+## incorporating log response ratio of mass to trt
 
 lrr_df <- mass_ppt %>%
   group_by(site_code) %>%
   summarize(
     lrr_mass = log(mean(vascular_live_mass[trt == "NPK"], na.rm = TRUE) /
-                     mean(vascular_live_mass[trt == "Control"], na.rm = TRUE)),
-    lrr_prop_par = log(mean(proportion_par[trt == "NPK"], na.rm = TRUE) /
-                         mean(proportion_par[trt == "Control"], na.rm = TRUE))
+                     mean(vascular_live_mass[trt == "Control"], na.rm = TRUE))
   )
-
-ggplot(lrr_df, aes(x = lrr_prop_par, y = lrr_mass)) +
-  geom_point() +
-  geom_smooth(method = "lm", color = "darkgrey") +
-  labs(x = "LRR proportion par",
-       y = "LRR mass") +
-  theme_bw()
-
-lrr_par_mass_model <- lm(lrr_mass ~ lrr_prop_par, data = lrr_df)
-summary(lrr_par_mass_model)
-
 
 ## incorporating C3/C4 and annual/perennial information from cover data
 
@@ -412,7 +399,7 @@ cover_by_site_trt <- cover_by_site_plot %>%
 mass_ppt_edited <- mass_ppt %>%
   dplyr::select(site_code, block, plot, continent, country, region, habitat, trt, year, 
                 vascular_live_mass, log_mass, mswep_ppt, log_mswep_ppt, prev_ppt, year_trt, 
-                proportion_par, avg_ppt_site, rich, MAT_v2, AI, PET)
+                proportion_par, avg_ppt, rich, MAT_v2, AI, PET)
 
 unique(mass_ppt_edited$site_code)
 
@@ -425,12 +412,9 @@ mass_ppt_edited <- mass_ppt_edited %>%
 mass_ppt_edited <- na.omit(mass_ppt_edited)
 unique(mass_ppt_edited$site_code)
 
-mass_ppt_edited <- mass_ppt_edited %>% 
-  mutate(AI2 = avg_ppt_site/PET)
-
-full_model <- lmer(log_mass ~ trt * (log_mswep_ppt + proportion_par + avg_ppt_site + AI2 + MAT_v2 + rich 
-                                     + prev_ppt + lrr_mass + avg_c4_proportion + avg_annual_proportion)
-                   + (1 | site_code/year_trt), 
+full_model <- lmer(log_mass ~ trt * (log_mswep_ppt + proportion_par + AI + rich + prev_ppt 
+                                     + lrr_mass + avg_c4_proportion + avg_annual_proportion)
+                   + (1 | site_code/year_trt) + (1 | site_code/block), 
                    data = mass_ppt_edited, REML = FALSE, na.action = "na.fail")
 
 summary(full_model)
@@ -438,37 +422,47 @@ full_model_table <- dredge(full_model, m.lim=c(NA, 6), fixed = c("c.Control", "c
 full_model_avg <- model.avg(get.models(full_model_table, subset = delta < 10))
 summary(full_model_avg); sw(full_model_avg)
 
-mass_ai_plot <- ggplot(data = mass_ppt_edited, aes(x = AI2, y = vascular_live_mass, color = trt, shape = trt)) +
+mass_ai_plot <- ggplot(data = mass_ppt_edited, aes(x = AI, y = vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("Aridity Index") + ylab("") +
-  theme_bw(12)
+  theme_bw(12) +
+  scale_color_manual(values = c("#4267ac", "#ff924c"))
+
 mass_ai_plot
 
 mass_par_plot <- ggplot(data = mass_ppt_edited, aes(x = proportion_par, y = vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
-  xlab("Proportion PAR") + ylab("Bimass (g m-2)") +
-  theme_bw(12)
+  xlab("Proportion PAR") + ylab("") +
+  theme_bw(12) +
+  scale_color_manual(values = c("#4267ac", "#ff924c"))
+
 mass_par_plot
 
 mass_rich_plot <- ggplot(data = mass_ppt_edited, aes(x = rich, y = vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("Richness") + ylab("") +
-  theme_bw(12)
+  theme_bw(12) +
+  scale_color_manual(values = c("#4267ac", "#ff924c"))
+
 mass_rich_plot
 
 mass_prev_ppt_plot <- ggplot(data = mass_ppt_edited, aes(x = prev_ppt, y = vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("Previous years' precipitation (mm)") + ylab("") +
-  theme_bw(12)
+  theme_bw(12) +
+  scale_color_manual(values = c("#4267ac", "#ff924c"))
+
 mass_prev_ppt_plot
 
 mass_lrr_mass_plot <- ggplot(data = mass_ppt_edited, aes(x = lrr_mass, y = vascular_live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
-  xlab("Log Response Ratio of Mass") + ylab("") +
-  theme_bw(12)
+  xlab("Log Response Ratio of Mass") + ylab("Biomass (g m-2)") +
+  theme_bw(12) +
+  scale_color_manual(values = c("#4267ac", "#ff924c"))
+
 mass_lrr_mass_plot
 
-mass_covar_figure <- ggarrange(mass_par_plot, mass_rich_plot, mass_lrr_mass_plot, mass_ai_plot, mass_prev_ppt_plot, 
+mass_covar_figure <- ggarrange(mass_lrr_mass_plot, mass_par_plot, mass_rich_plot, mass_ai_plot, mass_prev_ppt_plot, 
                                ncol = 5, common.legend = TRUE, legend = "bottom", align = 'hv')
 mass_covar_figure
 
