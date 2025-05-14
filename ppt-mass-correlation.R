@@ -537,16 +537,18 @@ averages <- mass_ppt_edited %>%
 results_with_averages <- results_long %>%
   left_join(averages, by = c("site_code", "trt"))
 
-full_r2_model <- lm(r2 ~ trt * (avg_proportion_par + avg_avg_ppt + avg_mat + avg_richness + avg_lrr_mass
-                                + avg_avg_c4_proportion + avg_avg_annual_proportion + avg_ai), 
+full_r2_model <- lm(r2 ~ trt * (avg_proportion_par + avg_ai + avg_richness + avg_lrr_mass
+                                + avg_avg_c4_proportion + avg_avg_annual_proportion), 
                     data = results_with_averages, na.action = "na.fail")
 summary(full_r2_model)
 
-full_slope_model <- lm(slope ~ trt * (avg_proportion_par + avg_avg_ppt + avg_mat + avg_richness + avg_lrr_mass
-                                      + avg_avg_c4_proportion + avg_avg_annual_proportion + avg_ai), 
+full_slope_model <- lm(slope ~ trt * (avg_proportion_par  + avg_ai + avg_richness + avg_lrr_mass
+                                      + avg_avg_c4_proportion + avg_avg_annual_proportion), 
                        data = results_with_averages, na.action = "na.fail")
 summary(full_slope_model)
 
+ai_slope_model <- lm(slope ~ trt * avg_ai, data = results_with_averages, na.action = "na.fail")
+summary(ai_slope_model)
 
 r2_lrr_mass_plot <- ggplot(data = results_with_averages, aes(x = avg_lrr_mass, y = r2, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
