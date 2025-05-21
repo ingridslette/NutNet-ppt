@@ -550,6 +550,9 @@ summary(full_slope_model)
 ai_slope_model <- lm(slope ~ trt * avg_ai, data = results_with_averages, na.action = "na.fail")
 summary(ai_slope_model)
 
+ai_slope_model_quad <- lm(slope ~ trt * poly(avg_ai, 2, raw = TRUE), data = results_with_averages)
+summary(ai_slope_model_quad)
+
 
 r2_lrr_mass_plot <- ggplot(data = results_with_averages, aes(x = avg_lrr_mass, y = r2, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
@@ -606,10 +609,17 @@ slope_par_plot <- ggplot(data = results_with_averages, aes(x = avg_proportion_pa
 
 slope_ai_plot <- ggplot(data = results_with_averages, aes(x = avg_ai, y = slope, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
-  xlab("Aridity Index") + ylab("") +
+  xlab("Aridity Index") + ylab("slope") +
   theme_bw() +
   scale_color_manual(values = c("#4267ac", "#ff924c"))
 slope_ai_plot
+
+slope_ai_plot_quad <- ggplot(data = results_with_averages, aes(x = avg_ai, y = slope, color = trt, shape = trt)) +
+  geom_point() + geom_smooth(method = lm, , formula = y ~ poly(x, 2, raw = TRUE), se = FALSE) +
+  xlab("Aridity Index") + ylab("slope") +
+  theme_bw() +
+  scale_color_manual(values = c("#4267ac", "#ff924c"))
+slope_ai_plot_quad
 
 slope_rich_plot <- ggplot(data = results_with_averages, aes(x = avg_richness, y = slope, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
