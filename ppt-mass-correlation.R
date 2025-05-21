@@ -646,8 +646,11 @@ par_lrr_mass_plot
 par_lrr_mass_model <- lm(avg_proportion_par ~ trt * avg_lrr_mass, data = results_with_averages, na.action = "na.fail")
 summary(par_lrr_mass_model) # NS
 
-par_lrr_mass_model <- lm(avg_proportion_par ~ trt * avg_lrr_mass, data = results_with_averages, na.action = "na.fail")
-summary(par_lrr_mass_model)
+slope_lrr_mass_model <- lm(slope ~ trt * avg_lrr_mass, data = results_with_averages, na.action = "na.fail")
+summary(slope_lrr_mass_model) # NS
+
+slope_par_model <- lm(slope ~ trt * avg_proportion_par, data = results_with_averages, na.action = "na.fail")
+summary(slope_par_model) # NS
 
 colimitation_figure <- ggarrange(slope_lrr_mass_plot, slope_par_plot, par_lrr_mass_plot,
                                  ncol = 1, common.legend = TRUE, legend = "bottom", align = 'hv')
