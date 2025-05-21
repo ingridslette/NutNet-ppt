@@ -8,6 +8,7 @@ library(MASS)
 library(broom)
 library(emmeans)
 library(ggpubr)
+library(cowplot)
 
 
 ### Loading, viewing, and filtering precipitation and mass data 
@@ -216,6 +217,16 @@ pal3 <- c("#808080","#808080","#808080","#808080","#808080","#808080","#808080",
           "#808080","#808080","#808080","#808080","#808080","#808080","#808080","#808080","#808080","#808080",
           "#808080")
 
+palette_31 <- c(
+  "#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#66a61e",
+  "#e6ab02", "#a6761d", "#666666", "#1f78b4", "#b2df8a",
+  "#33a02c", "#fb9a99", "#a6cee3", "#fdbf6f", "#ff7f00",
+  "#cab2d6", "#6a3d9a", "#ffff99", "#b15928", "#8dd3c7",
+  "#ffffb3", "#bebada", "#fb8072", "#80b1d3", "#fdb462",
+  "#b3de69", "#fccde5", "#bc80bd", "#ccebc5", "#d9d9d9", 
+  "#ffed6f"
+)
+
 ggplot(predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass, colour = site_code)) +
   geom_line() +
   geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), 
@@ -244,6 +255,18 @@ ggplot(predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass, colour = site_
   facet_wrap(~ trt) +
   theme_bw(14) +
   theme(legend.position = "none")
+
+figure1 <- ggplot(predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass, colour = site_code)) +
+  geom_line() +
+  scale_color_manual(values = palette_31) +
+  geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), 
+            color = "black", linewidth = 1) +
+  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)") +
+  facet_wrap(~ trt) +
+  theme_bw(14) +
+  theme(legend.position = "none")
+figure1
+
 
 
 ### Comparing control vs. NPK R2 - Approach 1: calculate and compare difference at each site
@@ -547,7 +570,7 @@ full_slope_model <- lm(slope ~ trt * (avg_proportion_par  + avg_ai + avg_richnes
                        data = results_with_averages, na.action = "na.fail")
 summary(full_slope_model)
 
-ai_slope_model <- lm(slope ~ trt * avg_ai, data = results_with_averages, na.action = "na.fail")
+ai_slope_model <- lm(slope ~ trt * avg_ai, data = results_with_averages)
 summary(ai_slope_model)
 
 ai_slope_model_quad <- lm(slope ~ trt * poly(avg_ai, 2, raw = TRUE), data = results_with_averages)
@@ -597,7 +620,7 @@ r2_covar_figure
 
 slope_lrr_mass_plot <- ggplot(data = results_with_averages, aes(x = avg_lrr_mass, y = slope, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
-  xlab("Log Response Ratio of Mass") + ylab("Slope of ppt vs. mass") +
+  xlab("Log Response Ratio of Mass") + ylab("") +
   theme_bw() +
   scale_color_manual(values = c("#4267ac", "#ff924c"))
 
@@ -616,7 +639,7 @@ slope_ai_plot
 
 slope_ai_plot_quad <- ggplot(data = results_with_averages, aes(x = avg_ai, y = slope, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, , formula = y ~ poly(x, 2, raw = TRUE), se = FALSE) +
-  xlab("Aridity Index") + ylab("slope") +
+  xlab("Aridity Index") + ylab("Slope of ppt vs. mass") +
   theme_bw() +
   scale_color_manual(values = c("#4267ac", "#ff924c"))
 slope_ai_plot_quad
@@ -640,7 +663,7 @@ slope_annual_plot <- ggplot(data = results_with_averages, aes(x = avg_avg_annual
   scale_color_manual(values = c("#4267ac", "#ff924c"))
 
 
-slope_covar_figure <- ggarrange(slope_lrr_mass_plot, slope_ai_plot, slope_rich_plot,
+slope_covar_figure <- ggarrange(slope_ai_plot_quad, slope_lrr_mass_plot, slope_rich_plot,
                                 slope_par_plot, slope_c4_plot, slope_annual_plot,
                                 ncol = 3, nrow = 2, common.legend = TRUE, legend = "bottom", align = 'hv')
 slope_covar_figure
@@ -665,6 +688,7 @@ summary(slope_par_model) # NS
 colimitation_figure <- ggarrange(slope_lrr_mass_plot, slope_par_plot, par_lrr_mass_plot,
                                  ncol = 1, common.legend = TRUE, legend = "bottom", align = 'hv')
 colimitation_figure
+
 
 ### Calculating and graphing effect sizes
 
@@ -764,4 +788,16 @@ ggplot(cohen_d_df, aes(x = Cohen_d, y = Variable)) +
   
 
 
+fig1_inset <- ggplot(data = results_with_averages, aes(x = avg_ai, y = slope, color = trt, shape = trt)) +
+  geom_point() + geom_smooth(method = lm, , formula = y ~ poly(x, 2, raw = TRUE), se = FALSE) +
+  labs(x = "Aridity Index", y = "Sensitivity", color = "Treatment", shape = "Treatment") +
+  theme_bw(12) +
+  theme(legend.title = element_blank(), legend.position = c(0.77, 0.85), 
+        legend.background = element_rect(fill = alpha("white", 0))) +
+  scale_color_manual(values = c("#BFBFBF", "#666666"))
+
+figure1_with_inset <- ggdraw() + 
+  draw_plot(figure1) +
+  draw_plot(fig1_inset, x = 0.08, y = 0.55, width = 0.22, height = 0.38)
+figure1_with_inset
 
