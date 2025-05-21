@@ -550,6 +550,7 @@ summary(full_slope_model)
 ai_slope_model <- lm(slope ~ trt * avg_ai, data = results_with_averages, na.action = "na.fail")
 summary(ai_slope_model)
 
+
 r2_lrr_mass_plot <- ggplot(data = results_with_averages, aes(x = avg_lrr_mass, y = r2, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
   xlab("Log Response Ratio of Mass") + ylab("R2 of ppt vs. mass") +
@@ -599,7 +600,7 @@ slope_lrr_mass_plot <- ggplot(data = results_with_averages, aes(x = avg_lrr_mass
 
 slope_par_plot <- ggplot(data = results_with_averages, aes(x = avg_proportion_par, y = slope, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
-  xlab("Proportion Par") + ylab("") +
+  xlab("Proportion PAR") + ylab("Slope of ppt vs. mass") +
   theme_bw() +
   scale_color_manual(values = c("#4267ac", "#ff924c"))
 
@@ -629,11 +630,28 @@ slope_annual_plot <- ggplot(data = results_with_averages, aes(x = avg_avg_annual
   scale_color_manual(values = c("#4267ac", "#ff924c"))
 
 
-slope_covar_figure <- ggarrange(slope_lrr_mass_plot, slope_par_plot, slope_ai_plot, slope_rich_plot,
-                                slope_c4_plot, slope_annual_plot,
+slope_covar_figure <- ggarrange(slope_lrr_mass_plot, slope_ai_plot, slope_rich_plot,
+                                slope_par_plot, slope_c4_plot, slope_annual_plot,
                                 ncol = 3, nrow = 2, common.legend = TRUE, legend = "bottom", align = 'hv')
 slope_covar_figure
 
+
+par_lrr_mass_plot <- ggplot(data = results_with_averages, aes(x = avg_lrr_mass, y = avg_proportion_par, color = trt, shape = trt)) +
+  geom_point() + geom_smooth(method = lm, se = FALSE) +
+  xlab("Log Response Ratio of Mass") + ylab("Proportion PAR") +
+  theme_bw() +
+  scale_color_manual(values = c("#4267ac", "#ff924c"))
+par_lrr_mass_plot
+
+par_lrr_mass_model <- lm(avg_proportion_par ~ trt * avg_lrr_mass, data = results_with_averages, na.action = "na.fail")
+summary(par_lrr_mass_model) # NS
+
+par_lrr_mass_model <- lm(avg_proportion_par ~ trt * avg_lrr_mass, data = results_with_averages, na.action = "na.fail")
+summary(par_lrr_mass_model)
+
+colimitation_figure <- ggarrange(slope_lrr_mass_plot, slope_par_plot, par_lrr_mass_plot,
+                                 ncol = 1, common.legend = TRUE, legend = "bottom", align = 'hv')
+colimitation_figure
 
 ### Calculating and graphing effect sizes
 
