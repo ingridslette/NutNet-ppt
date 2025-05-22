@@ -801,3 +801,22 @@ figure1_with_inset <- ggdraw() +
   draw_plot(fig1_inset, x = 0.08, y = 0.55, width = 0.22, height = 0.38)
 figure1_with_inset
 
+
+
+driest_year_mass_ppt <- mass_ppt_edited %>%
+  group_by(site_code, trt) %>%
+  slice_min(mswep_ppt) %>%
+  ungroup()
+
+driest_year_mass_ppt <- driest_year_mass_ppt %>% 
+  mutate(rue = live_mass/mswep_ppt)
+
+rue_trt_model <- lmer(rue ~ trt + (1 | site_code / block) + (1 | year_trt), data = driest_year_mass_ppt)
+summary(rue_trt_model)
+
+driest_year_plot <- ggplot(data = driest_year_mass_ppt, aes(x = mswep_ppt, y = live_mass, color = trt, shape = trt)) +
+  geom_point() + geom_smooth(method = lm, se = FALSE) +
+  xlab("Precipitation") + ylab("Biomass") +
+  theme_bw() +
+  scale_color_manual(values = c("#4267ac", "#ff924c"))
+driest_year_plot
