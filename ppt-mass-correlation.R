@@ -835,9 +835,14 @@ driest_year_plot
 
 driest_year_plot <- ggplot(data = driest_year_mass_ppt, 
                            aes(x = mswep_ppt, y = live_mass, color = trt, shape = trt)) +
-  geom_point() + geom_smooth(method = lm, se = FALSE) +
-  xlab("Precipitation") + ylab("Biomass") +
+  geom_point() + geom_smooth(method = lm) +
+  labs(x = "Precipitation", y = "Biomass", color = "Treatment", shape = "Treatment") +
   theme_bw() +
   scale_color_manual(values = c("#4267ac", "#ff924c"))
 driest_year_plot
+
+initial_model_driest <- lmer(log_mass ~ log_mswep_ppt * trt + (1 | site_code / block) + (1 | year_trt), data = driest_year_mass_ppt)
+summary(initial_model_driest)
+
+
 
