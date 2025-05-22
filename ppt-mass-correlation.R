@@ -787,7 +787,6 @@ ggplot(cohen_d_df, aes(x = Cohen_d, y = Variable)) +
   theme(axis.text.y = element_text(size = 14))
   
 
-
 fig1_inset <- ggplot(data = results_with_averages, aes(x = avg_ai, y = slope, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, , formula = y ~ poly(x, 2, raw = TRUE), se = FALSE) +
   labs(x = "Aridity Index", y = "Sensitivity", color = "Treatment", shape = "Treatment") +
@@ -802,21 +801,33 @@ figure1_with_inset <- ggdraw() +
 figure1_with_inset
 
 
+## Calculating and testing trt effect on RUE 
+
+mass_ppt_edited <- mass_ppt_edited %>% 
+  mutate(rue = live_mass/mswep_ppt)
+
+rue_trt_model <- lmer(rue ~ trt + (1 | site_code / block) + (1 | year_trt), data = mass_ppt_edited)
+summary(rue_trt_model)
+
+ggplot(mass_ppt_edited, aes(x = trt, y = rue)) +
+  geom_boxplot() +
+  labs(x= "Treatment", y= "Rain Use Efficiency")
+  theme_bw(14)
+
+
+## Analyzing only driest-year rue - testing for convergence a la Huxman and Smith 2004
 
 driest_year_mass_ppt <- mass_ppt_edited %>%
   group_by(site_code, trt) %>%
   slice_min(mswep_ppt) %>%
   ungroup()
 
-driest_year_mass_ppt <- driest_year_mass_ppt %>% 
-  mutate(rue = live_mass/mswep_ppt)
-
-rue_trt_model <- lmer(rue ~ trt + (1 | site_code / block) + (1 | year_trt), data = driest_year_mass_ppt)
-summary(rue_trt_model)
-
-driest_year_plot <- ggplot(data = driest_year_mass_ppt, aes(x = mswep_ppt, y = live_mass, color = trt, shape = trt)) +
+driest_year_plot <- ggplot(data = driest_year_mass_ppt, 
+                           aes(x = mswep_ppt, y = live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
   xlab("Precipitation") + ylab("Biomass") +
   theme_bw() +
   scale_color_manual(values = c("#4267ac", "#ff924c"))
 driest_year_plot
+
+
