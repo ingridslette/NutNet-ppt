@@ -304,67 +304,6 @@ paired_t_test_slope <- t.test(results$control_slope, results$npk_slope, paired =
 print(paired_t_test_slope)
 
 
-### Comparing control vs. NPK R2 - Approach 2: fit separate models for control and NPK data, calculate and compare z scores
-
-model_control <- lmer(log_mass ~ log_mswep_ppt + (1 | site_code / year_trt), 
-                      data = subset(mass_ppt, trt == "Control"))
-model_npk <- lmer(log_mass ~ log_mswep_ppt + (1 | site_code / year_trt), 
-                  data = subset(mass_ppt, trt == "NPK"))
-
-summary(model_control)
-summary(model_npk)
-
-AIC(model_control, model_npk)
-
-r2_control <- performance::r2(model_control)
-r2_npk <- performance::r2(model_npk)
-
-conditional_r2_control <- r2_control$R2_conditional
-conditional_r2_npk <- r2_npk$R2_conditional
-
-marginal_r2_control <- r2_control$R2_marginal
-marginal_r2_npk <- r2_npk$R2_marginal
-
-# Compare R2 values using Fisher's Z transformation
-z_control <- 0.5 * log((1 + sqrt(marginal_r2_control)) / (1 - sqrt(marginal_r2_control)))
-z_npk <- 0.5 * log((1 + sqrt(marginal_r2_npk)) / (1 - sqrt(marginal_r2_npk)))
-
-n_control <- length(unique(subset(mass_ppt, trt == "Control")$site_code))
-n_npk <- length(unique(subset(mass_ppt, trt == "NPK")$site_code))
-se_diff <- sqrt((1 / (n_control - 3)) + (1 / (n_npk - 3)))
-
-# Calculate the Z-score for the difference
-z_diff <- (z_control - z_npk) / se_diff
-
-p_value <- 2 * (1 - pnorm(abs(z_diff)))
-
-cat("Z-score for the difference:", z_diff, "\n")
-cat("P-value for the difference in marginal R-squared values:", p_value, "\n")
-
-
-### Comparing control vs. NPK R2 - Approach 3: Bootstrapping to test for difference in R2 between Control and NKP models
-
-r2_diff <- function(data, indices) {
-  data_resampled <- data[indices, ]
-  model_control <- lmer(log_mass ~ log_mswep_ppt + (1 | site_code), 
-                        data = data_resampled[data_resampled$trt == "Control", ])
-  model_npk <- lmer(log_mass ~ log_mswep_ppt + (1 | site_code), 
-                    data = data_resampled[data_resampled$trt == "NPK", ])
-  r2_control <- r.squaredGLMM(model_control)[2]
-  r2_npk <- r.squaredGLMM(model_npk)[2]          
-  return(r2_control - r2_npk)
-}
-
-set.seed(123)
-
-boot_r2 <- boot(data = mass_ppt, statistic = r2_diff, R = 1000)
-
-print(boot_r2)
-
-boot_ci <- boot.ci(boot_r2, type = "perc")
-print(boot_ci)
-
-
 ### Covariate analyses
 
 ## Incorporating log response ratio of mass to trt
@@ -661,44 +600,6 @@ slope_covar_figure <- ggarrange(slope_ai_plot_quad, slope_lrr_mass_plot, slope_p
 slope_covar_figure
 
 
-## Looking at site-level trade-offs in magnitude of response to limiting factors
-
-par_lrr_mass_plot <- ggplot(data = results_with_averages, 
-                            aes(x = avg_lrr_mass, y = avg_proportion_par, color = trt, shape = trt)) +
-  geom_point() + geom_smooth(method = lm, se = FALSE) +
-  xlab("Log Response Ratio of Mass") + ylab("Proportion PAR") +
-  theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
-par_lrr_mass_plot
-
-slope_lrr_mass_plot2 <- ggplot(data = results_with_averages, 
-                               aes(x = avg_lrr_mass, y = slope, color = trt, shape = trt)) +
-  geom_point() + geom_smooth(method = lm, se = FALSE) +
-  xlab("Log Response Ratio of Mass") + ylab("Slope of ppt vs. mass") +
-  theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
-
-slope_par_plot2 <- ggplot(data = results_with_averages, 
-                         aes(x = avg_proportion_par, y = slope, color = trt, shape = trt)) +
-  geom_point() + geom_smooth(method = lm, se = FALSE) +
-  xlab("Proportion PAR") + ylab("Slope of ppt vs. mass") +
-  theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
-
-par_lrr_mass_model <- lm(avg_proportion_par ~ trt * avg_lrr_mass, data = results_with_averages, na.action = "na.fail")
-summary(par_lrr_mass_model) # NS
-
-slope_lrr_mass_model <- lm(slope ~ trt * avg_lrr_mass, data = results_with_averages, na.action = "na.fail")
-summary(slope_lrr_mass_model) # NS
-
-slope_par_model <- lm(slope ~ trt * avg_proportion_par, data = results_with_averages, na.action = "na.fail")
-summary(slope_par_model) # NS
-
-colimitation_figure <- ggarrange(slope_lrr_mass_plot2, slope_par_plot2, par_lrr_mass_plot,
-                                 ncol = 1, common.legend = TRUE, legend = "bottom", align = 'hv')
-colimitation_figure
-
-
 ### Calculating and graphing effect sizes
 
 results_graphing <- data.frame(site_code = character(), 
@@ -836,5 +737,131 @@ driest_year_plot
 
 initial_model_driest <- lmer(log_mass ~ log_mswep_ppt * trt + (1 | site_code / block) + (1 | year_trt), data = driest_year_mass_ppt)
 summary(initial_model_driest)
+
+
+
+# SUPPLEMENTAL ANALYSES
+
+### Comparing control vs. NPK R2 - Approach 2: fit separate models for control and NPK data, calculate and compare z scores
+
+model_control <- lmer(log_mass ~ log_mswep_ppt + (1 | site_code / year_trt), 
+                      data = subset(mass_ppt, trt == "Control"))
+model_npk <- lmer(log_mass ~ log_mswep_ppt + (1 | site_code / year_trt), 
+                  data = subset(mass_ppt, trt == "NPK"))
+
+summary(model_control)
+summary(model_npk)
+
+AIC(model_control, model_npk)
+
+r2_control <- performance::r2(model_control)
+r2_npk <- performance::r2(model_npk)
+
+conditional_r2_control <- r2_control$R2_conditional
+conditional_r2_npk <- r2_npk$R2_conditional
+
+marginal_r2_control <- r2_control$R2_marginal
+marginal_r2_npk <- r2_npk$R2_marginal
+
+# Compare R2 values using Fisher's Z transformation
+z_control <- 0.5 * log((1 + sqrt(marginal_r2_control)) / (1 - sqrt(marginal_r2_control)))
+z_npk <- 0.5 * log((1 + sqrt(marginal_r2_npk)) / (1 - sqrt(marginal_r2_npk)))
+
+n_control <- length(unique(subset(mass_ppt, trt == "Control")$site_code))
+n_npk <- length(unique(subset(mass_ppt, trt == "NPK")$site_code))
+se_diff <- sqrt((1 / (n_control - 3)) + (1 / (n_npk - 3)))
+
+# Calculate the Z-score for the difference
+z_diff <- (z_control - z_npk) / se_diff
+
+p_value <- 2 * (1 - pnorm(abs(z_diff)))
+
+cat("Z-score for the difference:", z_diff, "\n")
+cat("P-value for the difference in marginal R-squared values:", p_value, "\n")
+
+
+### Comparing control vs. NPK R2 - Approach 3: Bootstrapping to test for difference in R2 between Control and NKP models
+
+r2_diff <- function(data, indices) {
+  data_resampled <- data[indices, ]
+  model_control <- lmer(log_mass ~ log_mswep_ppt + (1 | site_code), 
+                        data = data_resampled[data_resampled$trt == "Control", ])
+  model_npk <- lmer(log_mass ~ log_mswep_ppt + (1 | site_code), 
+                    data = data_resampled[data_resampled$trt == "NPK", ])
+  r2_control <- r.squaredGLMM(model_control)[2]
+  r2_npk <- r.squaredGLMM(model_npk)[2]          
+  return(r2_control - r2_npk)
+}
+
+set.seed(123)
+
+boot_r2 <- boot(data = mass_ppt, statistic = r2_diff, R = 1000)
+
+print(boot_r2)
+
+boot_ci <- boot.ci(boot_r2, type = "perc")
+print(boot_ci)
+
+
+
+## Looking at site-level trade-offs in magnitude of response to limiting factors
+
+par_lrr_mass_plot <- ggplot(data = results_with_averages, 
+                            aes(x = avg_lrr_mass, y = avg_proportion_par, color = trt, shape = trt)) +
+  geom_point() + geom_smooth(method = lm, se = FALSE) +
+  xlab("Log Response Ratio of Mass") + ylab("Proportion PAR") +
+  theme_bw() +
+  scale_color_manual(values = c("#4267ac", "#ff924c"))
+par_lrr_mass_plot
+
+slope_lrr_mass_plot2 <- ggplot(data = results_with_averages, 
+                               aes(x = avg_lrr_mass, y = slope, color = trt, shape = trt)) +
+  geom_point() + geom_smooth(method = lm, se = FALSE) +
+  xlab("Log Response Ratio of Mass") + ylab("Slope of ppt vs. mass") +
+  theme_bw() +
+  scale_color_manual(values = c("#4267ac", "#ff924c"))
+
+slope_par_plot2 <- ggplot(data = results_with_averages, 
+                          aes(x = avg_proportion_par, y = slope, color = trt, shape = trt)) +
+  geom_point() + geom_smooth(method = lm, se = FALSE) +
+  xlab("Proportion PAR") + ylab("Slope of ppt vs. mass") +
+  theme_bw() +
+  scale_color_manual(values = c("#4267ac", "#ff924c"))
+
+par_lrr_mass_model <- lm(avg_proportion_par ~ trt * avg_lrr_mass, data = results_with_averages, na.action = "na.fail")
+summary(par_lrr_mass_model) # NS
+
+slope_lrr_mass_model <- lm(slope ~ trt * avg_lrr_mass, data = results_with_averages, na.action = "na.fail")
+summary(slope_lrr_mass_model) # NS
+
+slope_par_model <- lm(slope ~ trt * avg_proportion_par, data = results_with_averages, na.action = "na.fail")
+summary(slope_par_model) # NS
+
+colimitation_figure <- ggarrange(slope_lrr_mass_plot2, slope_par_plot2, par_lrr_mass_plot,
+                                 ncol = 1, common.legend = TRUE, legend = "bottom", align = 'hv')
+colimitation_figure
+
+
+
+
+
+
+
+ai_lrr_model <- lm(avg_lrr_mass ~ avg_ai, data = results_with_averages)
+summary(ai_lrr_model)
+
+
+ai_lrr_plot <- ggplot(data = results_with_averages, aes(x = avg_ai, y = avg_lrr_mass)) +
+  geom_point(color = "darkgrey") + geom_smooth(method = lm, se = FALSE, color = "black") +
+  labs(x = "Aridity Index",  y = "LRR mass") +
+  theme_bw() 
+ai_lrr_plot
+
+
+
+
+
+
+
 
 
