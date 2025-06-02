@@ -807,7 +807,7 @@ ggplot(mass_ppt_edited, aes(x = trt, y = rue)) +
   theme_bw(14)
 
 mass_ppt_edited_subset <- mass_ppt_edited %>%
-  filter(rue < 5)
+  filter(rue < 2)
 
 rue_trt_model_subset <- lmer(rue ~ trt + (1 | site_code / block) + (1 | year_trt), data = mass_ppt_edited_subset)
 summary(rue_trt_model_subset)
@@ -818,7 +818,8 @@ ggplot(mass_ppt_edited_subset, aes(x = trt, y = rue)) +
 theme_bw(14)
 
 
-## Analyzing only driest-year rue - testing for convergence a la Huxman and Smith 2004
+## Analyzing only data from the driest year at each site
+### testing for convergence of RUE a la Huxman and Smith 2004
 
 driest_year_mass_ppt <- mass_ppt_edited %>%
   group_by(site_code, trt) %>%
