@@ -27,14 +27,13 @@ mass1 <- filter(mass1, trt %in% c("Control", "NPK"))
 unique(mass1$trt)
 
 mass1 <- mass1 %>%
-  mutate(
-    live_mass = case_when(
-      !is.na(vascular_live_mass) | !is.na(nonvascular_live_mass) ~ 
-        rowSums(across(c(vascular_live_mass, nonvascular_live_mass, standing_dead_mass)), na.rm = TRUE),
-      is.na(vascular_live_mass) & is.na(nonvascular_live_mass) ~ 
-        unsorted_live_mass
-      )
-    )
+  mutate(live_mass = case_when(
+    !is.na(vascular_live_mass) | !is.na(nonvascular_live_mass) ~ 
+      rowSums(across(c(vascular_live_mass, nonvascular_live_mass, standing_dead_mass)), na.rm = TRUE),
+    is.na(vascular_live_mass) & is.na(nonvascular_live_mass) ~ 
+      unsorted_live_mass
+  )
+  )
 
 site_year_counts <- mass1 %>%
   group_by(site_code, trt) %>%
@@ -54,42 +53,41 @@ unique(mass2$site_code)
 ## popped over to script "daily-to-gs-ppt.R" here, to get growing season ppt for the sites included in mass2
 ## exported that as csv and now loading it here
 
-mswep <- read.csv("/Users/ingridslette/Desktop/NutNet/mswep_ppt_annual_gs_only_2025-05-07.csv")
+ppt_data <- read.csv("/Users/ingridslette/Desktop/NutNet/ppt_annual_gs_only_2025-06-02.csv")
 
-unique(mswep$site_code)
+unique(ppt_data$site_code)
 
-mswep <- mswep %>%
+ppt_data <- ppt_data %>%
   arrange(site_code, year) %>% 
   group_by(site_code) %>%
-  mutate(prev_ppt = lag(mswep_ppt)) %>%
+  mutate(prev_ppt = lag(ppt)) %>%
   ungroup()
 
-mswep <- filter(mswep, year >= 1983)
+ppt_data <- filter(ppt_data, year >= 1983)
+ppt_data <- filter(ppt_data, year < 2025) 
+unique(ppt_data$year)
 
-mswep <- filter(mswep, year < 2025) 
-unique(mswep$year)
-
-mswep <- mswep %>%
+ppt_data <- ppt_data %>%
   group_by(site_code) %>%
-  mutate(avg_ppt = mean(mswep_ppt, na.rm = TRUE),
-         sd_ppt = sd(mswep_ppt, na.rm = TRUE)) %>%
+  mutate(avg_ppt = mean(ppt, na.rm = TRUE),
+         sd_ppt = sd(ppt, na.rm = TRUE)) %>%
   ungroup()
 
 unique(mass2$site_code)
-unique(mswep$site_code)
+unique(ppt_data$site_code)
 
-mass_ppt <- inner_join(mass2, mswep, by = c("site_code", "year"))
+mass_ppt <- inner_join(mass2, ppt_data, by = c("site_code", "year"))
 
 unique(mass_ppt$site_code)
 
 mass_ppt <- mass_ppt %>%
   mutate(log_mass = log10(live_mass),
-         log_mswep_ppt = log10(mswep_ppt))
+         log_ppt = log10(ppt))
 
 mass_ppt <- mass_ppt %>%
   group_by(site_code) %>%
-  mutate(min_ppt = min(mswep_ppt, na.rm = TRUE),
-         max_ppt = max(mswep_ppt, na.rm = TRUE)) %>%
+  mutate(min_ppt = min(ppt, na.rm = TRUE),
+         max_ppt = max(ppt, na.rm = TRUE)) %>%
   ungroup()
 
 # Filter to keep only sites with an observed ppt range that spans at least +- 1 sd of long-term avg
@@ -103,7 +101,7 @@ unique(mass_ppt$site_code)
 
 ### Initial model
 
-initial_model <- lmer(log_mass ~ log_mswep_ppt * trt + (1 | site_code / block) + (1 | year_trt), data = mass_ppt)
+initial_model <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), data = mass_ppt)
 summary(initial_model)
 
 # Model assumptions check 
@@ -116,13 +114,13 @@ plot(fitted(initial_model), resid, main = "Residuals vs Fitted")
 
 
 ### Initial graphs
-ggplot(data = mass_ppt, aes(x = mswep_ppt, y = live_mass, color = trt, shape = trt)) +
+ggplot(data = mass_ppt, aes(x = ppt, y = live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("Growing Season Precipitation (mm)") + ylab("Biomass (g/m2)") +
   theme_bw() +
   scale_color_manual(values = c("#4267ac", "#ff924c"))
 
-ggplot(data = mass_ppt, aes(x = mswep_ppt, y = live_mass, color = trt, shape = trt)) +
+ggplot(data = mass_ppt, aes(x = ppt, y = live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("Growing Season Precipitation (mm)") + ylab("Biomass (g/m2)") +
   facet_wrap(vars(site_code), scales = "free") +
@@ -136,7 +134,7 @@ ggplot(data = mass_ppt, aes(x = year_trt, y = live_mass, color = trt, shape = tr
   theme_bw() +
   scale_color_manual(values = c("#4267ac", "#ff924c"))
 
-ggplot(data = mass_ppt, aes(x = mswep_ppt, y = live_mass)) +
+ggplot(data = mass_ppt, aes(x = ppt, y = live_mass)) +
   geom_smooth(aes(group = site_code, color = site_code), method = "lm", se = FALSE) +
   geom_smooth(method = "lm", se = FALSE, color = "black") +
   facet_wrap(~ trt, nrow = 2) +
@@ -151,9 +149,9 @@ ggplot(data = mass_ppt, aes(x = mswep_ppt, y = live_mass)) +
 
 # back transform from log-log scale
 fit_model_and_predict <- function(data) {
-  model <- lm(log_mass ~ log_mswep_ppt, data = data)
-  new_data <- data.frame(log_mswep_ppt = seq(min(data$log_mswep_ppt, na.rm = TRUE),
-                                             max(data$log_mswep_ppt, na.rm = TRUE),
+  model <- lm(log_mass ~ log_ppt, data = data)
+  new_data <- data.frame(log_ppt = seq(min(data$log_ppt, na.rm = TRUE),
+                                             max(data$log_ppt, na.rm = TRUE),
                                              length.out = 100))
   new_data$predicted_log_mass <- predict(model, newdata = new_data)
   new_data$predicted_mass <- 10^new_data$predicted_log_mass
@@ -168,9 +166,9 @@ predictions <- mass_ppt %>%
   ungroup()
 
 fit_model_and_predict_allsites <- function(data) {
-  model <- lm(log_mass ~ log_mswep_ppt, data = data)
-  new_data <- data.frame(log_mswep_ppt = seq(min(data$log_mswep_ppt, na.rm = TRUE),
-                                             max(data$log_mswep_ppt, na.rm = TRUE),
+  model <- lm(log_mass ~ log_ppt, data = data)
+  new_data <- data.frame(log_ppt = seq(min(data$log_ppt, na.rm = TRUE),
+                                             max(data$log_ppt, na.rm = TRUE),
                                              length.out = 100))
   new_data$predicted_log_mass <- predict(model, newdata = new_data)
   new_data$predicted_mass <- 10^new_data$predicted_log_mass
@@ -183,25 +181,25 @@ predictions_allsites <- mass_ppt %>%
   group_modify(~ fit_model_and_predict_allsites(.x)) %>%
   ungroup()
 
-ggplot(data = mass_ppt, aes(x = mswep_ppt, y = live_mass, color = trt, shape = trt)) +
+ggplot(data = mass_ppt, aes(x = ppt, y = live_mass, color = trt, shape = trt)) +
   geom_point() + 
-  geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), linewidth = 1) +
+  geom_line(data = predictions_allsites, aes(x = 10^log_ppt, y = predicted_mass), linewidth = 1) +
   xlab("Growing Season Precipitation (mm)") + ylab("Biomass (g/m2)") +
   labs(color = "Treatment", shape = "Treatment") +
   scale_color_manual(values = c("#4267ac", "#ff924c")) +
   theme_bw(14)
 
-ggplot(mass_ppt, aes(x = mswep_ppt, y = live_mass, color = trt)) +
+ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = trt)) +
   geom_point() +
-  geom_line(data = predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass), linewidth = 1) +
+  geom_line(data = predictions, aes(x = 10^log_ppt, y = predicted_mass), linewidth = 1) +
   labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)", color = "Treatment") +
   facet_wrap(~ site_code, scales = "free") +
   theme_bw() +
   scale_color_manual(values = c("#4267ac", "#ff924c"))
 
-ggplot(mass_ppt, aes(x = mswep_ppt, y = live_mass, color = site_code)) +
-  geom_line(data = predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass), linewidth = 1) +
-  geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), 
+ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = site_code)) +
+  geom_line(data = predictions, aes(x = 10^log_ppt, y = predicted_mass), linewidth = 1) +
+  geom_line(data = predictions_allsites, aes(x = 10^log_ppt, y = predicted_mass), 
             linewidth = 1, color = "black") +
   labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)") +
   facet_wrap(~ trt) +
@@ -227,39 +225,39 @@ palette_31 <- c(
   "#ffed6f"
 )
 
-ggplot(predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass, colour = site_code)) +
+ggplot(predictions, aes(x = 10^log_ppt, y = predicted_mass, colour = site_code)) +
   geom_line() +
-  geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), 
+  geom_line(data = predictions_allsites, aes(x = 10^log_ppt, y = predicted_mass), 
             color = "black", linewidth = 1) +
   labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)") +
   facet_wrap(~ trt) +
   theme_bw(14) +
   theme(legend.position = "none")
 
-ggplot(predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass, colour = site_code)) +
+ggplot(predictions, aes(x = 10^log_ppt, y = predicted_mass, colour = site_code)) +
   geom_line() +
   scale_color_manual(values = pal2) +
-  geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), 
+  geom_line(data = predictions_allsites, aes(x = 10^log_ppt, y = predicted_mass), 
             color = "black", linewidth = 1) +
   labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)") +
   facet_wrap(~ trt) +
   theme_bw(14) +
   theme(legend.position = "none")
 
-ggplot(predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass, colour = site_code)) +
+ggplot(predictions, aes(x = 10^log_ppt, y = predicted_mass, colour = site_code)) +
   geom_line() +
   scale_color_manual(values = pal3) +
-  geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), 
+  geom_line(data = predictions_allsites, aes(x = 10^log_ppt, y = predicted_mass), 
             color = "black", linewidth = 1) +
   labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)") +
   facet_wrap(~ trt) +
   theme_bw(14) +
   theme(legend.position = "none")
 
-figure1 <- ggplot(predictions, aes(x = 10^log_mswep_ppt, y = predicted_mass, colour = site_code)) +
+figure1 <- ggplot(predictions, aes(x = 10^log_ppt, y = predicted_mass, colour = site_code)) +
   geom_line() +
   scale_color_manual(values = palette_31) +
-  geom_line(data = predictions_allsites, aes(x = 10^log_mswep_ppt, y = predicted_mass), 
+  geom_line(data = predictions_allsites, aes(x = 10^log_ppt, y = predicted_mass), 
             color = "black", linewidth = 1) +
   labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)") +
   facet_wrap(~ trt) +
@@ -282,12 +280,12 @@ results <- data.frame(site_code = character(),
 for (site in site_codes) {
   site_data_control <- subset(mass_ppt, site_code == site & trt == "Control")
   site_data_npk <- subset(mass_ppt, site_code == site & trt == "NPK")
-  control_model <- lm(log_mass ~ log_mswep_ppt, data = site_data_control)
-  npk_model <- lm(log_mass ~ log_mswep_ppt, data = site_data_npk)
+  control_model <- lm(log_mass ~ log_ppt, data = site_data_control)
+  npk_model <- lm(log_mass ~ log_ppt, data = site_data_npk)
   control_r2 <- summary(control_model)$r.squared
   npk_r2 <- summary(npk_model)$r.squared
-  control_slope <- coef(control_model)["log_mswep_ppt"]
-  npk_slope <- coef(npk_model)["log_mswep_ppt"]
+  control_slope <- coef(control_model)["log_ppt"]
+  npk_slope <- coef(npk_model)["log_ppt"]
   results <- rbind(results, data.frame(
     site_code = site,
     control_r2 = control_r2,
@@ -316,7 +314,7 @@ lrr_df <- mass_ppt %>%
 
 ## Incorporating C3/C4 and annual/perennial information from cover data
 cover <- read.csv("/Users/ingridslette/Desktop/NutNet/full-cover_2025-01-31.csv",
-                 na.strings = c("NULL","NA"))
+                  na.strings = c("NULL","NA"))
 
 cover <- cover %>%
   filter(site_code %in% site_codes)
@@ -367,7 +365,7 @@ cover_by_site_trt <- cover_by_site_plot %>%
 
 mass_ppt_edited <- mass_ppt %>%
   dplyr::select(site_code, block, plot, continent, country, region, habitat, trt, year, 
-                live_mass, log_mass, mswep_ppt, log_mswep_ppt, prev_ppt, year_trt, 
+                live_mass, log_mass, ppt, log_ppt, prev_ppt, year_trt, 
                 proportion_par, avg_ppt, rich, MAT_v2, AI, PET)
 
 unique(mass_ppt_edited$site_code)
@@ -382,7 +380,7 @@ mass_ppt_edited <- na.omit(mass_ppt_edited)
 unique(mass_ppt_edited$site_code)
 
 ## covariate model of mass
-full_model <- lmer(log_mass ~ trt * (log_mswep_ppt + proportion_par + AI + rich + prev_ppt 
+full_model <- lmer(log_mass ~ trt * (log_ppt + proportion_par + AI + rich + prev_ppt 
                                      + lrr_mass + avg_c4_proportion + avg_annual_proportion)
                    + (1 | site_code/year_trt) + (1 | site_code/block), 
                    data = mass_ppt_edited, REML = FALSE, na.action = "na.fail")
@@ -451,12 +449,12 @@ results_long <- data.frame(site_code = character(),
 for (site in site_codes) {
   site_data_control <- subset(mass_ppt, site_code == site & trt == "Control")
   site_data_npk <- subset(mass_ppt, site_code == site & trt == "NPK")
-  control_model <- lm(log_mass ~ log_mswep_ppt, data = site_data_control)
-  npk_model <- lm(log_mass ~ log_mswep_ppt, data = site_data_npk)
+  control_model <- lm(log_mass ~ log_ppt, data = site_data_control)
+  npk_model <- lm(log_mass ~ log_ppt, data = site_data_npk)
   control_r2 <- summary(control_model)$r.squared
   npk_r2 <- summary(npk_model)$r.squared
-  control_slope <- coef(control_model)["log_mswep_ppt"]
-  npk_slope <- coef(npk_model)["log_mswep_ppt"]
+  control_slope <- coef(control_model)["log_ppt"]
+  npk_slope <- coef(npk_model)["log_ppt"]
   control_mean <- mean(site_data_control$live_mass, na.rm = TRUE)
   npk_mean <- mean(site_data_npk$live_mass, na.rm = TRUE)
   results_long <- rbind(results_long, data.frame(
@@ -603,21 +601,21 @@ slope_covar_figure
 ### Calculating and graphing effect sizes
 
 results_graphing <- data.frame(site_code = character(), 
-                           trt = character(), 
-                           r2 = numeric(), 
-                           slope = numeric(),
-                           mean = numeric(),
-                           stringsAsFactors = FALSE)
+                               trt = character(), 
+                               r2 = numeric(), 
+                               slope = numeric(),
+                               mean = numeric(),
+                               stringsAsFactors = FALSE)
 
 for (site in site_codes) {
   site_data_control <- subset(mass_ppt, site_code == site & trt == "Control")
   site_data_npk <- subset(mass_ppt, site_code == site & trt == "NPK")
-  control_model <- lm(live_mass ~ mswep_ppt, data = site_data_control)
-  npk_model <- lm(live_mass ~ mswep_ppt, data = site_data_npk)
+  control_model <- lm(live_mass ~ ppt, data = site_data_control)
+  npk_model <- lm(live_mass ~ ppt, data = site_data_npk)
   control_r2 <- summary(control_model)$r.squared
   npk_r2 <- summary(npk_model)$r.squared
-  control_slope <- coef(control_model)["mswep_ppt"]
-  npk_slope <- coef(npk_model)["mswep_ppt"]
+  control_slope <- coef(control_model)["ppt"]
+  npk_slope <- coef(npk_model)["ppt"]
   control_mean <- mean(site_data_control$live_mass, na.rm = TRUE)
   npk_mean <- mean(site_data_npk$live_mass, na.rm = TRUE)
   results_graphing <- rbind(results_graphing, data.frame(
@@ -651,14 +649,14 @@ mean_se <- 22.75
 mean_resid_sd <- 89.55
 n_mean <- 62
 
-slope_estimate <- 0.3336
-slope_se <- 0.1338
-slope_resid_sd <- 0.5267
+slope_estimate <- 0.3427
+slope_se <- 0.1342
+slope_resid_sd <- 0.5283
 n_slope <- 62   
 
-r2_estimate <- -0.01054
-r2_se <- 0.02046
-r2_resid_sd <- 0.080554
+r2_estimate <- -0.009264
+r2_se <- 0.020466
+r2_resid_sd <- 0.08057
 n_r2 <- 62
 
 calc_cohen_d <- function(estimate, resid_sd, n) {
@@ -697,7 +695,7 @@ ggplot(cohen_d_df, aes(x = Cohen_d, y = Variable)) +
 ## Calculating and testing trt effect on RUE 
 
 mass_ppt_edited <- mass_ppt_edited %>% 
-  mutate(rue = live_mass/mswep_ppt)
+  mutate(rue = live_mass/ppt)
 
 rue_trt_model <- lmer(rue ~ trt + (1 | site_code / block) + (1 | year_trt), data = mass_ppt_edited)
 summary(rue_trt_model)
@@ -705,7 +703,7 @@ summary(rue_trt_model)
 ggplot(mass_ppt_edited, aes(x = trt, y = rue)) +
   geom_boxplot() +
   labs(x= "Treatment", y= "Rain Use Efficiency")
-  theme_bw(14)
+theme_bw(14)
 
 mass_ppt_edited_subset <- mass_ppt_edited %>%
   filter(rue < 2)
@@ -724,18 +722,18 @@ theme_bw(14)
 
 driest_year_mass_ppt <- mass_ppt_edited %>%
   group_by(site_code, trt) %>%
-  slice_min(mswep_ppt) %>%
+  slice_min(ppt) %>%
   ungroup()
 
 driest_year_plot <- ggplot(data = driest_year_mass_ppt, 
-                           aes(x = mswep_ppt, y = live_mass, color = trt, shape = trt)) +
+                           aes(x = ppt, y = live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   labs(x = "Precipitation", y = "Biomass", color = "Treatment", shape = "Treatment") +
   theme_bw() +
   scale_color_manual(values = c("#4267ac", "#ff924c"))
 driest_year_plot
 
-initial_model_driest <- lmer(log_mass ~ log_mswep_ppt * trt + (1 | site_code / block) + (1 | year_trt), data = driest_year_mass_ppt)
+initial_model_driest <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), data = driest_year_mass_ppt)
 summary(initial_model_driest)
 
 
@@ -744,9 +742,9 @@ summary(initial_model_driest)
 
 ### Comparing control vs. NPK R2 - Approach 2: fit separate models for control and NPK data, calculate and compare z scores
 
-model_control <- lmer(log_mass ~ log_mswep_ppt + (1 | site_code / year_trt), 
+model_control <- lmer(log_mass ~ log_ppt + (1 | site_code / year_trt), 
                       data = subset(mass_ppt, trt == "Control"))
-model_npk <- lmer(log_mass ~ log_mswep_ppt + (1 | site_code / year_trt), 
+model_npk <- lmer(log_mass ~ log_ppt + (1 | site_code / year_trt), 
                   data = subset(mass_ppt, trt == "NPK"))
 
 summary(model_control)
@@ -784,9 +782,9 @@ cat("P-value for the difference in marginal R-squared values:", p_value, "\n")
 
 r2_diff <- function(data, indices) {
   data_resampled <- data[indices, ]
-  model_control <- lmer(log_mass ~ log_mswep_ppt + (1 | site_code), 
+  model_control <- lmer(log_mass ~ log_ppt + (1 | site_code), 
                         data = data_resampled[data_resampled$trt == "Control", ])
-  model_npk <- lmer(log_mass ~ log_mswep_ppt + (1 | site_code), 
+  model_npk <- lmer(log_mass ~ log_ppt + (1 | site_code), 
                     data = data_resampled[data_resampled$trt == "NPK", ])
   r2_control <- r.squaredGLMM(model_control)[2]
   r2_npk <- r.squaredGLMM(model_npk)[2]          
