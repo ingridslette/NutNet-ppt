@@ -99,53 +99,20 @@ mass_ppt <- mass_ppt %>%
 unique(mass_ppt$site_code)
 
 
-### Initial model
+### Main model
 
-initial_model <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), data = mass_ppt)
-summary(initial_model)
+main_model <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), data = mass_ppt)
+summary(main_model)
 
 # Model assumptions check 
-plot(initial_model)
-resid <- residuals(initial_model)
+plot(main_model)
+resid <- residuals(main_model)
 hist(resid, breaks = 30, main = "Histogram of Residuals")
 qqnorm(resid)
 qqline(resid)
-plot(fitted(initial_model), resid, main = "Residuals vs Fitted")
+plot(fitted(main_model), resid, main = "Residuals vs Fitted")
 
-
-### Initial graphs
-ggplot(data = mass_ppt, aes(x = ppt, y = live_mass, color = trt, shape = trt)) +
-  geom_point() + geom_smooth(method = lm) +
-  xlab("Growing Season Precipitation (mm)") + ylab("Biomass (g/m2)") +
-  theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
-
-ggplot(data = mass_ppt, aes(x = ppt, y = live_mass, color = trt, shape = trt)) +
-  geom_point() + geom_smooth(method = lm) +
-  xlab("Growing Season Precipitation (mm)") + ylab("Biomass (g/m2)") +
-  facet_wrap(vars(site_code), scales = "free") +
-  theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
-
-ggplot(data = mass_ppt, aes(x = year_trt, y = live_mass, color = trt, shape = trt)) +
-  geom_point() + geom_smooth(method = lm) +
-  xlab("Treatment Year") + ylab("Biomass (g/m2)") +
-  facet_wrap(vars(site_code), scales = "free") +
-  theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
-
-ggplot(data = mass_ppt, aes(x = ppt, y = live_mass)) +
-  geom_smooth(aes(group = site_code, color = site_code), method = "lm", se = FALSE) +
-  geom_smooth(method = "lm", se = FALSE, color = "black") +
-  facet_wrap(~ trt, nrow = 2) +
-  theme_bw() +
-  labs(x = "Growing Season Precipitation (mm)",
-       y = "Biomass (g/m2)",
-       color = "Site Code") +
-  theme(legend.position = "right")
-
-
-### Graphing back-transformed data, to allow non-linear curves on linear scale
+### Back-transforming data for graphing - allows for non-linear curves on linear scale
 
 # back transform from log-log scale
 fit_model_and_predict <- function(data) {
@@ -273,8 +240,10 @@ site_codes <- unique(mass_ppt$site_code)
 results <- data.frame(site_code = character(), 
                       control_r2 = numeric(), 
                       npk_r2 = numeric(),
+                      r2_diff = numeric(),
                       control_slope = numeric(), 
                       npk_slope = numeric(),
+                      slope_diff = numeric(),
                       stringsAsFactors = FALSE)
 
 for (site in site_codes) {
@@ -290,16 +259,15 @@ for (site in site_codes) {
     site_code = site,
     control_r2 = control_r2,
     npk_r2 = npk_r2,
+    r2_diff = npk_r2 - control_r2,
     control_slope = control_slope,
-    npk_slope = npk_slope
+    npk_slope = npk_slope,
+    slope_diff = npk_slope - control_slope
   ))
 }
 
 paired_t_test_r2 <- t.test(results$control_r2, results$npk_r2, paired = TRUE)
 print(paired_t_test_r2)
-
-paired_t_test_slope <- t.test(results$control_slope, results$npk_slope, paired = TRUE)
-print(paired_t_test_slope)
 
 
 ### Covariate analyses
@@ -321,7 +289,6 @@ cover <- cover %>%
 
 dat1 <- subset(cover, is.na(ps_path) == TRUE)%>%
   separate(Taxon, into = c("Genus", "Species"), remove = FALSE, sep = " ")
-
 
 dat1$ps_path <- ifelse(dat1$Genus == "BINERTIA" | dat1$Genus == "TIDESTROMIA" | dat1$Genus == "PECTIS" | dat1$Genus == "EUPLOCA" | dat1$Genus == "BULBOSTYLIS" | dat1$Genus == "CYPERUS" | dat1$Genus == "FIMBRISTYLIS" | dat1$Genus == "CHAMAESYCE" | dat1$Genus == "ALLIONIA" | dat1$Genus == "CALLIGONUM" | dat1$Genus == "PORTULACA" | dat1$Genus == "EUPHORBIA", "C4",
                        ifelse(dat1$Genus == "BELAPHARIS" | dat1$Genus == "AERVA" | dat1$Genus == "ALTERNANTHERA" | dat1$Genus == "ATRIPLEX" | dat1$Genus == "SUAEDA" | dat1$Genus == "TECTICORNIA" | dat1$Genus == "FLAVERIA" | dat1$Genus == "POLYCARPOREA" | dat1$Genus == "ELEOCHARS" | dat1$Genus == "RHYNCHOSPORA" | dat1$Genus == "EUPHORBIA" | dat1$Genus == "MOLLUGO" | dat1$Genus == "BOERHAVIA" | dat1$Genus == "BASSIA" | dat1$Family == "Poaceae", NA,
@@ -713,8 +680,8 @@ summary(rue_trt_model_subset)
 
 ggplot(mass_ppt_edited_subset, aes(x = trt, y = rue)) +
   geom_boxplot() +
-  labs(x= "Treatment", y= "Rain Use Efficiency")
-theme_bw(14)
+  labs(x= "Treatment", y= "Rain Use Efficiency") +
+  theme_bw(14)
 
 
 ## Analyzing only data from the driest year at each site
@@ -733,8 +700,8 @@ driest_year_plot <- ggplot(data = driest_year_mass_ppt,
   scale_color_manual(values = c("#4267ac", "#ff924c"))
 driest_year_plot
 
-initial_model_driest <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), data = driest_year_mass_ppt)
-summary(initial_model_driest)
+main_model_driest <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), data = driest_year_mass_ppt)
+summary(main_model_driest)
 
 
 
