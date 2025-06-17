@@ -172,65 +172,23 @@ ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = site_code)) +
   facet_wrap(~ trt) +
   theme_bw(14)
 
-pal2 <- c("#800000","#c00000","#ff0000","#ff4040","#ff8080","#a83a01","#e04d01","#f06201","#ff7700","#e0a500",
-          "#ffbc00","#ffcd40","#ffde80","#305020","#406a2a","#609f3f","#80d353","#bdda0f","#0b5043","#117864",
-          "#1abc9c","#03045e","#125d93","#057dcd","#43b0f1","#96cff1","#503658","#80558c","#af7ab3","#c497b0",
-          "#808080")
+my_palette <- colorRampPalette(c("#a50026","#d73027","#f46d43","#fdae61",
+                                 "#CAF0F8","#90E0EF","#00A5D0","#0077B6",
+                                 "#023E8A","#032174","#030455"))
 
-pal3 <- c("#808080","#808080","#808080","#808080","#808080","#808080","#808080","#808080","#808080","#808080",
-          "#808080","#808080","#808080","#808080","#808080","#808080","#808080","#808080","#808080","#808080",
-          "#808080","#808080","#808080","#808080","#808080","#808080","#808080","#808080","#808080","#808080",
-          "#808080")
-
-palette_31 <- c(
-  "#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#66a61e",
-  "#e6ab02", "#a6761d", "#666666", "#1f78b4", "#b2df8a",
-  "#33a02c", "#fb9a99", "#a6cee3", "#fdbf6f", "#ff7f00",
-  "#cab2d6", "#6a3d9a", "#ffff99", "#b15928", "#8dd3c7",
-  "#ffffb3", "#bebada", "#fb8072", "#80b1d3", "#fdb462",
-  "#b3de69", "#fccde5", "#bc80bd", "#ccebc5", "#d9d9d9", 
-  "#ffed6f"
-)
-
-ggplot(predictions, aes(x = 10^log_ppt, y = predicted_mass, colour = site_code)) +
-  geom_line() +
+ggplot(predictions, aes(x = 10^log_ppt, y = predicted_mass, colour = r2_diff)) +
+  geom_line(aes(group = site_code)) +
+  scale_color_gradientn(
+    colors = my_palette(1000),
+    limits = c(-0.25, 0.4),
+    name = "Δ R²"
+  ) +
   geom_line(data = predictions_allsites, aes(x = 10^log_ppt, y = predicted_mass), 
             color = "black", linewidth = 1) +
-  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)") +
+  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m²)") +
   facet_wrap(~ trt) +
-  theme_bw(14) +
-  theme(legend.position = "none")
-
-ggplot(predictions, aes(x = 10^log_ppt, y = predicted_mass, colour = site_code)) +
-  geom_line() +
-  scale_color_manual(values = pal2) +
-  geom_line(data = predictions_allsites, aes(x = 10^log_ppt, y = predicted_mass), 
-            color = "black", linewidth = 1) +
-  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)") +
-  facet_wrap(~ trt) +
-  theme_bw(14) +
-  theme(legend.position = "none")
-
-ggplot(predictions, aes(x = 10^log_ppt, y = predicted_mass, colour = site_code)) +
-  geom_line() +
-  scale_color_manual(values = pal3) +
-  geom_line(data = predictions_allsites, aes(x = 10^log_ppt, y = predicted_mass), 
-            color = "black", linewidth = 1) +
-  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)") +
-  facet_wrap(~ trt) +
-  theme_bw(14) +
-  theme(legend.position = "none")
-
-figure1 <- ggplot(predictions, aes(x = 10^log_ppt, y = predicted_mass, colour = site_code)) +
-  geom_line() +
-  scale_color_manual(values = palette_31) +
-  geom_line(data = predictions_allsites, aes(x = 10^log_ppt, y = predicted_mass), 
-            color = "black", linewidth = 1) +
-  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)") +
-  facet_wrap(~ trt) +
-  theme_bw(14) +
-  theme(legend.position = "none")
-figure1
+  theme_bw(base_size = 14) +
+  theme(legend.position = "right")
 
 
 ### Comparing control vs. NPK R2 - Approach 1: calculate and compare difference at each site
