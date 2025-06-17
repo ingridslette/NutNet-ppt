@@ -135,10 +135,14 @@ predictions <- mass_ppt %>%
 fit_model_and_predict_allsites <- function(data) {
   model <- lm(log_mass ~ log_ppt, data = data)
   new_data <- data.frame(log_ppt = seq(min(data$log_ppt, na.rm = TRUE),
-                                             max(data$log_ppt, na.rm = TRUE),
-                                             length.out = 100))
-  new_data$predicted_log_mass <- predict(model, newdata = new_data)
+                                       max(data$log_ppt, na.rm = TRUE),
+                                       length.out = 100))
+  preds <- predict(model, newdata = new_data, se.fit = TRUE)
+  new_data$predicted_log_mass <- preds$fit
+  new_data$se_log_mass <- preds$se.fit
   new_data$predicted_mass <- 10^new_data$predicted_log_mass
+  new_data$mass_lower <- 10^(new_data$predicted_log_mass - 1.96 * new_data$se_log_mass)
+  new_data$mass_upper <- 10^(new_data$predicted_log_mass + 1.96 * new_data$se_log_mass)
   new_data$trt <- unique(data$trt)
   return(new_data)
 }
@@ -172,24 +176,63 @@ ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = site_code)) +
   facet_wrap(~ trt) +
   theme_bw(14)
 
+
+predictions <- predictions %>%
+  left_join(results %>% dplyr::select(site_code, r2_diff), by = "site_code")
+
 my_palette <- colorRampPalette(c("#a50026","#d73027","#f46d43","#fdae61",
                                  "#CAF0F8","#90E0EF","#00A5D0","#0077B6",
                                  "#023E8A","#032174","#030455"))
 
+my_palette2 <- colorRampPalette(c("#533C88","#7251B5","#B185DB","#D8C0E7",
+                                 "#99E2B4","#78C6A3","#56AB91","#358F80",
+                                 "#14746F","#116460"))
+
 ggplot(predictions, aes(x = 10^log_ppt, y = predicted_mass, colour = r2_diff)) +
   geom_line(aes(group = site_code)) +
   scale_color_gradientn(
-    colors = my_palette(1000),
+    colors = my_palette2(50),
     limits = c(-0.25, 0.4),
-    name = "Δ R²"
-  ) +
+    name = "Δ R²") +
   geom_line(data = predictions_allsites, aes(x = 10^log_ppt, y = predicted_mass), 
-            color = "black", linewidth = 1) +
+            color = "black", linewidth = 0.75) +
   labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m²)") +
   facet_wrap(~ trt) +
   theme_bw(base_size = 14) +
   theme(legend.position = "right")
 
+fig2 <- ggplot(predictions, aes(x = 10^log_ppt, y = predicted_mass, colour = r2_diff)) +
+  geom_line(aes(group = site_code)) +
+  scale_color_gradientn(
+    colors = my_palette2(50),
+    limits = c(-0.25, 0.4),
+    name = "Δ R²") +
+  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m²)") +
+  facet_wrap(~ trt) +
+  theme_bw(base_size = 14) +
+  theme(legend.position = "right")
+fig2
+
+fig2_inset <- ggplot(data = mass_ppt, aes(x = ppt, y = live_mass, color = trt, shape = trt)) +
+  geom_ribbon(data = predictions_allsites, 
+              aes(x = 10^log_ppt, ymin = mass_lower, ymax = mass_upper, fill = trt),
+              inherit.aes = FALSE, alpha = 0.25) +
+  geom_line(data = predictions_allsites, 
+            aes(x = 10^log_ppt, y = predicted_mass)) +
+  labs(x = "GSP (mm)", y = "Biomass (g/m²)", 
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
+  scale_color_manual(values = c("#4267ac", "#ff924c")) +
+  scale_fill_manual(values = c("#4267ac", "#ff924c")) +
+  theme_bw() +
+  theme(legend.title = element_blank(), legend.position = c(0.27, 0.79), 
+        legend.background = element_rect(fill = alpha("white", 0)), 
+        )
+fig2_inset
+
+fig2_with_inset <- ggdraw() + 
+  draw_plot(fig2) +
+  draw_plot(fig2_inset, x = 0.09, y = 0.52, width = 0.22, height = 0.38)
+fig2_with_inset
 
 ### Comparing control vs. NPK R2 - Approach 1: calculate and compare difference at each site
 
@@ -329,7 +372,7 @@ mass_par_plot <- ggplot(data = mass_ppt_edited, aes(x = proportion_par, y = live
 
 mass_ai_plot <- ggplot(data = mass_ppt_edited, aes(x = AI, y = live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
-  xlab("Aridity Index") + ylab("Biomass (g m-2)") +
+  labs(x = "Aridity Index", y = "Biomass (g m-2)", color = "Treatment", shape = "Treatment") +
   theme_bw() +
   scale_color_manual(values = c("#4267ac", "#ff924c"))
 
@@ -493,7 +536,8 @@ slope_ai_plot
 
 slope_ai_plot_quad <- ggplot(data = results_with_averages, aes(x = avg_ai, y = slope, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, , formula = y ~ poly(x, 2, raw = TRUE), se = FALSE) +
-  xlab("Aridity Index") + ylab("Slope of ppt vs. mass") +
+  labs(x = "Aridity Index", y = "Biomass Sensitivity to Precipitation",
+       color = "Treatment", shape = "Treatment") +
   theme_bw() +
   scale_color_manual(values = c("#4267ac", "#ff924c"))
 slope_ai_plot_quad
