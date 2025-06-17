@@ -180,18 +180,14 @@ ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = site_code)) +
 predictions <- predictions %>%
   left_join(results %>% dplyr::select(site_code, r2_diff), by = "site_code")
 
-my_palette <- colorRampPalette(c("#a50026","#d73027","#f46d43","#fdae61",
-                                 "#CAF0F8","#90E0EF","#00A5D0","#0077B6",
-                                 "#023E8A","#032174","#030455"))
-
-my_palette2 <- colorRampPalette(c("#533C88","#7251B5","#B185DB","#D8C0E7",
+my_palette <- colorRampPalette(c("#533C88","#7251B5","#B185DB","#D8C0E7",
                                  "#99E2B4","#78C6A3","#56AB91","#358F80",
                                  "#14746F","#116460"))
 
 ggplot(predictions, aes(x = 10^log_ppt, y = predicted_mass, colour = r2_diff)) +
   geom_line(aes(group = site_code)) +
   scale_color_gradientn(
-    colors = my_palette2(50),
+    colors = my_palette(100),
     limits = c(-0.25, 0.4),
     name = "Δ R²") +
   geom_line(data = predictions_allsites, aes(x = 10^log_ppt, y = predicted_mass), 
@@ -469,10 +465,6 @@ summary(full_slope_model)
 
 ai_slope_model <- lm(slope ~ trt * avg_ai, data = results_with_averages)
 summary(ai_slope_model)
-
-ai_slope_model_quad <- lm(slope ~ trt * poly(avg_ai, 2, raw = TRUE), data = results_with_averages)
-summary(ai_slope_model_quad)
-
 
 r2_lrr_mass_plot <- ggplot(data = results_with_averages, aes(x = avg_lrr_mass, y = r2, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
