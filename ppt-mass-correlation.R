@@ -204,18 +204,20 @@ fig2 <- ggplot(predictions, aes(x = 10^log_ppt, y = predicted_mass, colour = r2_
     limits = c(-0.25, 0.4),
     name = "Δ R²") +
   labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m²)") +
-  facet_wrap(~ trt) +
+  facet_wrap(~ trt, ncol = 1) +
   theme_bw(base_size = 14) +
-  theme(legend.position = "right")
+  theme(legend.position = "bottom")
 fig2
 
 fig2_inset <- ggplot(data = mass_ppt, aes(x = ppt, y = live_mass, color = trt, shape = trt)) +
   geom_ribbon(data = predictions_allsites, 
               aes(x = 10^log_ppt, ymin = mass_lower, ymax = mass_upper, fill = trt),
               inherit.aes = FALSE, alpha = 0.25) +
+  geom_point(alpha = 0.3) +
   geom_line(data = predictions_allsites, 
-            aes(x = 10^log_ppt, y = predicted_mass)) +
-  labs(x = "GSP (mm)", y = "Biomass (g/m²)", 
+            aes(x = 10^log_ppt, y = predicted_mass),
+            linewidth = 1) +
+  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m²)", 
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   scale_color_manual(values = c("#4267ac", "#ff924c")) +
   scale_fill_manual(values = c("#4267ac", "#ff924c")) +
@@ -354,17 +356,24 @@ full_model_table <- dredge(full_model, m.lim=c(NA, 6), fixed = c("c.Control", "c
 full_model_avg <- model.avg(get.models(full_model_table, subset = delta < 10))
 summary(full_model_avg); sw(full_model_avg)
 
-mass_lrr_mass_plot <- ggplot(data = mass_ppt_edited, aes(x = lrr_mass, y = live_mass, color = trt, shape = trt)) +
-  geom_point() + geom_smooth(method = lm) +
-  xlab("Log Response Ratio of Mass") + ylab("") +
+mass_lrr_mass_plot <- ggplot(data = mass_ppt_edited, 
+                             aes(x = lrr_mass, y = live_mass, color = trt, shape = trt)) +
+  geom_point(alpha = 0.25) + 
+  geom_smooth(method = lm) +
+  labs(x = "Log Response Ratio of Mass", y = "Biomass (g/m²)",
+       color = "Treatment", shape = "Treatment") +
   theme_bw() +
   scale_color_manual(values = c("#4267ac", "#ff924c"))
+mass_lrr_mass_plot
 
 mass_par_plot <- ggplot(data = mass_ppt_edited, aes(x = proportion_par, y = live_mass, color = trt, shape = trt)) +
-  geom_point() + geom_smooth(method = lm) +
-  xlab("Proportion PAR") + ylab("") +
+  geom_point(alpha = 0.25) + 
+  geom_smooth(method = lm) +
+  labs(x = "Log Response Ratio of Mass", y = "Biomass (g/m²)",
+       color = "Treatment", shape = "Treatment") +
   theme_bw() +
   scale_color_manual(values = c("#4267ac", "#ff924c"))
+mass_par_plot
 
 mass_ai_plot <- ggplot(data = mass_ppt_edited, aes(x = AI, y = live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
@@ -397,9 +406,9 @@ mass_annual_plot <- ggplot(data = mass_ppt_edited, aes(x = avg_annual_proportion
   scale_color_manual(values = c("#4267ac", "#ff924c"))
 
 
-mass_covar_figure <- ggarrange(mass_ai_plot, mass_lrr_mass_plot, mass_par_plot, mass_prev_ppt_plot,
-                               mass_rich_plot, mass_c4_plot, mass_annual_plot,
-                               ncol = 4, nrow = 2, common.legend = TRUE, legend = "bottom", align = 'hv')
+mass_covar_figure <- ggarrange(mass_lrr_mass_plot, mass_par_plot,
+                               ncol = 2, nrow = 1, common.legend = TRUE, 
+                               legend = "bottom", align = 'hv')
 mass_covar_figure
 
 ## covariate models of R2 and slope
@@ -520,14 +529,15 @@ slope_par_plot <- ggplot(data = results_with_averages, aes(x = avg_proportion_pa
   scale_color_manual(values = c("#4267ac", "#ff924c"))
 
 slope_ai_plot <- ggplot(data = results_with_averages, aes(x = avg_ai, y = slope, color = trt, shape = trt)) +
-  geom_point() + geom_smooth(method = lm, se = FALSE) +
+  geom_point(alpha = 0.5) + geom_smooth(method = lm, se = FALSE) +
   xlab("Aridity Index") + ylab("slope") +
   theme_bw() +
   scale_color_manual(values = c("#4267ac", "#ff924c"))
 slope_ai_plot
 
 slope_ai_plot_quad <- ggplot(data = results_with_averages, aes(x = avg_ai, y = slope, color = trt, shape = trt)) +
-  geom_point() + geom_smooth(method = lm, , formula = y ~ poly(x, 2, raw = TRUE), se = FALSE) +
+  geom_point(alpha = 0.5) + 
+  geom_smooth(method = lm, formula = y ~ poly(x, 2, raw = TRUE), se = FALSE) +
   labs(x = "Aridity Index", y = "Biomass Sensitivity to Precipitation",
        color = "Treatment", shape = "Treatment") +
   theme_bw() +
@@ -558,6 +568,11 @@ slope_covar_figure <- ggarrange(slope_ai_plot_quad, slope_lrr_mass_plot, slope_p
                                 ncol = 3, nrow = 2, common.legend = TRUE, legend = "bottom", align = 'hv')
 slope_covar_figure
 
+
+fig <- ggarrange(fig2_inset, slope_ai_plot_quad,
+                 ncol = 1, common.legend = TRUE, legend = "bottom", align = 'hv')
+
+fig
 
 ### Calculating and graphing effect sizes
 
