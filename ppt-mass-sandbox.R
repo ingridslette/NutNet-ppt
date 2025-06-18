@@ -1,3 +1,5 @@
+# "just playing around" code
+
 
 my_palette <- colorRampPalette(c("#a50026","#d73027","#f46d43","#fdae61",
                                  "#CAF0F8","#90E0EF","#00A5D0","#0077B6",
