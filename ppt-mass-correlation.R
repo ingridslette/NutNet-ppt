@@ -213,18 +213,15 @@ fig2_inset <- ggplot(data = mass_ppt, aes(x = ppt, y = live_mass, color = trt, s
   geom_ribbon(data = predictions_allsites, 
               aes(x = 10^log_ppt, ymin = mass_lower, ymax = mass_upper, fill = trt),
               inherit.aes = FALSE, alpha = 0.25) +
-  geom_point(alpha = 0.3) +
   geom_line(data = predictions_allsites, 
             aes(x = 10^log_ppt, y = predicted_mass),
             linewidth = 1) +
-  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m²)", 
+  labs(x = "GSP (mm)", y = "Biomass (g/m²)", 
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   scale_color_manual(values = c("#4267ac", "#ff924c")) +
   scale_fill_manual(values = c("#4267ac", "#ff924c")) +
-  theme_bw() +
-  theme(legend.title = element_blank(), legend.position = c(0.27, 0.79), 
-        legend.background = element_rect(fill = alpha("white", 0)), 
-        )
+  theme_bw(16) +
+  theme(legend.title = element_blank(), legend.position = "bottom")
 fig2_inset
 
 fig2_with_inset <- ggdraw() + 
@@ -535,12 +532,13 @@ slope_ai_plot <- ggplot(data = results_with_averages, aes(x = avg_ai, y = slope,
   scale_color_manual(values = c("#4267ac", "#ff924c"))
 slope_ai_plot
 
-slope_ai_plot_quad <- ggplot(data = results_with_averages, aes(x = avg_ai, y = slope, color = trt, shape = trt)) +
-  geom_point(alpha = 0.5) + 
+slope_ai_plot_quad <- ggplot(data = results_with_averages, 
+                             aes(x = avg_ai, y = slope, color = trt, shape = trt)) +
   geom_smooth(method = lm, formula = y ~ poly(x, 2, raw = TRUE), se = FALSE) +
-  labs(x = "Aridity Index", y = "Biomass Sensitivity to Precipitation",
+  labs(x = "Aridity Index", y = "Sensitivity",
        color = "Treatment", shape = "Treatment") +
-  theme_bw() +
+  theme_bw(16) +
+  theme(legend.position = "bottom", legend.title = element_blank()) +
   scale_color_manual(values = c("#4267ac", "#ff924c"))
 slope_ai_plot_quad
 
@@ -664,7 +662,7 @@ ggplot(cohen_d_df, aes(x = Cohen_d, y = Variable)) +
   labs(x = "Effect Size (Cohen's d)",
        y = "") +
   geom_vline(xintercept = 0, linetype = "dashed") +
-  theme_bw(14) +
+  theme_bw(16) +
   theme(axis.text.y = element_text(size = 14))
 
 
@@ -703,7 +701,7 @@ driest_year_mass_ppt <- mass_ppt_edited %>%
 
 driest_year_plot <- ggplot(data = driest_year_mass_ppt, 
                            aes(x = ppt, y = live_mass, color = trt, shape = trt)) +
-  geom_point() + geom_smooth(method = lm) +
+  geom_point(alpha = 0.3) + geom_smooth(method = lm) +
   labs(x = "Precipitation", y = "Biomass", color = "Treatment", shape = "Treatment") +
   theme_bw() +
   scale_color_manual(values = c("#4267ac", "#ff924c"))
@@ -814,10 +812,6 @@ summary(slope_par_model) # NS
 colimitation_figure <- ggarrange(slope_lrr_mass_plot2, slope_par_plot2, par_lrr_mass_plot,
                                  ncol = 1, common.legend = TRUE, legend = "bottom", align = 'hv')
 colimitation_figure
-
-
-
-
 
 
 
