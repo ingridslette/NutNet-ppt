@@ -6,6 +6,57 @@ my_palette <- colorRampPalette(c("#a50026","#d73027","#f46d43","#fdae61",
                                  "#023E8A","#032174","#030455"))
 
 
+my_palette <- colorRampPalette(c("#533C88","#7251B5","#B185DB","#D8C0E7",
+                                 "#99E2B4","#78C6A3","#56AB91","#358F80",
+                                 "#14746F","#116460"))
+
+ggplot(predictions, aes(x = 10^log_ppt, y = predicted_mass, colour = r2)) +
+  geom_line(aes(group = site_code)) +
+  scale_color_gradientn(
+    colors = my_palette(100),
+    limits = c(-0.25, 0.4),
+    name = "R²") +
+  geom_line(data = predictions_allsites, aes(x = 10^log_ppt, y = predicted_mass), 
+            color = "black", linewidth = 0.75) +
+  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m²)") +
+  facet_wrap(~ trt) +
+  theme_bw(base_size = 14) +
+  theme(legend.position = "right")
+
+fig2 <- ggplot(predictions, aes(x = 10^log_ppt, y = predicted_mass, colour = r2_diff)) +
+  geom_line(aes(group = site_code)) +
+  scale_color_gradientn(
+    colors = my_palette2(50),
+    limits = c(-0.25, 0.4),
+    name = "Δ R²") +
+  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m²)") +
+  facet_wrap(~ trt, ncol = 1) +
+  theme_bw(base_size = 14) +
+  theme(legend.position = "bottom")
+fig2
+
+fig2_inset <- ggplot(data = mass_ppt, aes(x = ppt, y = live_mass, color = trt, shape = trt)) +
+  geom_ribbon(data = predictions_allsites, 
+              aes(x = 10^log_ppt, ymin = mass_lower, ymax = mass_upper, fill = trt),
+              inherit.aes = FALSE, alpha = 0.25) +
+  geom_line(data = predictions_allsites, 
+            aes(x = 10^log_ppt, y = predicted_mass),
+            linewidth = 1) +
+  labs(x = "GSP (mm)", y = "Biomass (g/m²)", 
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
+  scale_color_manual(values = c("#4267ac", "#ff924c")) +
+  scale_fill_manual(values = c("#4267ac", "#ff924c")) +
+  theme_bw(16) +
+  theme(legend.title = element_blank(), legend.position = "bottom")
+fig2_inset
+
+fig2_with_inset <- ggdraw() + 
+  draw_plot(fig2) +
+  draw_plot(fig2_inset, x = 0.09, y = 0.52, width = 0.22, height = 0.38)
+fig2_with_inset
+
+
+
 
 ### Calculating and graphing variance in log_mass
 
