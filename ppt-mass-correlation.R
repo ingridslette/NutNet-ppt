@@ -176,20 +176,11 @@ ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = site_code)) +
   facet_wrap(~ trt) +
   theme_bw(14)
 
-
 predictions <- predictions %>%
-  left_join(results %>% dplyr::select(site_code, r2_diff), by = "site_code")
+  left_join(results_with_averages, by = c("site_code", "trt"))
 
-my_palette <- colorRampPalette(c("#533C88","#7251B5","#B185DB","#D8C0E7",
-                                 "#99E2B4","#78C6A3","#56AB91","#358F80",
-                                 "#14746F","#116460"))
-
-ggplot(predictions, aes(x = 10^log_ppt, y = predicted_mass, colour = r2_diff)) +
+ggplot(predictions, aes(x = 10^log_ppt, y = predicted_mass, colour = r2)) +
   geom_line(aes(group = site_code)) +
-  scale_color_gradientn(
-    colors = my_palette(100),
-    limits = c(-0.25, 0.4),
-    name = "Δ R²") +
   geom_line(data = predictions_allsites, aes(x = 10^log_ppt, y = predicted_mass), 
             color = "black", linewidth = 0.75) +
   labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m²)") +
@@ -197,37 +188,45 @@ ggplot(predictions, aes(x = 10^log_ppt, y = predicted_mass, colour = r2_diff)) +
   theme_bw(base_size = 14) +
   theme(legend.position = "right")
 
-fig2 <- ggplot(predictions, aes(x = 10^log_ppt, y = predicted_mass, colour = r2_diff)) +
-  geom_line(aes(group = site_code)) +
+
+
+
+
+ggplot(subset(predictions, trt == "Control"), aes(x = 10^log_ppt, y = predicted_mass)) +
+  geom_line(aes(group = site_code, colour = r2_diff)) +
   scale_color_gradientn(
-    colors = my_palette2(50),
+    colors = my_palette(100),
     limits = c(-0.25, 0.4),
     name = "Δ R²") +
-  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m²)") +
-  facet_wrap(~ trt, ncol = 1) +
-  theme_bw(base_size = 14) +
-  theme(legend.position = "bottom")
-fig2
-
-fig2_inset <- ggplot(data = mass_ppt, aes(x = ppt, y = live_mass, color = trt, shape = trt)) +
-  geom_ribbon(data = predictions_allsites, 
-              aes(x = 10^log_ppt, ymin = mass_lower, ymax = mass_upper, fill = trt),
-              inherit.aes = FALSE, alpha = 0.25) +
-  geom_line(data = predictions_allsites, 
+  geom_ribbon(data = subset(predictions_allsites, trt == "Control"),
+              aes(x = 10^log_ppt, ymin = mass_lower, ymax = mass_upper), 
+              fill = "#4267ac", alpha = 0.3) +
+  geom_line(data = subset(predictions_allsites, trt == "Control"), 
             aes(x = 10^log_ppt, y = predicted_mass),
-            linewidth = 1) +
-  labs(x = "GSP (mm)", y = "Biomass (g/m²)", 
-       color = "Treatment", shape = "Treatment", fill = "Treatment") +
-  scale_color_manual(values = c("#4267ac", "#ff924c")) +
-  scale_fill_manual(values = c("#4267ac", "#ff924c")) +
-  theme_bw(16) +
-  theme(legend.title = element_blank(), legend.position = "bottom")
-fig2_inset
+            color = "#4267ac", linewidth = 0.75) +
+  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m²)") +
+  scale_y_continuous(limits = c(0, 2300)) +
+  theme_bw(base_size = 14) +
+  theme(legend.position = "right")
 
-fig2_with_inset <- ggdraw() + 
-  draw_plot(fig2) +
-  draw_plot(fig2_inset, x = 0.09, y = 0.52, width = 0.22, height = 0.38)
-fig2_with_inset
+ggplot(subset(predictions, trt == "NPK"), aes(x = 10^log_ppt, y = predicted_mass)) +
+  geom_line(aes(group = site_code, colour = r2_diff)) +
+  scale_color_gradientn(
+    colors = my_palette(100),
+    limits = c(-0.25, 0.4),
+    name = "Δ R²") +
+  geom_ribbon(data = subset(predictions_allsites, trt == "NPK"),
+              aes(x = 10^log_ppt, ymin = mass_lower, ymax = mass_upper), 
+              fill = "#ff924c", alpha = 0.3) +
+  geom_line(data = subset(predictions_allsites, trt == "NPK"), 
+            aes(x = 10^log_ppt, y = predicted_mass),
+            color = "#ff924c", linewidth = 0.75) +
+  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m²)") +
+  scale_y_continuous(limits = c(0, 2300)) +
+  theme_bw(base_size = 14) +
+  theme(legend.position = "right")
+
+
 
 ### Comparing control vs. NPK R2 - Approach 1: calculate and compare difference at each site
 
