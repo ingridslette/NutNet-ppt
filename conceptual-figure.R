@@ -40,18 +40,19 @@ data_unique_line <- data.frame(
 final_data <- rbind(data_main_line, data_unique_line)
 
 fig1 <- ggplot(final_data, aes(x = x, y = y)) +
-  geom_ribbon(aes(ymin = ymin, ymax = ymax, fill = Treatment), alpha = 0.3, show.legend = FALSE) +
+  geom_ribbon(aes(ymin = ymin, ymax = ymax, fill = Treatment), alpha = 0.3) +
   geom_line(aes(color = Treatment), linewidth = 1.2) +
   facet_wrap(.~panel, nrow = 2, ncol = 2) +
   theme_bw(14) +
-  scale_color_manual(values = c("#4267ac", "#ff924c")) +
-  scale_fill_manual(values = c("#4267ac", "#ff924c")) +
+  scale_color_manual(values = c("#0092E0", "#ff924c")) +
+  scale_fill_manual(values = c("#0092E0", "#ff924c")) +
   labs(x = "Precipitation", y = "Biomass") +
   theme(
     axis.ticks = element_blank(),
     axis.text = element_blank(),
     strip.text = element_blank(),
-    panel.grid = element_blank()
+    panel.grid = element_blank(),
+    legend.position = "bottom"
   )
 
 fig1
