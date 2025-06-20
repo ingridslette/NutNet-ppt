@@ -187,6 +187,12 @@ fig2_control <- ggplot(subset(predictions, trt == "Control"), aes(x = 10^log_ppt
   geom_line(data = subset(predictions_allsites, trt == "Control"), 
             aes(x = 10^log_ppt, y = predicted_mass),
             color = "#0092E0") +
+  geom_ribbon(data = subset(predictions_allsites, trt == "NPK"),
+              aes(x = 10^log_ppt, ymin = mass_lower, ymax = mass_upper), 
+              fill = "#ff924c", alpha = 0.15) +
+  geom_line(data = subset(predictions_allsites, trt == "NPK"), 
+            aes(x = 10^log_ppt, y = predicted_mass),
+            color = "#ff924c", linetype = "dashed") +
   labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m²)", 
        title = "Control", colour = expression(R^2)) +
   scale_y_continuous(limits = c(0, 2300)) +
@@ -208,6 +214,12 @@ fig2_npk <- ggplot(subset(predictions, trt == "NPK"), aes(x = 10^log_ppt, y = pr
   geom_line(data = subset(predictions_allsites, trt == "NPK"), 
             aes(x = 10^log_ppt, y = predicted_mass),
             color = "#ff924c") +
+  geom_ribbon(data = subset(predictions_allsites, trt == "Control"),
+              aes(x = 10^log_ppt, ymin = mass_lower, ymax = mass_upper), 
+              fill = "#0092E0", alpha = 0.15) +
+  geom_line(data = subset(predictions_allsites, trt == "Control"), 
+            aes(x = 10^log_ppt, y = predicted_mass),
+            color = "#0092E0", linetype = "dashed") +
   labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m²)", 
        title = "Fertilized", colour = expression(R^2)) +
   scale_y_continuous(limits = c(0, 2300)) +
