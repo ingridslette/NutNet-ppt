@@ -382,51 +382,56 @@ mass_lrr_mass_plot <- ggplot(data = mass_ppt_edited,
   geom_smooth(method = lm) +
   labs(x = "Log Response Ratio of Mass", y = "Biomass (g/m²)",
        color = "Treatment", shape = "Treatment") +
-  theme_bw() +
+  theme_bw(14) +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 mass_lrr_mass_plot
 
 mass_par_plot <- ggplot(data = mass_ppt_edited, aes(x = proportion_par, y = live_mass, color = trt, shape = trt)) +
   geom_point(alpha = 0.25) + 
   geom_smooth(method = lm) +
-  labs(x = "Log Response Ratio of Mass", y = "Biomass (g/m²)",
+  labs(x = "Proportion PAR", y = "Biomass (g/m²)",
        color = "Treatment", shape = "Treatment") +
-  theme_bw() +
+  theme_bw(14) +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 mass_par_plot
 
 mass_ai_plot <- ggplot(data = mass_ppt_edited, aes(x = AI, y = live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   labs(x = "Aridity Index", y = "Biomass (g m-2)", color = "Treatment", shape = "Treatment") +
-  theme_bw() +
+  theme_bw(14) +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 mass_rich_plot <- ggplot(data = mass_ppt_edited, aes(x = rich, y = live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("Richness") + ylab("") +
-  theme_bw() +
+  theme_bw(14) +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 mass_prev_ppt_plot <- ggplot(data = mass_ppt_edited, aes(x = prev_ppt, y = live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("Previous years' precipitation (mm)") + ylab("") +
-  theme_bw() +
+  theme_bw(14) +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 mass_c4_plot <- ggplot(data = mass_ppt_edited, aes(x = avg_c4_proportion, y = live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("Proportion C4 Species") + ylab("") +
-  theme_bw() +
+  theme_bw(14) +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 mass_annual_plot <- ggplot(data = mass_ppt_edited, aes(x = avg_annual_proportion, y = live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("Proportion Annual Species") + ylab("") +
-  theme_bw() +
+  theme_bw(14) +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 
-mass_covar_figure <- ggarrange(mass_lrr_mass_plot, mass_par_plot,
+mass_covar_figure <- ggarrange(mass_par_plot, 
+                               mass_lrr_mass_plot + rremove("ylab") +
+                               theme(
+                                 axis.text.y = element_blank(), 
+                                 axis.ticks.y = element_blank()
+                               ),
                                ncol = 2, nrow = 1, common.legend = TRUE, 
                                legend = "bottom", align = 'hv')
 mass_covar_figure
