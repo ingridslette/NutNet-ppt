@@ -157,7 +157,7 @@ ggplot(data = mass_ppt, aes(x = ppt, y = live_mass, color = trt, shape = trt)) +
   geom_line(data = predictions_allsites, aes(x = 10^log_ppt, y = predicted_mass), linewidth = 1) +
   xlab("Growing Season Precipitation (mm)") + ylab("Biomass (g/m2)") +
   labs(color = "Treatment", shape = "Treatment") +
-  scale_color_manual(values = c("#0077B8", "#ff924c")) +
+  scale_color_manual(values = c("#0092E0", "#ff924c")) +
   theme_bw(14)
 
 ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = trt)) +
@@ -166,7 +166,7 @@ ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = trt)) +
   labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)", color = "Treatment") +
   facet_wrap(~ site_code, scales = "free") +
   theme_bw() +
-  scale_color_manual(values = c("#0077B8", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = site_code)) +
   geom_line(data = predictions, aes(x = 10^log_ppt, y = predicted_mass), linewidth = 1) +
@@ -178,16 +178,6 @@ ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = site_code)) +
 
 predictions <- predictions %>%
   left_join(results_with_averages, by = c("site_code", "trt"))
-
-ggplot(predictions, aes(x = 10^log_ppt, y = predicted_mass, colour = r2)) +
-  geom_line(aes(group = site_code)) +
-  geom_line(data = predictions_allsites, aes(x = 10^log_ppt, y = predicted_mass), 
-            color = "black", linewidth = 0.75) +
-  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m²)") +
-  facet_wrap(~ trt) +
-  theme_bw(14) +
-  theme(legend.position = "right")
-
 
 fig2_control <- ggplot(subset(predictions, trt == "Control"), aes(x = 10^log_ppt, y = predicted_mass)) +
   geom_line(aes(group = site_code, colour = r2)) +
@@ -381,7 +371,7 @@ mass_lrr_mass_plot <- ggplot(data = mass_ppt_edited,
   labs(x = "Log Response Ratio of Mass", y = "Biomass (g/m²)",
        color = "Treatment", shape = "Treatment") +
   theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
 mass_lrr_mass_plot
 
 mass_par_plot <- ggplot(data = mass_ppt_edited, aes(x = proportion_par, y = live_mass, color = trt, shape = trt)) +
@@ -390,38 +380,38 @@ mass_par_plot <- ggplot(data = mass_ppt_edited, aes(x = proportion_par, y = live
   labs(x = "Log Response Ratio of Mass", y = "Biomass (g/m²)",
        color = "Treatment", shape = "Treatment") +
   theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
 mass_par_plot
 
 mass_ai_plot <- ggplot(data = mass_ppt_edited, aes(x = AI, y = live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   labs(x = "Aridity Index", y = "Biomass (g m-2)", color = "Treatment", shape = "Treatment") +
   theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 mass_rich_plot <- ggplot(data = mass_ppt_edited, aes(x = rich, y = live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("Richness") + ylab("") +
   theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 mass_prev_ppt_plot <- ggplot(data = mass_ppt_edited, aes(x = prev_ppt, y = live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("Previous years' precipitation (mm)") + ylab("") +
   theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 mass_c4_plot <- ggplot(data = mass_ppt_edited, aes(x = avg_c4_proportion, y = live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("Proportion C4 Species") + ylab("") +
   theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 mass_annual_plot <- ggplot(data = mass_ppt_edited, aes(x = avg_annual_proportion, y = live_mass, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm) +
   xlab("Proportion Annual Species") + ylab("") +
   theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 
 mass_covar_figure <- ggarrange(mass_lrr_mass_plot, mass_par_plot,
@@ -497,37 +487,37 @@ r2_lrr_mass_plot <- ggplot(data = results_with_averages, aes(x = avg_lrr_mass, y
   geom_point() + geom_smooth(method = lm, se = FALSE) +
   xlab("Log Response Ratio of Mass") + ylab("") +
   theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 r2_par_plot <- ggplot(data = results_with_averages, aes(x = avg_proportion_par, y = r2, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
   xlab("Proportion PAR") + ylab("") +
   theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 r2_ai_plot <- ggplot(data = results_with_averages, aes(x = avg_ai, y = r2, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
   xlab("Aridity Index") + ylab("R2 of ppt vs. mass") +
   theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 r2_rich_plot <- ggplot(data = results_with_averages, aes(x = avg_richness, y = r2, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
   xlab("Richness") + ylab("") +
   theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 r2_c4_plot <- ggplot(data = results_with_averages, aes(x = avg_avg_c4_proportion, y = r2, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
   xlab("Proportion C4 Species") + ylab("") +
   theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 r2_annual_plot <- ggplot(data = results_with_averages, aes(x = avg_avg_annual_proportion, y = r2, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
   xlab("Proportion Annual Species") + ylab("") +
   theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 r2_covar_figure <- ggarrange(r2_ai_plot, r2_lrr_mass_plot, r2_par_plot,  r2_rich_plot, r2_c4_plot, r2_annual_plot,
                              ncol = 3, nrow = 2, common.legend = TRUE, legend = "bottom", align = 'hv')
@@ -538,19 +528,19 @@ slope_lrr_mass_plot <- ggplot(data = results_with_averages, aes(x = avg_lrr_mass
   geom_point() + geom_smooth(method = lm, se = FALSE) +
   xlab("Log Response Ratio of Mass") + ylab("") +
   theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 slope_par_plot <- ggplot(data = results_with_averages, aes(x = avg_proportion_par, y = slope, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
   xlab("Proportion PAR") + ylab("") +
   theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 slope_ai_plot <- ggplot(data = results_with_averages, aes(x = avg_ai, y = slope, color = trt, shape = trt)) +
   geom_point(alpha = 0.5) + geom_smooth(method = lm, se = FALSE) +
   xlab("Aridity Index") + ylab("slope") +
   theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
 slope_ai_plot
 
 slope_ai_plot_quad <- ggplot(data = results_with_averages, 
@@ -560,26 +550,26 @@ slope_ai_plot_quad <- ggplot(data = results_with_averages,
        color = "Treatment", shape = "Treatment") +
   theme_bw(16) +
   theme(legend.position = "bottom", legend.title = element_blank()) +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
 slope_ai_plot_quad
 
 slope_rich_plot <- ggplot(data = results_with_averages, aes(x = avg_richness, y = slope, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
   xlab("Richness") + ylab("") +
   theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 slope_c4_plot <- ggplot(data = results_with_averages, aes(x = avg_avg_c4_proportion, y = slope, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
   xlab("Proportion C4 Species") + ylab("") +
   theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 slope_annual_plot <- ggplot(data = results_with_averages, aes(x = avg_avg_annual_proportion, y = slope, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
   xlab("Proportion Annual Species") + ylab("") +
   theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 
 slope_covar_figure <- ggarrange(slope_ai_plot_quad, slope_lrr_mass_plot, slope_par_plot, 
@@ -669,13 +659,13 @@ slope_results <- calc_cohen_d(slope_estimate, slope_resid_sd, n_slope)
 r2_results <- calc_cohen_d(r2_estimate, r2_resid_sd, n_r2)
 
 cohen_d_df <- data.frame(
-  Variable = c("Mean", "Slope", "R²"),
+  Variable = c("Biomass", "Sensitivity", "R²"),
   Cohen_d = c(mean_results[1], slope_results[1], r2_results[1]),
   Lower_CI = c(mean_results[2], slope_results[2], r2_results[2]),
   Upper_CI = c(mean_results[3], slope_results[3], r2_results[3])
 )
 
-cohen_d_df$Variable <- factor(cohen_d_df$Variable, levels = c("R²", "Slope", "Mean"))
+cohen_d_df$Variable <- factor(cohen_d_df$Variable, levels = c("R²", "Sensitivity", "Biomass"))
 
 ggplot(cohen_d_df, aes(x = Cohen_d, y = Variable)) +
   geom_point(size = 4) +
@@ -697,8 +687,8 @@ summary(rue_trt_model)
 
 ggplot(mass_ppt_edited, aes(x = trt, y = rue)) +
   geom_boxplot() +
-  labs(x= "Treatment", y= "Rain Use Efficiency")
-theme_bw(14)
+  labs(x= "Treatment", y= "Rain Use Efficiency") +
+  theme_bw(14)
 
 mass_ppt_edited_subset <- mass_ppt_edited %>%
   filter(rue < 2)
@@ -725,7 +715,7 @@ driest_year_plot <- ggplot(data = driest_year_mass_ppt,
   geom_point(alpha = 0.3) + geom_smooth(method = lm) +
   labs(x = "Precipitation", y = "Biomass", color = "Treatment", shape = "Treatment") +
   theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
 driest_year_plot
 
 main_model_driest <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), data = driest_year_mass_ppt)
@@ -804,7 +794,7 @@ par_lrr_mass_plot <- ggplot(data = results_with_averages,
   geom_point() + geom_smooth(method = lm, se = FALSE) +
   xlab("Log Response Ratio of Mass") + ylab("Proportion PAR") +
   theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
 par_lrr_mass_plot
 
 slope_lrr_mass_plot2 <- ggplot(data = results_with_averages, 
@@ -812,14 +802,14 @@ slope_lrr_mass_plot2 <- ggplot(data = results_with_averages,
   geom_point() + geom_smooth(method = lm, se = FALSE) +
   xlab("Log Response Ratio of Mass") + ylab("Slope of ppt vs. mass") +
   theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 slope_par_plot2 <- ggplot(data = results_with_averages, 
                           aes(x = avg_proportion_par, y = slope, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
   xlab("Proportion PAR") + ylab("Slope of ppt vs. mass") +
   theme_bw() +
-  scale_color_manual(values = c("#4267ac", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 par_lrr_mass_model <- lm(avg_proportion_par ~ trt * avg_lrr_mass, data = results_with_averages, na.action = "na.fail")
 summary(par_lrr_mass_model) # NS
