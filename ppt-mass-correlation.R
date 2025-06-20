@@ -562,11 +562,12 @@ slope_ai_plot
 
 slope_ai_plot_quad <- ggplot(data = results_with_averages, 
                              aes(x = avg_ai, y = slope, color = trt, shape = trt)) +
+  geom_point(alpha = 0.3) +
   geom_smooth(method = lm, formula = y ~ poly(x, 2, raw = TRUE), se = FALSE) +
   labs(x = "Aridity Index", y = "Sensitivity",
        color = "Treatment", shape = "Treatment") +
-  theme_bw(16) +
-  theme(legend.position = "bottom", legend.title = element_blank()) +
+  theme_bw(14) +
+  theme(legend.position = "bottom") +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 slope_ai_plot_quad
 
