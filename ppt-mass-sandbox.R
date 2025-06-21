@@ -98,21 +98,15 @@ summary_stats <- mass_ppt %>%
   group_by(trt) %>%
   summarise(
     total_variance = var(log_mass, na.rm = TRUE),
-    r2 = summary(lm(log_mass ~ log_ppt, data = cur_data()))$r.squared
+    r2 = summary(lm(log_mass ~ log_ppt, data = cur_data()))$r.squared,
+    exp_variance = total_variance * r2
   )
 
-plot_data <- summary_stats %>%
-  pivot_longer(cols = c(total_variance, r2),
-               names_to = "metric",
-               values_to = "value")
+ggplot(summary_stats, aes(x = trt, fill = trt)) +
+  geom_bar(aes(y = total_variance), stat = "identity", alpha = 0.3) +
+  geom_bar(aes(y = exp_variance), stat = "identity") +
+  theme_bw()
 
-ggplot(plot_data, aes(x = trt, y = value, fill = metric)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  scale_fill_manual(values = c("total_variance" = "lightblue", "r2" = "darkblue"),
-                    labels = c("Total Variance", "Variance Explained (R²)")) +
-  labs(x = "Treatment", y = "Value", fill = "Metric",
-       title = "Total Variance and Variance Explained (R²) by Treatment") +
-  theme_minimal()
 
 
 ### Calculating and graphing variance in log_mass
@@ -155,43 +149,21 @@ for (site in site_codes) {
   ))
 }
 
-var_averages <- results_long %>%
-  group_by(trt) %>%
-  summarise(
-    variance = mean(variance, na.rm = TRUE),
-    variance_se = sd(variance, na.rm = TRUE) / sqrt(n()),
-    r2 = mean(r2, na.rm = TRUE),
-    r2_se = sd(r2, na.rm = TRUE) / sqrt(n())
-  )
-
 variance_summary <- results_long %>%
   group_by(trt) %>%
   summarise(
     mean_variance = mean(variance, na.rm = TRUE),
     se_variance = sd(variance, na.rm = TRUE) / sqrt(n()),
-    r2 = mean(r2, na.rm = TRUE),
-    r2_se = sd(r2, na.rm = TRUE) / sqrt(n())
+    mean_r2 = mean(r2, na.rm = TRUE),
+    se_r2 = sd(r2, na.rm = TRUE) / sqrt(n()),
   )
 
-var_graphing <- var_averages %>%
-  pivot_longer(cols = c(variance, r2), names_to = "metric", values_to = "value") %>%
-  pivot_longer(cols = c(variance_se, r2_se), names_to = "se_metric", values_to = "se") %>%
-  filter((metric == "variance" & se_metric == "variance_se") |
-           (metric == "r2" & se_metric == "r2_se"))
 
-var_graphing$trt <- factor(var_graphing$trt, levels = c("Control", "NPK"))
-
-ggplot() +
-  geom_bar(data = subset(var_graphing, metric == "r2"),
-           aes(x = trt, y = value, fill = c("#005E90", "#D55200")),
-           stat = "identity") +
-  geom_bar(data = subset(var_graphing, metric == "variance"),
-           aes(x = trt, y = value, fill = c("#0092E0", "#ff924c")),
-           stat = "identity") +
-  geom_errorbar(data = var_graphing,
-                aes(x = trt, ymin = value - se, ymax = value + se)) +
-  scale_fill_identity() +
-  labs(x = "Treatment", y = "Variance") +
+ggplot(variance_summary, aes(x = trt), fill = trt) +
+  geom_bar(aes(y = mean_variance), stat = "identity") +
+  geom_bar(aes(y = mean_r2), stat = "identity", alpha = 0.3) +
+  labs(y = "Variance",
+       x = "Treatment") +
   theme_bw(14)
 
 
@@ -212,7 +184,7 @@ variance$unex_variance_marginal <- variance$total_variance - variance$prop_varia
 
 ggplot(variance, aes(x = trt)) +
   geom_bar(aes(y = total_variance), stat = "identity", fill = "darkgrey") +
-  geom_bar(aes(y = prop_variance_mar), stat = "identity", fill = "lightgrey") +
+  geom_bar(aes(y = unex_variance_marginal), stat = "identity", fill = "lightgrey") +
   labs(y = "Variance",
        x = "Treatment",
        fill = "Variance Type") +
