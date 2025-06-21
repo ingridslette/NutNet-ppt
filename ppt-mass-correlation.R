@@ -380,22 +380,25 @@ full_model_avg <- model.avg(get.models(full_model_table, subset = delta < 10))
 summary(full_model_avg); sw(full_model_avg)
 
 mass_lrr_mass_plot <- ggplot(data = mass_ppt_edited, 
-                             aes(x = lrr_mass, y = live_mass, color = trt, shape = trt)) +
-  geom_point(alpha = 0.25) + 
-  geom_smooth(method = lm) +
+                             aes(x = lrr_mass, y = live_mass, color = trt, fill = trt, shape = trt)) +
+  geom_point(alpha = 0.2) + 
+  geom_smooth(method = lm, alpha = 0.3) +
   labs(x = "Log Response Ratio of Mass", y = "Biomass (g/m²)",
-       color = "Treatment", shape = "Treatment") +
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(14) +
-  scale_color_manual(values = c("#0092E0", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c")) +
+  scale_fill_manual(values = c("#0092E0", "#ff924c"))
 mass_lrr_mass_plot
 
-mass_par_plot <- ggplot(data = mass_ppt_edited, aes(x = proportion_par, y = live_mass, color = trt, shape = trt)) +
-  geom_point(alpha = 0.25) + 
-  geom_smooth(method = lm) +
+mass_par_plot <- ggplot(data = mass_ppt_edited, 
+                        aes(x = proportion_par, y = live_mass, color = trt, fill = trt, shape = trt)) +
+  geom_point(alpha = 0.2) + 
+  geom_smooth(method = lm, alpha = 0.3) +
   labs(x = "Proportion PAR", y = "Biomass (g/m²)",
-       color = "Treatment", shape = "Treatment") +
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(14) +
-  scale_color_manual(values = c("#0092E0", "#ff924c"))
+  scale_color_manual(values = c("#0092E0", "#ff924c")) +
+  scale_fill_manual(values = c("#0092E0", "#ff924c"))
 mass_par_plot
 
 mass_ai_plot <- ggplot(data = mass_ppt_edited, aes(x = AI, y = live_mass, color = trt, shape = trt)) +
