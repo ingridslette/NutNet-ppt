@@ -685,7 +685,7 @@ cohen_d_df <- data.frame(
 
 cohen_d_df$Variable <- factor(cohen_d_df$Variable, levels = c("R²", "Sensitivity", "Biomass"))
 
-ggplot(cohen_d_df, aes(x = Cohen_d, y = Variable)) +
+es_fig <- ggplot(cohen_d_df, aes(x = Cohen_d, y = Variable)) +
   geom_point(size = 4) +
   geom_errorbar(aes(xmin = Lower_CI, xmax = Upper_CI), width = 0.2) +
   labs(x = "Effect Size (Cohen's d)",
@@ -693,7 +693,39 @@ ggplot(cohen_d_df, aes(x = Cohen_d, y = Variable)) +
   geom_vline(xintercept = 0, linetype = "dashed") +
   theme_bw(16) +
   theme(axis.text.y = element_text(size = 14))
+es_fig
 
+
+fig2_both_es <- ggarrange(
+  es_fig,
+  fig2_control + rremove("xlab"),
+  fig2_npk + 
+    rremove("ylab") + rremove("xlab") +
+    theme(
+      axis.text.y = element_blank(), 
+      axis.ticks.y = element_blank()
+    ),
+  ncol = 3,
+  common.legend = TRUE,
+  legend = "right",
+  align = 'hv'
+)
+
+fig2_both_es
+
+
+fig2_both_es <- annotate_figure(
+  fig2_both_es,
+  bottom = text_grob("Growing Season Precipitation (mm)", size = 14)
+)
+
+fig2_both_es
+
+
+fig2_both_ef <- ggarrange(es_fig, fig2_both,
+                          widths = c(0.5, 1))
+
+fig2_both_ef
 
 ## Calculating and testing trt effect on RUE 
 
