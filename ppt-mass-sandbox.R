@@ -1,6 +1,40 @@
 # "just playing around" code
 
 
+fig2_both_es <- ggarrange(
+  es_fig,
+  fig2_control + rremove("xlab"),
+  fig2_npk + 
+    rremove("ylab") + rremove("xlab") +
+    theme(
+      axis.text.y = element_blank(), 
+      axis.ticks.y = element_blank()
+    ),
+  ncol = 3,
+  common.legend = TRUE,
+  legend = "right",
+  align = 'hv'
+)
+
+fig2_both_es
+
+
+fig2_both_es <- annotate_figure(
+  fig2_both_es,
+  bottom = text_grob("Growing Season Precipitation (mm)", size = 14)
+)
+
+fig2_both_es
+
+
+fig2_both_ef <- ggarrange(es_fig, fig2_both,
+                          widths = c(0.5, 1))
+
+fig2_both_ef
+
+
+
+
 my_palette <- colorRampPalette(c("#a50026","#d73027","#f46d43","#fdae61",
                                  "#CAF0F8","#90E0EF","#00A5D0","#0077B6",
                                  "#023E8A","#032174","#030455"))
