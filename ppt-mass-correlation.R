@@ -627,6 +627,17 @@ var_averages <- results_long %>%
     r2_se = sd(r2, na.rm = TRUE) / sqrt(n())
   )
 
+library(dplyr)
+
+variance_summary <- results_long %>%
+  group_by(trt) %>%
+  summarise(
+    mean_variance = mean(variance, na.rm = TRUE),
+    se_variance = sd(variance, na.rm = TRUE) / sqrt(n()),
+    r2 = mean(r2, na.rm = TRUE),
+    r2_se = sd(r2, na.rm = TRUE) / sqrt(n())
+  )
+
 var_graphing <- var_averages %>%
   pivot_longer(cols = c(variance, r2), names_to = "metric", values_to = "value") %>%
   pivot_longer(cols = c(variance_se, r2_se), names_to = "se_metric", values_to = "se") %>%
