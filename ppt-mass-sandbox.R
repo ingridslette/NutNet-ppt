@@ -92,6 +92,29 @@ fig2_with_inset
 
 
 
+library(dplyr)
+
+summary_stats <- mass_ppt %>%
+  group_by(trt) %>%
+  summarise(
+    total_variance = var(log_mass, na.rm = TRUE),
+    r2 = summary(lm(log_mass ~ log_ppt, data = cur_data()))$r.squared
+  )
+
+plot_data <- summary_stats %>%
+  pivot_longer(cols = c(total_variance, r2),
+               names_to = "metric",
+               values_to = "value")
+
+ggplot(plot_data, aes(x = trt, y = value, fill = metric)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_manual(values = c("total_variance" = "lightblue", "r2" = "darkblue"),
+                    labels = c("Total Variance", "Variance Explained (R²)")) +
+  labs(x = "Treatment", y = "Value", fill = "Metric",
+       title = "Total Variance and Variance Explained (R²) by Treatment") +
+  theme_minimal()
+
+
 ### Calculating and graphing variance in log_mass
 results_long <- data.frame(site_code = character(), 
                            trt = character(), 
@@ -174,12 +197,6 @@ ggplot() +
 
 
 
-
-
-
-
-
-
 variance <- mass_ppt_edited %>%
   group_by(trt) %>%
   summarise(total_variance = var(log_mass, na.rm = TRUE))
@@ -195,7 +212,7 @@ variance$unex_variance_marginal <- variance$total_variance - variance$prop_varia
 
 ggplot(variance, aes(x = trt)) +
   geom_bar(aes(y = total_variance), stat = "identity", fill = "darkgrey") +
-  geom_bar(aes(y = prop_variance_conditional), stat = "identity", fill = "lightgrey") +
+  geom_bar(aes(y = prop_variance_mar), stat = "identity", fill = "lightgrey") +
   labs(y = "Variance",
        x = "Treatment",
        fill = "Variance Type") +
