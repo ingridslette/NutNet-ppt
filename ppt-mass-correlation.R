@@ -165,8 +165,9 @@ ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = trt)) +
   geom_line(data = predictions, aes(x = 10^log_ppt, y = predicted_mass), linewidth = 1) +
   labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m2)", color = "Treatment") +
   facet_wrap(~ site_code, scales = "free") +
-  theme_bw() +
-  scale_color_manual(values = c("#0092E0", "#ff924c"))
+  theme_bw(14) +
+  scale_color_manual(values = c("#0092E0", "#ff924c")) +
+  theme(legend.position = "bottom")
 
 ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = site_code)) +
   geom_line(data = predictions, aes(x = 10^log_ppt, y = predicted_mass), linewidth = 1) +
@@ -705,7 +706,6 @@ es_fig <- ggplot(cohen_d_df, aes(x = Cohen_d, y = Variable)) +
 es_fig
 
 
-
 ## Calculating and testing trt effect on RUE 
 
 mass_ppt_edited <- mass_ppt_edited %>% 
@@ -725,7 +725,7 @@ mass_ppt_edited_subset <- mass_ppt_edited %>%
 rue_trt_model_subset <- lmer(rue ~ trt + (1 | site_code / block) + (1 | year_trt), data = mass_ppt_edited_subset)
 summary(rue_trt_model_subset)
 
-ggplot(mass_ppt_edited_subset, aes(x = trt, y = rue)) +
+ggplot(mass_ppt_edited, aes(x = trt, y = rue)) +
   geom_boxplot() +
   labs(x= "Treatment", y= "Rain Use Efficiency") +
   theme_bw(14)
