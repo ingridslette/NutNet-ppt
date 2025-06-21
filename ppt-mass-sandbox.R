@@ -93,6 +93,92 @@ fig2_with_inset
 
 
 ### Calculating and graphing variance in log_mass
+results_long <- data.frame(site_code = character(), 
+                           trt = character(), 
+                           r2 = numeric(), 
+                           slope = numeric(),
+                           mean = numeric(),
+                           variance = numeric(),
+                           stringsAsFactors = FALSE)
+
+for (site in site_codes) {
+  site_data_control <- subset(mass_ppt, site_code == site & trt == "Control")
+  site_data_npk <- subset(mass_ppt, site_code == site & trt == "NPK")
+  control_model <- lm(log_mass ~ log_ppt, data = site_data_control)
+  npk_model <- lm(log_mass ~ log_ppt, data = site_data_npk)
+  control_r2 <- summary(control_model)$r.squared
+  npk_r2 <- summary(npk_model)$r.squared
+  control_slope <- coef(control_model)["log_ppt"]
+  npk_slope <- coef(npk_model)["log_ppt"]
+  control_mean <- mean(site_data_control$log_mass, na.rm = TRUE)
+  npk_mean <- mean(site_data_npk$log_mass, na.rm = TRUE)
+  control_variance <- var(site_data_control$log_mass, na.rm = TRUE)
+  npk_variance <- var(site_data_npk$log_mass, na.rm = TRUE)
+  results_long <- rbind(results_long, data.frame(
+    site_code = site,
+    trt = "Control",
+    r2 = control_r2,
+    slope = control_slope,
+    mean = control_mean,
+    variance = control_variance
+  ))
+  results_long <- rbind(results_long, data.frame(
+    site_code = site,
+    trt = "NPK",
+    r2 = npk_r2,
+    slope = npk_slope,
+    mean = npk_mean,
+    variance = npk_variance
+  ))
+}
+
+var_averages <- results_long %>%
+  group_by(trt) %>%
+  summarise(
+    variance = mean(variance, na.rm = TRUE),
+    variance_se = sd(variance, na.rm = TRUE) / sqrt(n()),
+    r2 = mean(r2, na.rm = TRUE),
+    r2_se = sd(r2, na.rm = TRUE) / sqrt(n())
+  )
+
+variance_summary <- results_long %>%
+  group_by(trt) %>%
+  summarise(
+    mean_variance = mean(variance, na.rm = TRUE),
+    se_variance = sd(variance, na.rm = TRUE) / sqrt(n()),
+    r2 = mean(r2, na.rm = TRUE),
+    r2_se = sd(r2, na.rm = TRUE) / sqrt(n())
+  )
+
+var_graphing <- var_averages %>%
+  pivot_longer(cols = c(variance, r2), names_to = "metric", values_to = "value") %>%
+  pivot_longer(cols = c(variance_se, r2_se), names_to = "se_metric", values_to = "se") %>%
+  filter((metric == "variance" & se_metric == "variance_se") |
+           (metric == "r2" & se_metric == "r2_se"))
+
+var_graphing$trt <- factor(var_graphing$trt, levels = c("Control", "NPK"))
+
+ggplot() +
+  geom_bar(data = subset(var_graphing, metric == "r2"),
+           aes(x = trt, y = value, fill = c("#005E90", "#D55200")),
+           stat = "identity") +
+  geom_bar(data = subset(var_graphing, metric == "variance"),
+           aes(x = trt, y = value, fill = c("#0092E0", "#ff924c")),
+           stat = "identity") +
+  geom_errorbar(data = var_graphing,
+                aes(x = trt, ymin = value - se, ymax = value + se)) +
+  scale_fill_identity() +
+  labs(x = "Treatment", y = "Variance") +
+  theme_bw(14)
+
+
+
+
+
+
+
+
+
 
 variance <- mass_ppt_edited %>%
   group_by(trt) %>%
