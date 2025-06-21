@@ -203,7 +203,8 @@ fig2_control <- ggplot(subset(predictions, trt == "Control"), aes(x = 10^log_ppt
     plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
     axis.title = element_text(size = 14),
     legend.title = element_text(size = 14),
-    legend.text = element_text(size = 10)
+    legend.text = element_text(size = 10),
+    axis.title.y = element_text(size = 14, margin = margin(r = 20))
   )
 
 fig2_npk <- ggplot(subset(predictions, trt == "NPK"), aes(x = 10^log_ppt, y = predicted_mass)) +
@@ -251,6 +252,7 @@ fig2_both <- annotate_figure(
 )
 
 fig2_both
+
 
 ### Comparing control vs. NPK R2 - Approach 1: calculate and cotruehist()### Comparing control vs. NPK R2 - Approach 1: calculate and compare difference at each site
 
@@ -553,11 +555,16 @@ slope_par_plot <- ggplot(data = results_with_averages, aes(x = avg_proportion_pa
   theme_bw() +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 
-slope_ai_plot <- ggplot(data = results_with_averages, aes(x = avg_ai, y = slope, color = trt, shape = trt)) +
-  geom_point(alpha = 0.5) + geom_smooth(method = lm, se = FALSE) +
-  xlab("Aridity Index") + ylab("slope") +
-  theme_bw() +
-  scale_color_manual(values = c("#0092E0", "#ff924c"))
+slope_ai_plot <- ggplot(data = results_with_averages, 
+                        aes(x = avg_ai, y = slope, color = trt, fill = trt, shape = trt)) +
+  geom_point(alpha = 0.5) + 
+  geom_smooth(method = lm, alpha = 0.2) +
+  labs(x = "Aridity Index", y = "Sensitivity (g/m²/mm)", 
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
+  theme_bw(16) +
+  theme(legend.position = "bottom") +
+  scale_color_manual(values = c("#0092E0", "#ff924c")) +
+  scale_fill_manual(values = c("#0092E0", "#ff924c"))
 slope_ai_plot
 
 slope_ai_plot_quad <- ggplot(data = results_with_averages, 
@@ -566,8 +573,8 @@ slope_ai_plot_quad <- ggplot(data = results_with_averages,
   geom_smooth(method = lm, formula = y ~ poly(x, 2, raw = TRUE), se = FALSE) +
   labs(x = "Aridity Index", y = "Sensitivity",
        color = "Treatment", shape = "Treatment") +
-  theme_bw(14) +
-  theme(legend.position = "bottom") +
+  theme_bw(16) +
+  theme(legend.position = "none") +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 slope_ai_plot_quad
 
@@ -691,8 +698,10 @@ es_fig <- ggplot(cohen_d_df, aes(x = Cohen_d, y = Variable)) +
   labs(x = "Effect Size (Cohen's d)",
        y = "") +
   geom_vline(xintercept = 0, linetype = "dashed") +
-  theme_bw(14) +
-  theme(axis.text.y = element_text(size = 14))
+  theme_bw(16) +
+  theme(axis.text.y = element_text(size = 16))
+
+
 es_fig
 
 
@@ -731,11 +740,16 @@ driest_year_mass_ppt <- mass_ppt_edited %>%
   ungroup()
 
 driest_year_plot <- ggplot(data = driest_year_mass_ppt, 
-                           aes(x = ppt, y = live_mass, color = trt, shape = trt)) +
-  geom_point(alpha = 0.3) + geom_smooth(method = lm) +
-  labs(x = "Precipitation", y = "Biomass", color = "Treatment", shape = "Treatment") +
-  theme_bw() +
-  scale_color_manual(values = c("#0092E0", "#ff924c"))
+                           aes(x = ppt, y = live_mass, color = trt, fill = trt, shape = trt)) +
+  geom_point(alpha = 0.3) + 
+  geom_smooth(method = "lm", alpha = 0.2) +
+  labs(x = "Precipitation (mm)", y = "Biomass (g/m²)", 
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
+  theme_bw(14) +
+  scale_color_manual(values = c("#0092E0", "#ff924c")) +
+  scale_fill_manual(values = c("#0092E0", "#ff924c")) +
+  theme(legend.position = "bottom")
+
 driest_year_plot
 
 main_model_driest <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), data = driest_year_mass_ppt)
