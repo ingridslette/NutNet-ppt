@@ -1,30 +1,30 @@
 # "just playing around" code
 
 
-fig2_both_es <- ggarrange(
+fig2_4 <- ggarrange(
   es_fig,
   fig2_control + rremove("xlab"),
-  fig2_npk + 
-    rremove("ylab") + rremove("xlab") +
+  fig2_npk + rremove("ylab") + rremove("xlab") +
     theme(
       axis.text.y = element_blank(), 
-      axis.ticks.y = element_blank()
+      axis.ticks.y = element_blank(),
+      legend.position = "none"
     ),
-  ncol = 3,
+  slope_ai_plot_quad,
+  legend = "bottom",
   common.legend = TRUE,
-  legend = "right",
+  ncol = 4,
   align = 'hv'
 )
 
-fig2_both_es
-
-
-fig2_both_es <- annotate_figure(
-  fig2_both_es,
+fig2_4 <- annotate_figure(
+  fig2_4,
   bottom = text_grob("Growing Season Precipitation (mm)", size = 14)
 )
 
-fig2_both_es
+fig2_4
+
+
 
 
 fig2_both_ef <- ggarrange(es_fig, fig2_both,
