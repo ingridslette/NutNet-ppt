@@ -6,8 +6,10 @@ library(MuMIn)
 library(performance)
 library(MASS)
 library(broom)
+library(broom.mixed)
 library(emmeans)
 library(ggpubr)
+library(purrr)
 library(cowplot)
 
 
@@ -69,8 +71,12 @@ unique(ppt_data$year)
 
 ppt_data <- ppt_data %>%
   group_by(site_code) %>%
-  mutate(avg_ppt = mean(ppt, na.rm = TRUE),
-         sd_ppt = sd(ppt, na.rm = TRUE)) %>%
+  mutate(
+    avg_ppt = mean(ppt, na.rm = TRUE),
+    sd_ppt = sd(ppt, na.rm = TRUE),
+    p10_ppt = quantile(ppt, 0.10, na.rm = TRUE),
+    p90_ppt = quantile(ppt, 0.90, na.rm = TRUE)
+    ) %>%
   ungroup()
 
 unique(mass2$site_code)
@@ -89,6 +95,7 @@ mass_ppt <- mass_ppt %>%
   mutate(min_ppt = min(ppt, na.rm = TRUE),
          max_ppt = max(ppt, na.rm = TRUE)) %>%
   ungroup()
+
 
 # Filter to keep only sites with an observed ppt range that spans at least +- 1 sd of long-term avg
 mass_ppt <- mass_ppt %>%
@@ -255,7 +262,7 @@ fig2_both <- annotate_figure(
 fig2_both
 
 
-### Comparing control vs. NPK R2 - Approach 1: calculate and cotruehist()### Comparing control vs. NPK R2 - Approach 1: calculate and compare difference at each site
+### Comparing control vs. NPK R2 - calculate and compare difference at each site
 
 site_codes <- unique(mass_ppt$site_code)
 
@@ -760,11 +767,34 @@ driest_year_plot
 main_model_driest <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), data = driest_year_mass_ppt)
 summary(main_model_driest)
 
+## Analyzing only data from the driest year at each site
+
+wettest_year_mass_ppt <- mass_ppt_edited %>%
+  group_by(site_code, trt) %>%
+  slice_max(ppt) %>%
+  ungroup()
+
+wettest_year_plot <- ggplot(data = wettest_year_mass_ppt, 
+                           aes(x = ppt, y = live_mass, color = trt, fill = trt, shape = trt)) +
+  geom_point(alpha = 0.3) + 
+  geom_smooth(method = "lm", alpha = 0.2) +
+  labs(x = "Precipitation (mm)", y = "Biomass (g/m²)", 
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
+  theme_bw(14) +
+  scale_color_manual(values = c("#0092E0", "#ff924c")) +
+  scale_fill_manual(values = c("#0092E0", "#ff924c")) +
+  theme(legend.position = "bottom")
+
+wettest_year_plot
+
+main_model_wettest <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), data = wettest_year_mass_ppt)
+summary(main_model_wettest)
+
 
 
 # SUPPLEMENTAL ANALYSES
 
-### Comparing control vs. NPK R2 - Approach 2: fit separate models for control and NPK data, calculate and compare z scores
+### Another approach to comparing control vs. NPK R2 - fit separate models for control and NPK data, calculate and compare z scores
 
 model_control <- lmer(log_mass ~ log_ppt + (1 | site_code / year_trt), 
                       data = subset(mass_ppt, trt == "Control"))
@@ -802,7 +832,7 @@ cat("Z-score for the difference:", z_diff, "\n")
 cat("P-value for the difference in marginal R-squared values:", p_value, "\n")
 
 
-### Comparing control vs. NPK R2 - Approach 3: Bootstrapping to test for difference in R2 between Control and NKP models
+### Yet another approach to comparing control vs. NPK R2 - Bootstrapping to test for difference in R2 between Control and NKP models
 
 r2_diff <- function(data, indices) {
   data_resampled <- data[indices, ]
