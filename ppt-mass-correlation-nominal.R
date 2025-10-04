@@ -1,6 +1,6 @@
 
-# Doing everything again using only non-extreme ppt values
-# Picking up after line 106 of main script (right before running main model)
+### Doing everything again using only non-extreme ppt values
+### Picking up after line 106 of main script (right before running main model)
 
 # Filter to keep only ppt values within non-extreme range
 mass_ppt_nominal <- mass_ppt %>%
@@ -24,6 +24,8 @@ qqline(resid)
 plot(fitted(main_model_nominal), resid, main = "Residuals vs Fitted")
 
 
+### Models per site
+
 # Split data by site_code
 site_models <- mass_ppt_nominal %>%
   group_by(site_code) %>%
@@ -43,6 +45,8 @@ site_results <- map2_df(
     mutate(site_code = .y)
 )
 
+View(site_results)
+
 # Extract R² values for each model
 site_r2 <- map2_df(
   fit_site_models,
@@ -57,24 +61,51 @@ site_r2 <- map2_df(
   }
 )
 
+View(site_r2)
+
 # Join results
-final_results_site <- site_results %>%
+site_results_r2 <- site_results %>%
   left_join(site_r2, by = "site_code")
 
-# final_results now contains:
-# site_code | term | estimate | std.error | statistic | df | p.value | R2_marginal | R2_conditional
+View(site_results_r2)
+
+# Reorder columns for clarity
+site_results_r2 <- site_results_r2 %>%
+  dplyr::select(site_code, term, estimate, std.error, statistic, df, p.value, R2_marginal, R2_conditional)
+
+View(site_results_r2)
+
+# Pivot site results wider
+site_results_wide <- site_results %>%
+  dplyr::select(site_code, term, estimate, std.error, statistic, df, p.value) %>%
+  pivot_wider(
+    names_from = term,
+    values_from = c(estimate, std.error, statistic, df, p.value),
+    names_sep = "_"
+  )
+
+View(site_results_wide)
+
+# Join site R2 values
+site_results_r2_wide <- site_results_wide %>%
+  left_join(site_r2, by = "site_code") %>%
+  mutate(across(where(is.numeric), ~ round(., 3))) %>% 
+  arrange(site_code)
+
+View(site_results_r2_wide)
 
 
+### Models per site-trt
 
-# Fit lm for each site × trt
+# Fit models for each site-trt
 site_trt_models <- mass_ppt_nominal %>%
   group_by(site_code, trt) %>%
   group_split() %>%
   set_names(map_chr(., ~ paste(unique(.x$site_code), unique(.x$trt), sep = "_"))) %>%
   map(~ lm(log_mass ~ log_ppt, data = .x))
 
-# Extract coefficient-level estimates
-site_trt_estimates <- map2_df(
+# Extract tidy fixed effect results for model coefficients
+site_trt_results <- map2_df(
   site_trt_models,
   names(site_trt_models),
   ~ tidy(.x) %>%
@@ -82,8 +113,11 @@ site_trt_estimates <- map2_df(
       p.value_coef = p.value,
       t.value = statistic
     ) %>%
-    mutate(site_trt = .y)
+    mutate(site_trt = .y) %>%
+  separate(site_trt, into = c("site_code", "trt"), sep = "_")
 )
+
+View(site_trt_results)
 
 # Extract model-level R² and p-value
 site_trt_r2 <- map2_df(
@@ -94,35 +128,43 @@ site_trt_r2 <- map2_df(
     rename(
       p.value_model = p.value
     ) %>%
-    mutate(site_trt = .y)
+    mutate(site_trt = .y) %>%
+    separate(site_trt, into = c("site_code", "trt"), sep = "_")
 )
 
-# Split site_trt into separate columns
-site_trt_estimates <- site_trt_estimates %>%
-  separate(site_trt, into = c("site_code", "trt"), sep = "_")
+View(site_trt_r2)
 
-site_trt_r2 <- site_trt_r2 %>%
-  separate(site_trt, into = c("site_code", "trt"), sep = "_")
-
-# Join coefficient and model-level results
-final_results_site_trt <- site_trt_estimates %>%
+# Join coefficient and R2 values
+site_trt_results_r2 <- site_trt_results %>%
   left_join(site_trt_r2, by = c("site_code", "trt"))
 
-# final_results now contains:
-# site_code | trt | term | estimate | std.error | t.value | p.value_coef | r.squared | adj.r.squared | p.value_model | df
+View(site_trt_results_r2)
 
-
-# Keep model-level metrics only for slope term
-final_results_clean <- final_results %>%
-  mutate(
-    r.squared = ifelse(term != "log_ppt", NA, r.squared),
-    adj.r.squared = ifelse(term != "log_ppt", NA, adj.r.squared),
-    p.value_model = ifelse(term != "log_ppt", NA, p.value_model)
-  )
-
-# Optional: reorder columns for clarity
-final_results_clean <- final_results_clean %>%
+# Reorder columns for clarity
+site_trt_results_r2 <- site_trt_results_r2 %>%
   dplyr::select(site_code, trt, term, estimate, std.error, t.value, p.value_coef, df,
          r.squared, adj.r.squared, p.value_model)
+
+View(site_trt_results_r2)
+
+# Pivot site-trt results wider
+site_trt_results_wide <- site_trt_results_r2 %>%
+  dplyr::select(site_code, trt, term, estimate, std.error, t.value, p.value_coef) %>%
+  pivot_wider(
+    names_from = term,
+    values_from = c(estimate, std.error, t.value, p.value_coef),
+    names_sep = "_"
+  )
+
+View(site_trt_results_wide)
+
+# Join R2 values
+site_trt_results_r2_wide <- site_trt_results_wide %>%
+  left_join(site_trt_r2, by = c("site_code", "trt")) %>%
+  mutate(across(where(is.numeric), ~ round(., 3))) %>% 
+  arrange(site_code, trt)
+
+View(site_trt_results_r2_wide)
+
 
 
