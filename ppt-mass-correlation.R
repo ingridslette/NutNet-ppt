@@ -185,83 +185,6 @@ ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = site_code)) +
   facet_wrap(~ trt) +
   theme_bw(14)
 
-predictions <- predictions %>%
-  left_join(results_with_averages, by = c("site_code", "trt"))
-
-fig2_control <- ggplot(subset(predictions, trt == "Control"), aes(x = 10^log_ppt, y = predicted_mass)) +
-  geom_line(aes(group = site_code, colour = r2)) +
-  geom_ribbon(data = subset(predictions_allsites, trt == "Control"),
-              aes(x = 10^log_ppt, ymin = mass_lower, ymax = mass_upper), 
-              fill = "#0092E0", alpha = 0.3) +
-  geom_line(data = subset(predictions_allsites, trt == "Control"), 
-            aes(x = 10^log_ppt, y = predicted_mass),
-            color = "#0092E0") +
-  geom_ribbon(data = subset(predictions_allsites, trt == "NPK"),
-              aes(x = 10^log_ppt, ymin = mass_lower, ymax = mass_upper), 
-              fill = "#ff924c", alpha = 0.15) +
-  geom_line(data = subset(predictions_allsites, trt == "NPK"), 
-            aes(x = 10^log_ppt, y = predicted_mass),
-            color = "#ff924c", linetype = "dashed") +
-  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m²)", 
-       title = "Control", colour = expression(R^2)) +
-  scale_y_continuous(limits = c(0, 2300)) +
-  scale_colour_gradient2(low = "#E4D3EE", mid = "#B185DB", high = "#423073",
-                         midpoint = 0.3) +
-  theme_bw() +
-  theme(
-    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
-    axis.title = element_text(size = 14),
-    legend.title = element_text(size = 14),
-    legend.text = element_text(size = 10),
-    axis.title.y = element_text(size = 14, margin = margin(r = 20))
-  )
-
-fig2_npk <- ggplot(subset(predictions, trt == "NPK"), aes(x = 10^log_ppt, y = predicted_mass)) +
-  geom_line(aes(group = site_code, colour = r2)) +
-  geom_ribbon(data = subset(predictions_allsites, trt == "NPK"),
-              aes(x = 10^log_ppt, ymin = mass_lower, ymax = mass_upper), 
-              fill = "#ff924c", alpha = 0.3) +
-  geom_line(data = subset(predictions_allsites, trt == "NPK"), 
-            aes(x = 10^log_ppt, y = predicted_mass),
-            color = "#ff924c") +
-  geom_ribbon(data = subset(predictions_allsites, trt == "Control"),
-              aes(x = 10^log_ppt, ymin = mass_lower, ymax = mass_upper), 
-              fill = "#0092E0", alpha = 0.15) +
-  geom_line(data = subset(predictions_allsites, trt == "Control"), 
-            aes(x = 10^log_ppt, y = predicted_mass),
-            color = "#0092E0", linetype = "dashed") +
-  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m²)", 
-       title = "Fertilized", colour = expression(R^2)) +
-  scale_y_continuous(limits = c(0, 2300)) +
-  scale_colour_gradient2(low = "#E4D3EE", mid = "#B185DB", high = "#423073",
-                         midpoint = 0.3) +
-  theme_bw() +
-  theme(
-    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
-    axis.title = element_text(size = 14)
-  )
-
-fig2_both <- ggarrange(
-  fig2_control + rremove("xlab"),
-  fig2_npk + 
-    rremove("ylab") + rremove("xlab") +
-    theme(
-      axis.text.y = element_blank(), 
-      axis.ticks.y = element_blank()
-    ),
-  ncol = 2,
-  common.legend = TRUE,
-  legend = "right",
-  align = 'hv'
-)
-
-fig2_both <- annotate_figure(
-  fig2_both,
-  bottom = text_grob("Growing Season Precipitation (mm)", size = 14)
-)
-
-fig2_both
-
 
 ### Comparing control vs. NPK R2 - calculate and compare difference at each site
 
@@ -439,6 +362,20 @@ mass_annual_plot <- ggplot(data = mass_ppt_edited, aes(x = avg_annual_proportion
   theme_bw(14) +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 
+mass_covar_fig_all <- ggarrange(mass_par_plot, 
+                                mass_ai_plot,
+                                mass_annual_plot,
+                                mass_c4_plot,
+                                mass_prev_ppt_plot,
+                                mass_rich_plot,
+                               mass_lrr_mass_plot + rremove("ylab") +
+                                 theme(
+                                   axis.text.y = element_blank(), 
+                                   axis.ticks.y = element_blank()
+                                 ),
+                               common.legend = TRUE, 
+                               legend = "bottom", align = 'hv')
+mass_covar_fig_all
 
 mass_covar_figure <- ggarrange(mass_par_plot, 
                                mass_lrr_mass_plot + rremove("ylab") +
@@ -615,11 +552,84 @@ slope_covar_figure <- ggarrange(slope_ai_plot_quad, slope_lrr_mass_plot, slope_p
 slope_covar_figure
 
 
-fig <- ggarrange(fig2_inset, slope_ai_plot_quad,
-                 ncol = 1, common.legend = TRUE, legend = "bottom", align = 'hv')
+## Main graph
 
-fig
+predictions <- predictions %>%
+  left_join(results_with_averages, by = c("site_code", "trt"))
 
+fig2_control <- ggplot(subset(predictions, trt == "Control"), aes(x = 10^log_ppt, y = predicted_mass)) +
+  geom_line(aes(group = site_code, colour = r2)) +
+  geom_ribbon(data = subset(predictions_allsites, trt == "Control"),
+              aes(x = 10^log_ppt, ymin = mass_lower, ymax = mass_upper), 
+              fill = "#0092E0", alpha = 0.3) +
+  geom_line(data = subset(predictions_allsites, trt == "Control"), 
+            aes(x = 10^log_ppt, y = predicted_mass),
+            color = "#0092E0") +
+  geom_ribbon(data = subset(predictions_allsites, trt == "NPK"),
+              aes(x = 10^log_ppt, ymin = mass_lower, ymax = mass_upper), 
+              fill = "#ff924c", alpha = 0.15) +
+  geom_line(data = subset(predictions_allsites, trt == "NPK"), 
+            aes(x = 10^log_ppt, y = predicted_mass),
+            color = "#ff924c", linetype = "dashed") +
+  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m²)", 
+       title = "Control", colour = expression(R^2)) +
+  scale_y_continuous(limits = c(0, 2300)) +
+  scale_colour_gradient2(low = "#E4D3EE", mid = "#B185DB", high = "#423073",
+                         midpoint = 0.3) +
+  theme_bw() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    axis.title = element_text(size = 14),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 10),
+    axis.title.y = element_text(size = 14, margin = margin(r = 20))
+  )
+
+fig2_npk <- ggplot(subset(predictions, trt == "NPK"), aes(x = 10^log_ppt, y = predicted_mass)) +
+  geom_line(aes(group = site_code, colour = r2)) +
+  geom_ribbon(data = subset(predictions_allsites, trt == "NPK"),
+              aes(x = 10^log_ppt, ymin = mass_lower, ymax = mass_upper), 
+              fill = "#ff924c", alpha = 0.3) +
+  geom_line(data = subset(predictions_allsites, trt == "NPK"), 
+            aes(x = 10^log_ppt, y = predicted_mass),
+            color = "#ff924c") +
+  geom_ribbon(data = subset(predictions_allsites, trt == "Control"),
+              aes(x = 10^log_ppt, ymin = mass_lower, ymax = mass_upper), 
+              fill = "#0092E0", alpha = 0.15) +
+  geom_line(data = subset(predictions_allsites, trt == "Control"), 
+            aes(x = 10^log_ppt, y = predicted_mass),
+            color = "#0092E0", linetype = "dashed") +
+  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m²)", 
+       title = "Fertilized", colour = expression(R^2)) +
+  scale_y_continuous(limits = c(0, 2300)) +
+  scale_colour_gradient2(low = "#E4D3EE", mid = "#B185DB", high = "#423073",
+                         midpoint = 0.3) +
+  theme_bw() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    axis.title = element_text(size = 14)
+  )
+
+fig2_both <- ggarrange(
+  fig2_control + rremove("xlab"),
+  fig2_npk + 
+    rremove("ylab") + rremove("xlab") +
+    theme(
+      axis.text.y = element_blank(), 
+      axis.ticks.y = element_blank()
+    ),
+  ncol = 2,
+  common.legend = TRUE,
+  legend = "right",
+  align = 'hv'
+)
+
+fig2_both <- annotate_figure(
+  fig2_both,
+  bottom = text_grob("Growing Season Precipitation (mm)", size = 14)
+)
+
+fig2_both
 
 
 ### Calculating and graphing effect sizes
@@ -715,9 +725,7 @@ es_fig <- ggplot(cohen_d_df, aes(x = Cohen_d, y = Variable)) +
   theme_bw(16) +
   theme(axis.text.y = element_text(size = 16))
 
-
 es_fig
-
 
 ## Calculating and testing trt effect on RUE 
 
@@ -768,7 +776,7 @@ driest_year_plot
 main_model_driest <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), data = driest_year_mass_ppt)
 summary(main_model_driest)
 
-## Analyzing only data from the driest year at each site
+## Analyzing only data from the wettest year at each site
 
 wettest_year_mass_ppt <- mass_ppt_edited %>%
   group_by(site_code, trt) %>%
