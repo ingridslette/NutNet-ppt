@@ -585,6 +585,8 @@ fig2_control <- ggplot(subset(predictions, trt == "Control"), aes(x = 10^log_ppt
     axis.title.y = element_text(size = 14, margin = margin(r = 20))
   )
 
+fig2_control
+
 fig2_npk <- ggplot(subset(predictions, trt == "NPK"), aes(x = 10^log_ppt, y = predicted_mass)) +
   geom_line(aes(group = site_code, colour = r2)) +
   geom_ribbon(data = subset(predictions_allsites, trt == "NPK"),
@@ -610,6 +612,8 @@ fig2_npk <- ggplot(subset(predictions, trt == "NPK"), aes(x = 10^log_ppt, y = pr
     axis.title = element_text(size = 14)
   )
 
+fig2_npk
+
 fig2_both <- ggarrange(
   fig2_control + rremove("xlab"),
   fig2_npk + 
@@ -624,108 +628,15 @@ fig2_both <- ggarrange(
   align = 'hv'
 )
 
+fig2_both
+
 fig2_both <- annotate_figure(
   fig2_both,
-  bottom = text_grob("Growing Season Precipitation (mm)", size = 14)
+  bottom = text_grob("Annual Growing Season Precipitation (mm)", size = 14)
 )
 
 fig2_both
 
-
-### Calculating and graphing effect sizes
-
-results_graphing <- data.frame(site_code = character(), 
-                               trt = character(), 
-                               r2 = numeric(), 
-                               slope = numeric(),
-                               mean = numeric(),
-                               stringsAsFactors = FALSE)
-
-for (site in site_codes) {
-  site_data_control <- subset(mass_ppt, site_code == site & trt == "Control")
-  site_data_npk <- subset(mass_ppt, site_code == site & trt == "NPK")
-  control_model <- lm(live_mass ~ ppt, data = site_data_control)
-  npk_model <- lm(live_mass ~ ppt, data = site_data_npk)
-  control_r2 <- summary(control_model)$r.squared
-  npk_r2 <- summary(npk_model)$r.squared
-  control_slope <- coef(control_model)["ppt"]
-  npk_slope <- coef(npk_model)["ppt"]
-  control_mean <- mean(site_data_control$live_mass, na.rm = TRUE)
-  npk_mean <- mean(site_data_npk$live_mass, na.rm = TRUE)
-  results_graphing <- rbind(results_graphing, data.frame(
-    site_code = site,
-    trt = "Control",
-    r2 = control_r2,
-    slope = control_slope,
-    mean = control_mean
-  ))
-  results_graphing <- rbind(results_graphing, data.frame(
-    site_code = site,
-    trt = "NPK",
-    r2 = npk_r2,
-    slope = npk_slope,
-    mean = npk_mean
-  ))
-}
-
-mean_model <- lmer(mean ~ trt + (1| site_code), data = results_graphing)
-summary(mean_model)
-
-slope_model <- lmer(slope ~ trt + (1| site_code), data = results_graphing)
-summary(slope_model)
-
-r2_model <- lmer(r2 ~ trt + (1| site_code), data = results_graphing)
-summary(r2_model)
-
-
-mean_estimate <- 191.32
-mean_se <- 22.75
-mean_resid_sd <- 89.55
-n_mean <- 62
-
-slope_estimate <- 0.3427
-slope_se <- 0.1342
-slope_resid_sd <- 0.5283
-n_slope <- 62   
-
-r2_estimate <- -0.009264
-r2_se <- 0.020466
-r2_resid_sd <- 0.08057
-n_r2 <- 62
-
-calc_cohen_d <- function(estimate, resid_sd, n) {
-  d <- estimate / resid_sd
-  n1 <- n / 2
-  n2 <- n / 2
-  SE_d <- sqrt((n1 + n2) / (n1 * n2) + (d^2) / (2 * (n1 + n2))) 
-  lower_CI <- d - 1.96 * SE_d
-  upper_CI <- d + 1.96 * SE_d
-  return(c(d, lower_CI, upper_CI))
-}
-
-mean_results <- calc_cohen_d(mean_estimate, mean_resid_sd, n_mean)
-slope_results <- calc_cohen_d(slope_estimate, slope_resid_sd, n_slope)
-r2_results <- calc_cohen_d(r2_estimate, r2_resid_sd, n_r2)
-
-cohen_d_df <- data.frame(
-  Variable = c("Biomass", "Sensitivity", "R²"),
-  Cohen_d = c(mean_results[1], slope_results[1], r2_results[1]),
-  Lower_CI = c(mean_results[2], slope_results[2], r2_results[2]),
-  Upper_CI = c(mean_results[3], slope_results[3], r2_results[3])
-)
-
-cohen_d_df$Variable <- factor(cohen_d_df$Variable, levels = c("R²", "Sensitivity", "Biomass"))
-
-es_fig <- ggplot(cohen_d_df, aes(x = Cohen_d, y = Variable)) +
-  geom_point(size = 4) +
-  geom_errorbar(aes(xmin = Lower_CI, xmax = Upper_CI), width = 0.2) +
-  labs(x = "Effect Size (Cohen's d)",
-       y = "") +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  theme_bw(16) +
-  theme(axis.text.y = element_text(size = 16))
-
-es_fig
 
 ## Calculating and testing trt effect on RUE 
 
@@ -798,6 +709,109 @@ wettest_year_plot
 
 main_model_wettest <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), data = wettest_year_mass_ppt)
 summary(main_model_wettest)
+
+
+### Calculating and graphing effect sizes
+
+results_graphing <- data.frame(site_code = character(), 
+                               trt = character(), 
+                               r2 = numeric(), 
+                               slope = numeric(),
+                               mean = numeric(),
+                               stringsAsFactors = FALSE)
+
+for (site in site_codes) {
+  site_data_control <- subset(mass_ppt, site_code == site & trt == "Control")
+  site_data_npk <- subset(mass_ppt, site_code == site & trt == "NPK")
+  control_model <- lm(live_mass ~ ppt, data = site_data_control)
+  npk_model <- lm(live_mass ~ ppt, data = site_data_npk)
+  control_r2 <- summary(control_model)$r.squared
+  npk_r2 <- summary(npk_model)$r.squared
+  control_slope <- coef(control_model)["ppt"]
+  npk_slope <- coef(npk_model)["ppt"]
+  control_mean <- mean(site_data_control$live_mass, na.rm = TRUE)
+  npk_mean <- mean(site_data_npk$live_mass, na.rm = TRUE)
+  results_graphing <- rbind(results_graphing, data.frame(
+    site_code = site,
+    trt = "Control",
+    r2 = control_r2,
+    slope = control_slope,
+    mean = control_mean
+  ))
+  results_graphing <- rbind(results_graphing, data.frame(
+    site_code = site,
+    trt = "NPK",
+    r2 = npk_r2,
+    slope = npk_slope,
+    mean = npk_mean
+  ))
+}
+
+mean_model <- lmer(mean ~ trt + (1| site_code), data = results_graphing)
+summary(mean_model)
+
+slope_model <- lmer(slope ~ trt + (1| site_code), data = results_graphing)
+summary(slope_model)
+
+r2_model <- lmer(r2 ~ trt + (1| site_code), data = results_graphing)
+summary(r2_model)
+
+
+mean_estimate <- 191.32
+mean_se <- 22.75
+mean_resid_sd <- 89.55
+n_mean <- 62
+
+slope_estimate <- 0.3427
+slope_se <- 0.1342
+slope_resid_sd <- 0.5283
+n_slope <- 62   
+
+r2_estimate <- -0.009264
+r2_se <- 0.020466
+r2_resid_sd <- 0.08057
+n_r2 <- 62
+
+rue_estimate <- 0.5365
+rue_se <- 0.04865
+rue_resid_sd <- 1.0923
+n_rue <- 2046
+
+
+calc_cohen_d <- function(estimate, resid_sd, n) {
+  d <- estimate / resid_sd
+  n1 <- n / 2
+  n2 <- n / 2
+  SE_d <- sqrt((n1 + n2) / (n1 * n2) + (d^2) / (2 * (n1 + n2))) 
+  lower_CI <- d - 1.96 * SE_d
+  upper_CI <- d + 1.96 * SE_d
+  return(c(d, lower_CI, upper_CI))
+}
+
+mean_results <- calc_cohen_d(mean_estimate, mean_resid_sd, n_mean)
+slope_results <- calc_cohen_d(slope_estimate, slope_resid_sd, n_slope)
+r2_results <- calc_cohen_d(r2_estimate, r2_resid_sd, n_r2)
+rue_results <- calc_cohen_d(rue_estimate, rue_resid_sd, n_rue)
+
+cohen_d_df <- data.frame(
+  Variable = c("Biomass", "RUE", "Sensitivity", "R²"),
+  Cohen_d = c(mean_results[1], rue_results[1], slope_results[1], r2_results[1]),
+  Lower_CI = c(mean_results[2], rue_results[2], slope_results[2], r2_results[2]),
+  Upper_CI = c(mean_results[3], rue_results[3], slope_results[3], r2_results[3])
+)
+
+cohen_d_df$Variable <- factor(cohen_d_df$Variable, levels = c("R²", "Sensitivity", "RUE", "Biomass"))
+
+es_fig <- ggplot(cohen_d_df, aes(x = Cohen_d, y = Variable)) +
+  geom_point(size = 4) +
+  geom_errorbar(aes(xmin = Lower_CI, xmax = Upper_CI), width = 0.2) +
+  labs(x = "Effect Size (Cohen's d)",
+       y = "") +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  theme_bw(16) +
+  theme(axis.text.y = element_text(size = 16))
+
+es_fig
 
 
 
