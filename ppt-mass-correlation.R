@@ -11,6 +11,7 @@ library(emmeans)
 library(ggpubr)
 library(purrr)
 library(cowplot)
+library(ggeffects)
 
 
 ### Loading, viewing, and filtering precipitation and mass data 
