@@ -75,8 +75,8 @@ ppt_data <- ppt_data %>%
   mutate(
     avg_ppt = mean(ppt, na.rm = TRUE),
     sd_ppt = sd(ppt, na.rm = TRUE),
-    p10_ppt = quantile(ppt, 0.10, na.rm = TRUE),
-    p90_ppt = quantile(ppt, 0.90, na.rm = TRUE)
+    p05_ppt = quantile(ppt, 0.05, na.rm = TRUE),
+    p95_ppt = quantile(ppt, 0.95, na.rm = TRUE)
     ) %>%
   ungroup()
 
