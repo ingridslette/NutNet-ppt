@@ -12,7 +12,7 @@ library(ggpubr)
 library(purrr)
 library(cowplot)
 library(ggeffects)
-
+library(DHARMa)
 
 ### Loading, viewing, and filtering precipitation and mass data 
 
@@ -37,6 +37,8 @@ mass1 <- mass1 %>%
       unsorted_live_mass
   )
   )
+
+summary(mass1$live_mass)
 
 site_year_counts <- mass1 %>%
   group_by(site_code, trt) %>%
@@ -109,7 +111,7 @@ unique(mass_ppt$site_code)
 
 ### Main model
 
-main_model <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), data = mass_ppt)
+main_model <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), data = mass_ppt, na.action = na.exclude)
 summary(main_model)
 
 # Model assumptions check 
@@ -119,6 +121,53 @@ hist(resid, breaks = 30, main = "Histogram of Residuals")
 qqnorm(resid)
 qqline(resid)
 plot(fitted(main_model), resid, main = "Residuals vs Fitted")
+
+summary(mass_ppt$live_mass)
+hist(mass_ppt$live_mass)
+
+main_glmm <- glmer(
+  live_mass ~ ppt * trt + (1 | site_code / block) + (1 | year_trt),
+  data = mass_ppt,
+  family = Gamma(link = "log"),
+  na.action = na.exclude
+)
+
+summary(main_glmm)
+
+
+AIC(main_model, main_glmm)
+BIC(main_model, main_glmm)
+
+
+# Simulate residuals for each model
+res_lmer <- simulateResiduals(main_model)
+res_glmm <- simulateResiduals(main_glmm)
+
+# Plot residual diagnostics
+plot(res_lmer)
+plot(res_glmm)
+
+# R2 (Nakagawa's marginal and conditional R2)
+r.squaredGLMM(main_model)
+r.squaredGLMM(main_glmm)
+
+# Predicted values
+mass_ppt$pred_lmer <- predict(main_model)
+mass_ppt$pred_glmm <- predict(main_glmm, type = "response")
+
+ggplot(mass_ppt, aes(x = pred_lmer, y = log_mass)) +
+  geom_point(alpha = 0.4) +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Observed vs Predicted (LMM)", x = "Predicted", y = "Observed log_mass")
+
+ggplot(mass_ppt, aes(x = pred_glmm, y = live_mass)) +
+  geom_point(alpha = 0.4) +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Observed vs Predicted (GLMM, Gamma)", x = "Predicted", y = "Observed mass")
+
+
+
+
 
 ### Back-transforming data for graphing - allows for non-linear curves on linear scale
 
