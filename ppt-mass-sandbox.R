@@ -1,5 +1,5 @@
-# "just playing around" code
 
+# "just playing around" code
 
 fig2_4 <- ggarrange(
   es_fig,
@@ -24,16 +24,10 @@ fig2_4 <- annotate_figure(
 
 fig2_4
 
-
-
-
 fig2_both_ef <- ggarrange(es_fig, fig2_both,
                           widths = c(0.5, 1))
 
 fig2_both_ef
-
-
-
 
 my_palette <- colorRampPalette(c("#a50026","#d73027","#f46d43","#fdae61",
                                  "#CAF0F8","#90E0EF","#00A5D0","#0077B6",
@@ -89,10 +83,6 @@ fig2_with_inset <- ggdraw() +
   draw_plot(fig2_inset, x = 0.09, y = 0.52, width = 0.22, height = 0.38)
 fig2_with_inset
 
-
-
-
-library(dplyr)
 
 summary_stats <- mass_ppt %>%
   group_by(trt) %>%
@@ -164,10 +154,7 @@ ggplot(variance_summary, aes(x = trt), fill = trt) +
   geom_bar(aes(y = mean_r2), stat = "identity", alpha = 0.3) +
   labs(y = "Variance",
        x = "Treatment") +
-  theme_bw(14)
-
-
-
+  theme_bw()
 
 variance <- mass_ppt_edited %>%
   group_by(trt) %>%
@@ -188,7 +175,7 @@ ggplot(variance, aes(x = trt)) +
   labs(y = "Variance",
        x = "Treatment",
        fill = "Variance Type") +
-  theme_bw(14)
+  theme_bw()
 
 
 # Graphing mean, r2, and slope on absolute scale (not log transformed)
@@ -252,7 +239,6 @@ boxplots <- ggarrange(mean_boxplot, slope_boxplot, r2_boxplot,
 boxplots
 
 
-
 mass1 %>%
   filter(is.na(vascular_live_mass) & is.na(nonvascular_live_mass) & !is.na(unsorted_live_mass)) %>%
   count(site_code)
@@ -260,7 +246,6 @@ mass1 %>%
 mass1 %>%
   filter(!is.na(standing_dead_mass)) %>%
   count(site_code)
-
 
 
 fig1_inset <- ggplot(data = results_with_averages, aes(x = avg_ai, y = slope, color = trt, shape = trt)) +
@@ -275,7 +260,6 @@ figure1_with_inset <- ggdraw() +
   draw_plot(figure1) +
   draw_plot(fig1_inset, x = 0.08, y = 0.55, width = 0.22, height = 0.38)
 figure1_with_inset
-
 
 
 ### Initial graphs
@@ -308,8 +292,6 @@ ggplot(data = mass_ppt, aes(x = ppt, y = live_mass)) +
        y = "Biomass (g/m2)",
        color = "Site Code") +
   theme(legend.position = "right")
-
-
 
 
 ggplot(predictions, aes(x = 10^log_ppt, y = predicted_mass, colour = r2_diff)) +
@@ -349,8 +331,6 @@ ggplot(predictions, aes(x = 10^log_ppt, y = predicted_mass, colour = r2_diff)) +
   facet_wrap(~ trt) +
   theme_bw(base_size = 14) +
   theme(legend.position = "right")
-
-
 
 
 my_palette <- colorRampPalette(c("#a50026",
@@ -409,5 +389,52 @@ ggplot(predictions, aes(x = 10^log_ppt, y = predicted_mass, colour = r2_diff)) +
   facet_wrap(~ trt) +
   theme_bw(base_size = 14) +
   theme(legend.position = "right")
+
+
+## Looking at site-level trade-offs in magnitude of response to limiting factors
+
+par_lrr_mass_plot <- ggplot(data = results_with_averages, 
+                            aes(x = avg_lrr_mass, y = avg_proportion_par, color = trt, shape = trt)) +
+  geom_point() + geom_smooth(method = lm, se = FALSE) +
+  xlab("Log Response Ratio of Mass") + ylab("Proportion PAR") +
+  theme_bw() +
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
+par_lrr_mass_plot
+
+slope_lrr_mass_plot2 <- ggplot(data = results_with_averages, 
+                               aes(x = avg_lrr_mass, y = slope, color = trt, shape = trt)) +
+  geom_point() + geom_smooth(method = lm, se = FALSE) +
+  xlab("Log Response Ratio of Mass") + ylab("Slope of ppt vs. mass") +
+  theme_bw() +
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
+
+slope_par_plot2 <- ggplot(data = results_with_averages, 
+                          aes(x = avg_proportion_par, y = slope, color = trt, shape = trt)) +
+  geom_point() + geom_smooth(method = lm, se = FALSE) +
+  xlab("Proportion PAR") + ylab("Slope of ppt vs. mass") +
+  theme_bw() +
+  scale_color_manual(values = c("#0092E0", "#ff924c"))
+
+par_lrr_mass_model <- lm(avg_proportion_par ~ trt * avg_lrr_mass, data = results_with_averages, na.action = "na.fail")
+summary(par_lrr_mass_model) # NS
+
+slope_lrr_mass_model <- lm(slope ~ trt * avg_lrr_mass, data = results_with_averages, na.action = "na.fail")
+summary(slope_lrr_mass_model) # NS
+
+slope_par_model <- lm(slope ~ trt * avg_proportion_par, data = results_with_averages, na.action = "na.fail")
+summary(slope_par_model) # NS
+
+colimitation_figure <- ggarrange(slope_lrr_mass_plot2, slope_par_plot2, par_lrr_mass_plot,
+                                 ncol = 1, common.legend = TRUE, legend = "bottom", align = 'hv')
+colimitation_figure
+
+ai_lrr_model <- lm(avg_lrr_mass ~ avg_ai, data = results_with_averages)
+summary(ai_lrr_model)
+
+ai_lrr_plot <- ggplot(data = results_with_averages, aes(x = avg_ai, y = avg_lrr_mass)) +
+  geom_point(color = "darkgrey") + geom_smooth(method = lm, se = FALSE, color = "black") +
+  labs(x = "Aridity Index",  y = "LRR mass") +
+  theme_bw() 
+ai_lrr_plot
 
 
