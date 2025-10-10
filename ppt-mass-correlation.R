@@ -55,7 +55,7 @@ mass2 <- mass1 %>%
 
 unique(mass2$site_code)
 
-## popped over to script "daily-to-gs-ppt.R" here, to get growing season ppt for the sites included in mass2
+## popped over to script "calculate-gs-ppt-pet.R" here, to get growing season ppt for the sites included in mass2
 ## exported that as csv and now loading it here
 
 ppt_data <- read.csv("/Users/ingridslette/Desktop/NutNet/ppt_pet_annual_gs_only_2025-10-09.csv")
@@ -140,31 +140,25 @@ summary(main_glmm)
 AIC(main_model, main_glmm)
 BIC(main_model, main_glmm)
 
-# Simulate residuals for each model
-res_lmer <- simulateResiduals(main_model)
-res_glmm <- simulateResiduals(main_glmm)
-
-# Plot residual diagnostics
-plot(res_lmer)
-plot(res_glmm)
-
-# R2 (Nakagawa's marginal and conditional R2)
 r.squaredGLMM(main_model)
 r.squaredGLMM(main_glmm)
 
-# Predicted values
-mass_ppt$pred_lmer <- predict(main_model)
-mass_ppt$pred_glmm <- predict(main_glmm, type = "response")
 
-ggplot(mass_ppt, aes(x = pred_lmer, y = log_mass)) +
-  geom_point(alpha = 0.4) +
-  geom_smooth(method = "lm", se = FALSE, color = "red") +
-  labs(title = "Observed vs Predicted (LMM)", x = "Predicted", y = "Observed log_mass")
+## PPT-PET model
 
-ggplot(mass_ppt, aes(x = pred_glmm, y = live_mass)) +
-  geom_point(alpha = 0.4) +
-  geom_smooth(method = "lm", se = FALSE, color = "red") +
-  labs(title = "Observed vs Predicted (GLMM, Gamma)", x = "Predicted", y = "Observed mass")
+main_model_pet <- lmer(log_mass ~ ppt_pet * trt + (1 | site_code / block) + (1 | year_trt), 
+                   data = mass_ppt, na.action = na.exclude)
+summary(main_model_pet)
+
+plot(main_model_pet)
+resid_pet <- residuals(main_model_pet)
+hist(resid_pet, breaks = 30, main = "Histogram of Residuals")
+qqnorm(resid_pet)
+qqline(resid_pet)
+plot(fitted(main_model_pet), resid, main = "Residuals vs Fitted")
+
+AIC(main_model, main_model_pet)
+BIC(main_model, main_model_pet)
 
 
 ### Back-transforming data for graphing - allows for non-linear curves on linear scale
@@ -208,19 +202,19 @@ predictions_allsites <- mass_ppt %>%
   ungroup()
 
 ggplot(data = mass_ppt, aes(x = ppt, y = live_mass, color = trt, shape = trt)) +
-  geom_point() + 
+  geom_point(alpha = 0.7) + 
   geom_line(data = predictions_allsites, aes(x = 10^log_ppt, y = predicted_mass), linewidth = 1) +
   xlab("Annual Growing Season Precipitation (mm)") + ylab("Biomass (g/m²)") +
   labs(color = "Treatment", shape = "Treatment") +
   scale_color_manual(values = c("#0092E0", "#ff924c")) +
-  theme_bw(14)
+  theme_bw(base_size = 14)
 
 ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = trt)) +
-  geom_point() +
+  geom_point(alpha = 0.7) +
   geom_line(data = predictions, aes(x = 10^log_ppt, y = predicted_mass), linewidth = 1) +
   labs(x = "Annual Growing Season Precipitation (mm)", y = "Biomass (g/m²)", color = "Treatment") +
   facet_wrap(~ site_code, scales = "free") +
-  theme_bw(14) +
+  theme_bw(base_size = 14) +
   scale_color_manual(values = c("#0092E0", "#ff924c")) +
   theme(legend.position = "bottom")
 
@@ -230,7 +224,7 @@ ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = site_code)) +
             linewidth = 1, color = "black") +
   labs(x = "Annual Growing Season Precipitation (mm)", y = "Biomass (g/m²)") +
   facet_wrap(~ trt) +
-  theme_bw(14)
+  theme_bw(base_size = 14)
 
 
 ### Comparing control vs. NPK R2 - calculate and compare difference at each site
@@ -331,10 +325,10 @@ cover_by_site_trt <- cover_by_site_plot %>%
   )
 
 mass_ppt_edited <- mass_ppt %>%
-  dplyr::select(site_code, block, plot, continent, country, region, habitat, trt, year, 
-                live_mass, log_mass, ppt, log_ppt, prev_ppt, year_trt, 
-                proportion_par, avg_ppt, sd_ppt, p05_ppt, p95_ppt, p10_ppt, p90_ppt,
-                rich, MAT_v2, AI, PET, MAP_v2)
+  dplyr::select(site_code, block, plot, continent, country, region, habitat, trt, 
+                year, live_mass, log_mass, ppt, log_ppt, prev_ppt, year_trt,
+                proportion_par, avg_ppt, sd_ppt, p05_ppt, p95_ppt, p10_ppt, 
+                p90_ppt,rich, MAT_v2, AI, PET, MAP_v2)
 
 unique(mass_ppt_edited$site_code)
 
@@ -347,14 +341,16 @@ mass_ppt_edited <- mass_ppt_edited %>%
 mass_ppt_edited <- na.omit(mass_ppt_edited)
 unique(mass_ppt_edited$site_code)
 
-## covariate model of mass
-full_model <- lmer(log_mass ~ trt * (log_ppt + proportion_par + AI + rich + prev_ppt + MAP_v2
-                                     + MAT_v2 + lrr_mass + avg_c4_proportion + avg_annual_proportion)
+
+## Covariate model of mass
+
+full_model <- lmer(log_mass ~ trt * (log_ppt + proportion_par + AI + rich + prev_ppt + lrr_mass
+                                     + MAT_v2 + MAP_v2 + avg_c4_proportion + avg_annual_proportion)
                    + (1 | site_code/year_trt) + (1 | site_code/block), 
                    data = mass_ppt_edited, REML = FALSE, na.action = "na.fail")
 
 summary(full_model)
-full_model_table <- dredge(full_model, m.lim=c(NA, 6), fixed = c("c.Control", "c.NPK"))
+full_model_table <- dredge(full_model, m.lim = c(NA, 6), fixed = c("c.Control", "c.NPK"))
 full_model_avg <- model.avg(get.models(full_model_table, subset = delta < 10))
 summary(full_model_avg); sw(full_model_avg)
 
@@ -446,6 +442,7 @@ mass_covar_fig_sig <- ggarrange(mass_par_plot,
 mass_covar_fig_sig
 
 ## Covariate models of R2 and slope
+
 results_long <- data.frame(site_code = character(), 
                            trt = character(), 
                            r2 = numeric(), 
@@ -506,7 +503,6 @@ summary(full_r2_model)
 r2_slope_model <- lm(r2 ~ trt * avg_ai, data = results_with_averages)
 summary(r2_slope_model)
 
-
 full_slope_model <- lm(slope ~ trt * (avg_proportion_par  + avg_ai + avg_richness + avg_lrr_mass
                                       + avg_avg_c4_proportion + avg_avg_annual_proportion), 
                        data = results_with_averages, na.action = "na.fail")
@@ -515,7 +511,6 @@ summary(full_slope_model)
 
 ai_slope_model <- lm(slope ~ trt * avg_ai, data = results_with_averages)
 summary(ai_slope_model)
-
 
 r2_lrr_mass_plot <- ggplot(data = results_with_averages, 
                            aes(x = avg_lrr_mass, y = r2, color = trt, shape = trt)) +
@@ -533,15 +528,15 @@ r2_par_plot <- ggplot(data = results_with_averages,
 
 r2_ai_plot <- ggplot(data = results_with_averages, 
                      aes(x = avg_ai, y = r2, color = trt, shape = trt)) +
-  geom_point(alpha = 0.7) + geom_smooth(method = lm, se = F) +
+  geom_point(alpha = 0.7) +
   xlab("Aridity Index") + ylab("R2 of ppt vs. mass") +
   theme_bw() +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 r2_ai_plot_quad <- ggplot(data = results_with_averages, 
-                     aes(x = avg_ai, y = r2, color = trt, shape = trt)) +
-  geom_point(alpha = 0.7) + 
-  geom_smooth(method = lm, formula = y ~ poly(x, 2, raw = TRUE), se = F) +
+                     aes(x = avg_ai, y = r2)) +
+  geom_point(aes(color = trt, shape = trt), alpha = 0.7) + 
+  geom_smooth(method = lm, formula = y ~ poly(x, 2, raw = TRUE), se = F, color = "#3C4856") +
   xlab("Aridity Index") + ylab("R2 of ppt vs. mass") +
   theme_bw() +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
@@ -613,9 +608,9 @@ slope_ai_plot <- ggplot(data = results_with_averages,
   scale_fill_manual(values = c("#0092E0", "#ff924c"))
 
 slope_ai_plot_quad <- ggplot(data = results_with_averages, 
-                             aes(x = avg_ai, y = slope, color = trt, shape = trt)) +
-  geom_point(alpha = 0.7) +
-  geom_smooth(method = lm, formula = y ~ poly(x, 2, raw = TRUE), se = FALSE) +
+                             aes(x = avg_ai, y = slope)) +
+  geom_point(aes(color = trt, shape = trt), alpha = 0.7) +
+  geom_smooth(method = lm, formula = y ~ poly(x, 2, raw = TRUE), se = FALSE, color = "#3C4856") +
   labs(x = "Aridity Index", y = "Sensitivity (g/m²/mm)",
        color = "Treatment", shape = "Treatment") +
   theme_bw() +
@@ -982,14 +977,15 @@ cohen_d_df <- data.frame(
 
 cohen_d_df$Variable <- factor(cohen_d_df$Variable, levels = c("R²", "Sensitivity", "RUE", "Biomass"))
 
-es_fig <- ggplot(cohen_d_df, aes(x = Cohen_d, y = Variable)) +
+es_fig <- ggplot(cohen_d_df, aes(x = Cohen_d, y = Variable, color = Variable)) +
   geom_point(size = 4) +
   geom_errorbar(aes(xmin = Lower_CI, xmax = Upper_CI), width = 0.2) +
   labs(x = "Effect Size (Cohen's d)",
        y = "") +
   geom_vline(xintercept = 0, linetype = "dashed") +
-  theme_bw(16) +
-  theme(axis.text.y = element_text(size = 16))
+  scale_color_manual(values = c("#3C4856", "#D36D28", "#D36D28", "#D36D28")) +
+  theme_bw(base_size = 14) +
+  theme(axis.text.y = element_text(size = 14), legend.position = "none")
 
 es_fig
 
@@ -1056,56 +1052,4 @@ print(boot_r2)
 
 boot_ci <- boot.ci(boot_r2, type = "perc")
 print(boot_ci)
-
-
-
-## Looking at site-level trade-offs in magnitude of response to limiting factors
-
-par_lrr_mass_plot <- ggplot(data = results_with_averages, 
-                            aes(x = avg_lrr_mass, y = avg_proportion_par, color = trt, shape = trt)) +
-  geom_point() + geom_smooth(method = lm, se = FALSE) +
-  xlab("Log Response Ratio of Mass") + ylab("Proportion PAR") +
-  theme_bw() +
-  scale_color_manual(values = c("#0092E0", "#ff924c"))
-par_lrr_mass_plot
-
-slope_lrr_mass_plot2 <- ggplot(data = results_with_averages, 
-                               aes(x = avg_lrr_mass, y = slope, color = trt, shape = trt)) +
-  geom_point() + geom_smooth(method = lm, se = FALSE) +
-  xlab("Log Response Ratio of Mass") + ylab("Slope of ppt vs. mass") +
-  theme_bw() +
-  scale_color_manual(values = c("#0092E0", "#ff924c"))
-
-slope_par_plot2 <- ggplot(data = results_with_averages, 
-                          aes(x = avg_proportion_par, y = slope, color = trt, shape = trt)) +
-  geom_point() + geom_smooth(method = lm, se = FALSE) +
-  xlab("Proportion PAR") + ylab("Slope of ppt vs. mass") +
-  theme_bw() +
-  scale_color_manual(values = c("#0092E0", "#ff924c"))
-
-par_lrr_mass_model <- lm(avg_proportion_par ~ trt * avg_lrr_mass, data = results_with_averages, na.action = "na.fail")
-summary(par_lrr_mass_model) # NS
-
-slope_lrr_mass_model <- lm(slope ~ trt * avg_lrr_mass, data = results_with_averages, na.action = "na.fail")
-summary(slope_lrr_mass_model) # NS
-
-slope_par_model <- lm(slope ~ trt * avg_proportion_par, data = results_with_averages, na.action = "na.fail")
-summary(slope_par_model) # NS
-
-colimitation_figure <- ggarrange(slope_lrr_mass_plot2, slope_par_plot2, par_lrr_mass_plot,
-                                 ncol = 1, common.legend = TRUE, legend = "bottom", align = 'hv')
-colimitation_figure
-
-
-
-ai_lrr_model <- lm(avg_lrr_mass ~ avg_ai, data = results_with_averages)
-summary(ai_lrr_model)
-
-
-ai_lrr_plot <- ggplot(data = results_with_averages, aes(x = avg_ai, y = avg_lrr_mass)) +
-  geom_point(color = "darkgrey") + geom_smooth(method = lm, se = FALSE, color = "black") +
-  labs(x = "Aridity Index",  y = "LRR mass") +
-  theme_bw() 
-ai_lrr_plot
-
 
