@@ -115,7 +115,10 @@ unique(mass_ppt$site_code)
 
 main_model <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), 
                    data = mass_ppt, na.action = na.exclude)
+
 summary(main_model)
+
+r2_main_model <- performance::r2(main_model)
 
 # Model assumptions check 
 plot(main_model)
@@ -128,6 +131,7 @@ plot(fitted(main_model), resid, main = "Residuals vs Fitted")
 summary(mass_ppt$live_mass)
 hist(mass_ppt$live_mass)
 
+# Comparing a GLM
 main_glmm <- glmer(
   live_mass ~ ppt * trt + (1 | site_code / block) + (1 | year_trt),
   data = mass_ppt,
@@ -140,14 +144,14 @@ summary(main_glmm)
 AIC(main_model, main_glmm)
 BIC(main_model, main_glmm)
 
-r.squaredGLMM(main_model)
-r.squaredGLMM(main_glmm)
+r2_main_glmm <- performance::r2(main_glmm)
 
 
 ## PPT-PET model
 
 main_model_pet <- lmer(log_mass ~ ppt_pet * trt + (1 | site_code / block) + (1 | year_trt), 
                    data = mass_ppt, na.action = na.exclude)
+
 summary(main_model_pet)
 
 plot(main_model_pet)
@@ -160,10 +164,12 @@ plot(fitted(main_model_pet), resid, main = "Residuals vs Fitted")
 AIC(main_model, main_model_pet)
 BIC(main_model, main_model_pet)
 
+r2_ppt_pet_model <- performance::r2(main_model_pet)
+
 
 ### Back-transforming data for graphing - allows for non-linear curves on linear scale
 
-# back transform from log-log scale
+# Back transform from log-log scale
 fit_model_and_predict <- function(data) {
   model <- lm(log_mass ~ log_ppt, data = data)
   new_data <- data.frame(log_ppt = seq(min(data$log_ppt, na.rm = TRUE),
@@ -223,6 +229,32 @@ ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = site_code)) +
   geom_line(data = predictions_allsites, aes(x = 10^log_ppt, y = predicted_mass), 
             linewidth = 1, color = "black") +
   labs(x = "Annual Growing Season Precipitation (mm)", y = "Biomass (g/m²)") +
+  facet_wrap(~ trt) +
+  theme_bw(base_size = 14)
+
+
+# Graphing PPT-PET
+
+ggplot(data = mass_ppt, aes(x = ppt_pet, y = live_mass, color = trt, shape = trt)) +
+  geom_point(alpha = 0.7) + 
+  geom_smooth(method = lm, alpha = 0.2) +
+  labs(x = "Annual GSP-PET (mm)", y = "Biomass (g/m²)", color = "Treatment", shape = "Treatment") +
+  scale_color_manual(values = c("#0092E0", "#ff924c")) +
+  theme_bw(base_size = 14)
+
+ggplot(mass_ppt, aes(x = ppt_pet, y = live_mass, color = trt, shape = trt)) +
+  geom_point(alpha = 0.7) +
+  geom_smooth(method = lm, alpha = 0.2) +
+  labs(x = "Annual GSP-PET (mm)", y = "Biomass (g/m²)", color = "Treatment", shape = "Treatment") +
+  facet_wrap(~ site_code, scales = "free") +
+  theme_bw(base_size = 14) +
+  scale_color_manual(values = c("#0092E0", "#ff924c")) +
+  theme(legend.position = "bottom")
+
+ggplot(mass_ppt, aes(x = ppt_pet, y = live_mass)) +
+  geom_smooth(method = lm, alpha = 0.2, color = "black") +
+  geom_smooth(aes(color = site_code), method = lm, alpha = 0.2, se = F) +
+  labs(x = "Annual GSP-PET (mm)", y = "Biomass (g/m²)") +
   facet_wrap(~ trt) +
   theme_bw(base_size = 14)
 
@@ -328,7 +360,7 @@ mass_ppt_edited <- mass_ppt %>%
   dplyr::select(site_code, block, plot, continent, country, region, habitat, trt, 
                 year, live_mass, log_mass, ppt, log_ppt, prev_ppt, year_trt,
                 proportion_par, avg_ppt, sd_ppt, p05_ppt, p95_ppt, p10_ppt, 
-                p90_ppt,rich, MAT_v2, AI, PET, MAP_v2)
+                p90_ppt,rich, MAT_v2, AI, PET, MAP_v2, ppt_pet)
 
 unique(mass_ppt_edited$site_code)
 
@@ -500,8 +532,8 @@ full_r2_model <- lm(r2 ~ trt * (avg_proportion_par + avg_ai + avg_richness + avg
 
 summary(full_r2_model)
 
-r2_slope_model <- lm(r2 ~ trt * avg_ai, data = results_with_averages)
-summary(r2_slope_model)
+ai_r2_model <- lm(r2 ~ trt * avg_ai, data = results_with_averages)
+summary(ai_r2_model)
 
 full_slope_model <- lm(slope ~ trt * (avg_proportion_par  + avg_ai + avg_richness + avg_lrr_mass
                                       + avg_avg_c4_proportion + avg_avg_annual_proportion), 
@@ -536,7 +568,7 @@ r2_ai_plot <- ggplot(data = results_with_averages,
 r2_ai_plot_quad <- ggplot(data = results_with_averages, 
                      aes(x = avg_ai, y = r2)) +
   geom_point(aes(color = trt, shape = trt), alpha = 0.7) + 
-  geom_smooth(method = lm, formula = y ~ poly(x, 2, raw = TRUE), se = F, color = "#3C4856") +
+  geom_smooth(method = lm, formula = y ~ poly(x, 2, raw = TRUE), se = F, color = "#6F6F6F") +
   xlab("Aridity Index") + ylab("R2 of ppt vs. mass") +
   theme_bw() +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
@@ -610,13 +642,12 @@ slope_ai_plot <- ggplot(data = results_with_averages,
 slope_ai_plot_quad <- ggplot(data = results_with_averages, 
                              aes(x = avg_ai, y = slope)) +
   geom_point(aes(color = trt, shape = trt), alpha = 0.7) +
-  geom_smooth(method = lm, formula = y ~ poly(x, 2, raw = TRUE), se = FALSE, color = "#3C4856") +
+  geom_smooth(method = lm, formula = y ~ poly(x, 2, raw = TRUE), se = FALSE, color = "#6F6F6F") +
   labs(x = "Aridity Index", y = "Sensitivity (g/m²/mm)",
        color = "Treatment", shape = "Treatment") +
   theme_bw() +
   theme(legend.position = "none") +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
-slope_ai_plot_quad
 
 slope_rich_plot <- ggplot(data = results_with_averages, 
                           aes(x = avg_richness, y = slope, color = trt, shape = trt)) +
@@ -777,7 +808,7 @@ summary(main_model_driest)
 driest_year_plot <- ggplot(data = driest_year_mass_ppt, 
                            aes(x = ppt, y = live_mass)) +
   geom_point(aes(color = trt, fill = trt, shape = trt), alpha = 0.7) + 
-  geom_smooth(method = "lm", color = "#3C4856", fill = "#A0ACBD") +
+  geom_smooth(method = "lm", color = "#6F6F6F", alpha = 0.3) +
   labs(x = "Precipitation (mm)", y = "Biomass (g/m²)", 
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw() +
@@ -796,7 +827,7 @@ summary(main_model_p05)
 p05_plot <- ggplot(data = subset(mass_ppt_edited, ppt<p05_ppt), 
                            aes(x = ppt, y = live_mass)) +
   geom_point(aes(color = trt, fill = trt, shape = trt), alpha = 0.7) + 
-  geom_smooth(method = "lm", color = "#3C4856", fill = "#A0ACBD") +
+  geom_smooth(method = "lm", color = "#6F6F6F", alpha = 0.3) +
   labs(x = "Precipitation (mm)", y = "Biomass (g/m²)", 
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw() +
@@ -814,7 +845,7 @@ summary(main_model_p10)
 p10_plot <- ggplot(data = subset(mass_ppt_edited, ppt<p10_ppt), 
                    aes(x = ppt, y = live_mass)) +
   geom_point(aes(color = trt, fill = trt, shape = trt), alpha = 0.7) + 
-  geom_smooth(method = "lm", color = "#3C4856", fill = "#A0ACBD") +
+  geom_smooth(method = "lm", color = "#6F6F6F", alpha = 0.3) +
   labs(x = "Precipitation (mm)", y = "Biomass (g/m²)", 
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw() +
@@ -980,10 +1011,10 @@ cohen_d_df$Variable <- factor(cohen_d_df$Variable, levels = c("R²", "Sensitivit
 es_fig <- ggplot(cohen_d_df, aes(x = Cohen_d, y = Variable, color = Variable)) +
   geom_point(size = 4) +
   geom_errorbar(aes(xmin = Lower_CI, xmax = Upper_CI), width = 0.2) +
-  labs(x = "Effect Size (Cohen's d)",
+  labs(x = "Effect Size",
        y = "") +
   geom_vline(xintercept = 0, linetype = "dashed") +
-  scale_color_manual(values = c("#3C4856", "#D36D28", "#D36D28", "#D36D28")) +
+  scale_color_manual(values = c("#6F6F6F", "#ff924c", "#ff924c", "#ff924c")) +
   theme_bw(base_size = 14) +
   theme(axis.text.y = element_text(size = 14), legend.position = "none")
 
