@@ -485,3 +485,98 @@ summary_table <- model_summaries %>%
 
 summary_table
 
+
+
+## Analyzing only data from the driest year and from below 10th ppt percentile at each site
+
+driest_year_mass_ppt <- mass_ppt_edited %>%
+  group_by(site_code, trt) %>%
+  slice_min(ppt) %>%
+  ungroup()
+
+main_model_driest <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), 
+                          data = driest_year_mass_ppt)
+
+summary(main_model_driest)
+
+driest_year_plot <- ggplot(data = driest_year_mass_ppt, 
+                           aes(x = ppt, y = live_mass)) +
+  geom_point(aes(color = trt, fill = trt, shape = trt), alpha = 0.7) + 
+  geom_smooth(method = "lm", color = "#6F6F6F", alpha = 0.3) +
+  labs(x = "Precipitation (mm)", y = "Biomass (g/m²)", 
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
+  theme_bw() +
+  scale_color_manual(values = c("#0092E0", "#ff924c")) +
+  scale_fill_manual(values = c("#0092E0", "#ff924c")) +
+  theme(legend.position = "bottom")
+
+driest_year_plot
+
+
+main_model_p10 <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), 
+                       data = subset(mass_ppt_edited, ppt<p10_ppt))
+
+summary(main_model_p10)
+
+p10_plot <- ggplot(data = subset(mass_ppt_edited, ppt<p10_ppt), 
+                   aes(x = ppt, y = live_mass)) +
+  geom_point(aes(color = trt, fill = trt, shape = trt), alpha = 0.7) + 
+  geom_smooth(method = "lm", color = "#6F6F6F", alpha = 0.3) +
+  labs(x = "Precipitation (mm)", y = "Biomass (g/m²)", 
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
+  theme_bw() +
+  scale_color_manual(values = c("#0092E0", "#ff924c")) +
+  scale_fill_manual(values = c("#0092E0", "#ff924c")) +
+  theme(legend.position = "bottom")
+
+p10_plot
+
+
+## Analyzing only data from the wettest year and from above the 90th ppt percentile at each site
+
+wettest_year_mass_ppt <- mass_ppt_edited %>%
+  group_by(site_code, trt) %>%
+  slice_max(ppt) %>%
+  ungroup()
+
+main_model_wettest <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), 
+                           data = wettest_year_mass_ppt)
+
+summary(main_model_wettest)
+
+wettest_year_plot <- ggplot(data = wettest_year_mass_ppt, 
+                            aes(x = ppt, y = live_mass, color = trt, fill = trt, shape = trt)) +
+  geom_point(alpha = 0.7) + 
+  geom_smooth(method = "lm", alpha = 0.2) +
+  labs(x = "Precipitation (mm)", y = "Biomass (g/m²)", 
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
+  theme_bw() +
+  scale_color_manual(values = c("#0092E0", "#ff924c")) +
+  scale_fill_manual(values = c("#0092E0", "#ff924c")) +
+  theme(legend.position = "bottom")
+
+wettest_year_plot
+
+
+main_model_p90 <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), 
+                       data = subset(mass_ppt_edited, ppt>p90_ppt))
+
+summary(main_model_p90)
+
+wettest_year_plot_p90 <- ggplot(data = subset(mass_ppt_edited, ppt>p90_ppt), 
+                                aes(x = ppt, y = live_mass, color = trt, fill = trt, shape = trt)) +
+  geom_point(alpha = 0.7) + 
+  geom_smooth(method = "lm", alpha = 0.2) +
+  labs(x = "Precipitation (mm)", y = "Biomass (g/m²)", 
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
+  theme_bw() +
+  scale_color_manual(values = c("#0092E0", "#ff924c")) +
+  scale_fill_manual(values = c("#0092E0", "#ff924c")) +
+  theme(legend.position = "bottom")
+
+wettest_year_plot_p90
+
+
+
+
+
