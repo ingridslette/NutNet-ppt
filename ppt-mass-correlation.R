@@ -832,32 +832,7 @@ ggplot(mass_ppt_edited, aes(x = trt, y = rue)) +
   theme_bw(14)
 
 
-## Analyzing only data from the driest year at each site
-### testing for convergence of RUE a la Huxman and Smith 2004
-
-driest_year_mass_ppt <- mass_ppt_edited %>%
-  group_by(site_code, trt) %>%
-  slice_min(ppt) %>%
-  ungroup()
-
-main_model_driest <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), 
-                          data = driest_year_mass_ppt)
-
-summary(main_model_driest)
-
-driest_year_plot <- ggplot(data = driest_year_mass_ppt, 
-                           aes(x = ppt, y = live_mass)) +
-  geom_point(aes(color = trt, fill = trt, shape = trt), alpha = 0.7) + 
-  geom_smooth(method = "lm", color = "#6F6F6F", alpha = 0.3) +
-  labs(x = "Precipitation (mm)", y = "Biomass (g/m²)", 
-       color = "Treatment", shape = "Treatment", fill = "Treatment") +
-  theme_bw() +
-  scale_color_manual(values = c("#0092E0", "#ff924c")) +
-  scale_fill_manual(values = c("#0092E0", "#ff924c")) +
-  theme(legend.position = "bottom")
-
-driest_year_plot
-
+## Analyzing only data from years with ppt < 5th percentile of the long-term record at each site
 
 main_model_p05 <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), 
                           data = subset(mass_ppt_edited, ppt<p05_ppt))
@@ -877,49 +852,8 @@ p05_plot <- ggplot(data = subset(mass_ppt_edited, ppt<p05_ppt),
 
 p05_plot
 
-main_model_p10 <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), 
-                       data = subset(mass_ppt_edited, ppt<p10_ppt))
 
-summary(main_model_p10)
-
-p10_plot <- ggplot(data = subset(mass_ppt_edited, ppt<p10_ppt), 
-                   aes(x = ppt, y = live_mass)) +
-  geom_point(aes(color = trt, fill = trt, shape = trt), alpha = 0.7) + 
-  geom_smooth(method = "lm", color = "#6F6F6F", alpha = 0.3) +
-  labs(x = "Precipitation (mm)", y = "Biomass (g/m²)", 
-       color = "Treatment", shape = "Treatment", fill = "Treatment") +
-  theme_bw() +
-  scale_color_manual(values = c("#0092E0", "#ff924c")) +
-  scale_fill_manual(values = c("#0092E0", "#ff924c")) +
-  theme(legend.position = "bottom")
-
-p10_plot
-
-
-## Analyzing only data from the wettest year at each site
-
-wettest_year_mass_ppt <- mass_ppt_edited %>%
-  group_by(site_code, trt) %>%
-  slice_max(ppt) %>%
-  ungroup()
-
-main_model_wettest <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), 
-                           data = wettest_year_mass_ppt)
-
-summary(main_model_wettest)
-
-wettest_year_plot <- ggplot(data = wettest_year_mass_ppt, 
-                           aes(x = ppt, y = live_mass, color = trt, fill = trt, shape = trt)) +
-  geom_point(alpha = 0.7) + 
-  geom_smooth(method = "lm", alpha = 0.2) +
-  labs(x = "Precipitation (mm)", y = "Biomass (g/m²)", 
-       color = "Treatment", shape = "Treatment", fill = "Treatment") +
-  theme_bw() +
-  scale_color_manual(values = c("#0092E0", "#ff924c")) +
-  scale_fill_manual(values = c("#0092E0", "#ff924c")) +
-  theme(legend.position = "bottom")
-
-wettest_year_plot
+## Analyzing only data from years with ppt > 95th percentile of the long-term record at each site
 
 main_model_p95 <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), 
                            data = subset(mass_ppt_edited, ppt>p95_ppt))
@@ -938,25 +872,6 @@ wettest_year_plot_p95 <- ggplot(data = subset(mass_ppt_edited, ppt>p95_ppt),
   theme(legend.position = "bottom")
 
 wettest_year_plot_p95
-
-
-main_model_p90 <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), 
-                       data = subset(mass_ppt_edited, ppt>p90_ppt))
-
-summary(main_model_p90)
-
-wettest_year_plot_p90 <- ggplot(data = subset(mass_ppt_edited, ppt>p90_ppt), 
-                                aes(x = ppt, y = live_mass, color = trt, fill = trt, shape = trt)) +
-  geom_point(alpha = 0.7) + 
-  geom_smooth(method = "lm", alpha = 0.2) +
-  labs(x = "Precipitation (mm)", y = "Biomass (g/m²)", 
-       color = "Treatment", shape = "Treatment", fill = "Treatment") +
-  theme_bw() +
-  scale_color_manual(values = c("#0092E0", "#ff924c")) +
-  scale_fill_manual(values = c("#0092E0", "#ff924c")) +
-  theme(legend.position = "bottom")
-
-wettest_year_plot_p90
 
 
 ### Calculating and graphing effect sizes
