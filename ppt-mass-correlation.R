@@ -12,7 +12,6 @@ library(ggpubr)
 library(purrr)
 library(cowplot)
 library(ggeffects)
-library(DHARMa)
 
 ### Loading, viewing, and filtering precipitation and mass data 
 
@@ -76,6 +75,7 @@ ppt_data <- ppt_data %>%
   group_by(site_code) %>%
   mutate(
     avg_ppt = mean(ppt, na.rm = TRUE),
+    avg_pet = mean(pet, na.rm = TRUE),
     sd_ppt = sd(ppt, na.rm = TRUE),
     p10_ppt = quantile(ppt, 0.10, na.rm = TRUE),
     p90_ppt = quantile(ppt, 0.90, na.rm = TRUE),
@@ -111,6 +111,19 @@ mass_ppt <- mass_ppt %>%
 unique(mass_ppt$site_code)
 
 
+arid_sites <- mass_ppt %>%
+  group_by(site_code) %>%
+  filter(AI <= 0.65)
+
+unique(arid_sites$site_code)
+
+water_limited_sites <- mass_ppt %>%
+  group_by(site_code) %>%
+  filter(avg_ppt<avg_pet)
+
+unique(water_limited_sites$site_code)
+
+
 ### Main model
 
 main_model <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), 
@@ -119,6 +132,22 @@ main_model <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | yea
 summary(main_model)
 
 r2_main_model <- performance::r2(main_model)
+
+avg_live_mass_by_trt <- mass_ppt %>%
+  group_by(trt) %>%
+  summarise(
+    avg_live_mass = mean(live_mass, na.rm = TRUE),
+    se_live_mass = sd(live_mass, na.rm = TRUE) / sqrt(sum(!is.na(live_mass)))
+  )
+
+avg_live_mass_by_trt
+
+control_mean <- avg_live_mass_by_trt$avg_live_mass[avg_live_mass_by_trt$trt == "Control"]
+npk_mean <- avg_live_mass_by_trt$avg_live_mass[avg_live_mass_by_trt$trt == "NPK"]
+
+percent_increase <- ((npk_mean - control_mean) / control_mean) * 100
+
+percent_increase
 
 # Model assumptions check 
 plot(main_model)
