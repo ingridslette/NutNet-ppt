@@ -438,3 +438,50 @@ ai_lrr_plot <- ggplot(data = results_with_averages, aes(x = avg_ai, y = avg_lrr_
 ai_lrr_plot
 
 
+
+## Code loop to model mass vs. each predictor individually and summarize results in a table
+
+library(lme4)
+library(purrr)
+library(glue)
+library(broom.mixed)
+library(MuMIn)
+library(dplyr)
+library(stringr)
+
+predictors <- c(
+  "log_ppt",
+  "proportion_par",
+  "AI",
+  "rich",
+  "prev_ppt",
+  "lrr_mass",
+  "avg_c4_proportion",
+  "avg_annual_proportion"
+)
+
+base_formula <- "log_mass ~ trt * {predictor} + (1 | site_code/year_trt) + (1 | site_code/block)"
+
+models <- map(
+  predictors,
+  ~ lmer(as.formula(glue(base_formula, predictor = .x)), data = mass_ppt_edited)
+)
+
+names(models) <- paste0(predictors, "_mass_model")
+
+model_summaries <- map_dfr(
+  names(models),
+  function(name) {
+    model <- models[[name]]
+    tidy_df <- broom.mixed::tidy(model, effects = "fixed") %>% mutate(model = name)
+    r2 <- suppressWarnings(MuMIn::r.squaredGLMM(model))
+    tidy_df %>%
+      mutate(Marginal_R2 = r2[1], Conditional_R2 = r2[2])
+  }
+)
+
+summary_table <- model_summaries %>%
+  dplyr::select(model, term, estimate, std.error, statistic, p.value, Marginal_R2, Conditional_R2)
+
+summary_table
+
