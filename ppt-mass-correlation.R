@@ -415,38 +415,6 @@ full_model_table <- dredge(full_model, m.lim = c(NA, 6), fixed = c("c.Control", 
 full_model_avg <- model.avg(get.models(full_model_table, subset = delta < 10))
 summary(full_model_avg); sw(full_model_avg)
 
-ppt_mass_model <- lmer(log_mass ~ trt * log_ppt + (1 | site_code/year_trt) + (1 | site_code/block), 
-                       data = mass_ppt_edited)
-summary(ppt_mass_model)
-
-par_mass_model <- lmer(log_mass ~ trt * proportion_par + (1 | site_code/year_trt) + (1 | site_code/block), 
-                       data = mass_ppt_edited)
-summary(par_mass_model)
-
-ai_mass_model <- lmer(log_mass ~ trt * AI + (1 | site_code/year_trt) + (1 | site_code/block), 
-                       data = mass_ppt_edited)
-summary(ai_mass_model)
-
-rich_mass_model <- lmer(log_mass ~ trt * rich + (1 | site_code/year_trt) + (1 | site_code/block), 
-                      data = mass_ppt_edited)
-summary(rich_mass_model)
-
-prev_mass_model <- lmer(log_mass ~ trt * prev_ppt + (1 | site_code/year_trt) + (1 | site_code/block), 
-                        data = mass_ppt_edited)
-summary(prev_mass_model)
-
-lrr_mass_model <- lmer(log_mass ~ trt * lrr_mass + (1 | site_code/year_trt) + (1 | site_code/block), 
-                        data = mass_ppt_edited)
-summary(lrr_mass_model)
-
-c4_mass_model <- lmer(log_mass ~ trt * avg_c4_proportion + (1 | site_code/year_trt) + (1 | site_code/block), 
-                       data = mass_ppt_edited)
-summary(c4_mass_model)
-
-ann_mass_model <- lmer(log_mass ~ trt * avg_annual_proportion + (1 | site_code/year_trt) + (1 | site_code/block), 
-                      data = mass_ppt_edited)
-summary(ann_mass_model)
-
 
 mass_lrr_mass_plot <- ggplot(data = mass_ppt_edited, 
                              aes(x = lrr_mass, y = live_mass, color = trt, fill = trt, shape = trt)) +
