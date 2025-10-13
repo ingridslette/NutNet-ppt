@@ -406,7 +406,7 @@ unique(mass_ppt_edited$site_code)
 ## Covariate model of mass
 
 full_model <- lmer(log_mass ~ trt * (log_ppt + proportion_par + AI + rich + prev_ppt + lrr_mass
-                                     + MAT_v2 + MAP_v2 + avg_c4_proportion + avg_annual_proportion)
+                                     + avg_c4_proportion + avg_annual_proportion)
                    + (1 | site_code/year_trt) + (1 | site_code/block), 
                    data = mass_ppt_edited, REML = FALSE, na.action = "na.fail")
 
@@ -415,58 +415,89 @@ full_model_table <- dredge(full_model, m.lim = c(NA, 6), fixed = c("c.Control", 
 full_model_avg <- model.avg(get.models(full_model_table, subset = delta < 10))
 summary(full_model_avg); sw(full_model_avg)
 
+ppt_mass_model <- lmer(log_mass ~ trt * log_ppt + (1 | site_code/year_trt) + (1 | site_code/block), 
+                       data = mass_ppt_edited)
+summary(ppt_mass_model)
+
+par_mass_model <- lmer(log_mass ~ trt * proportion_par + (1 | site_code/year_trt) + (1 | site_code/block), 
+                       data = mass_ppt_edited)
+summary(par_mass_model)
+
+ai_mass_model <- lmer(log_mass ~ trt * AI + (1 | site_code/year_trt) + (1 | site_code/block), 
+                       data = mass_ppt_edited)
+summary(ai_mass_model)
+
+rich_mass_model <- lmer(log_mass ~ trt * rich + (1 | site_code/year_trt) + (1 | site_code/block), 
+                      data = mass_ppt_edited)
+summary(rich_mass_model)
+
+prev_mass_model <- lmer(log_mass ~ trt * prev_ppt + (1 | site_code/year_trt) + (1 | site_code/block), 
+                        data = mass_ppt_edited)
+summary(prev_mass_model)
+
+lrr_mass_model <- lmer(log_mass ~ trt * lrr_mass + (1 | site_code/year_trt) + (1 | site_code/block), 
+                        data = mass_ppt_edited)
+summary(lrr_mass_model)
+
+c4_mass_model <- lmer(log_mass ~ trt * avg_c4_proportion + (1 | site_code/year_trt) + (1 | site_code/block), 
+                       data = mass_ppt_edited)
+summary(c4_mass_model)
+
+ann_mass_model <- lmer(log_mass ~ trt * avg_annual_proportion + (1 | site_code/year_trt) + (1 | site_code/block), 
+                      data = mass_ppt_edited)
+summary(ann_mass_model)
+
+
 mass_lrr_mass_plot <- ggplot(data = mass_ppt_edited, 
                              aes(x = lrr_mass, y = live_mass, color = trt, fill = trt, shape = trt)) +
-  geom_point(alpha = 0.7) + 
+  geom_point(alpha = 0.5) + 
   geom_smooth(method = lm) +
-  labs(x = "Log Response Ratio of Mass", y = "Biomass (g/m²)",
-       color = "Treatment", shape = "Treatment", fill = "Treatment") +
+  labs(x = "Mass Response Ratio", y = "Biomass (g/m²)") +
   theme_bw() +
   scale_color_manual(values = c("#0092E0", "#ff924c")) +
   scale_fill_manual(values = c("#0092E0", "#ff924c"))
 
 mass_par_plot <- ggplot(data = mass_ppt_edited, 
                         aes(x = proportion_par, y = live_mass, color = trt, fill = trt, shape = trt)) +
-  geom_point(alpha = 0.7) + 
+  geom_point(alpha = 0.5) + 
   geom_smooth(method = lm) +
-  labs(x = "Proportion PAR", y = "Biomass (g/m²)",
-       color = "Treatment", shape = "Treatment", fill = "Treatment") +
+  labs(x = "Proportion PAR", y = "Biomass (g/m²)") +
   theme_bw() +
   scale_color_manual(values = c("#0092E0", "#ff924c")) +
   scale_fill_manual(values = c("#0092E0", "#ff924c"))
 
 mass_ai_plot <- ggplot(data = mass_ppt_edited, 
                        aes(x = AI, y = live_mass, color = trt, shape = trt)) +
-  geom_point(alpha = 0.7) +
-  labs(x = "Aridity Index", y = "Biomass (g/m²)", color = "Treatment", shape = "Treatment") +
+  geom_point(alpha = 0.5) +
+  labs(x = "Aridity Index", y = "Biomass (g/m²)") +
   theme_bw() +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 mass_rich_plot <- ggplot(data = mass_ppt_edited, 
                          aes(x = rich, y = live_mass, color = trt, shape = trt)) +
-  geom_point(alpha = 0.7) +
+  geom_point(alpha = 0.5) +
   xlab("Richness") + ylab("Biomass (g/m²)") +
   theme_bw() +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 mass_prev_ppt_plot <- ggplot(data = mass_ppt_edited, 
                              aes(x = prev_ppt, y = live_mass, color = trt, shape = trt)) +
-  geom_point(alpha = 0.7) +
+  geom_point(alpha = 0.5) +
   xlab("Previous years' precipitation (mm)") + ylab("Biomass (g/m²)") +
   theme_bw() +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 mass_c4_plot <- ggplot(data = mass_ppt_edited, 
                        aes(x = avg_c4_proportion, y = live_mass, color = trt, shape = trt)) +
-  geom_point(alpha = 0.7) +
-  xlab("Proportion C4 Species") + ylab("Biomass (g/m²)") +
+  geom_point(alpha = 0.5) +
+  xlab("Proportion C4") + ylab("Biomass (g/m²)") +
   theme_bw() +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 mass_annual_plot <- ggplot(data = mass_ppt_edited, 
                            aes(x = avg_annual_proportion, y = live_mass, color = trt, shape = trt)) +
-  geom_point(alpha = 0.7) +
-  xlab("Proportion Annual Species") + ylab("Biomass (g/m²)") +
+  geom_point(alpha = 0.5) +
+  xlab("Proportion Annual") + ylab("Biomass (g/m²)") +
   theme_bw() +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 
@@ -501,6 +532,7 @@ mass_covar_fig_sig <- ggarrange(mass_par_plot,
                                ncol = 2, nrow = 1, common.legend = TRUE, 
                                legend = "bottom", align = 'hv')
 mass_covar_fig_sig
+
 
 ## Covariate models of R2 and slope
 
@@ -560,23 +592,34 @@ full_r2_model <- lm(r2 ~ trt * (avg_proportion_par + avg_ai + avg_richness + avg
                     data = results_with_averages, na.action = "na.fail")
 
 summary(full_r2_model)
+full_r2_model_table <- dredge(full_r2_model, m.lim = c(NA, 6))
+full_r2_model_avg <- model.avg(get.models(full_r2_model_table, subset = delta < 10))
+summary(full_r2_model_avg); sw(full_r2_model_avg)
 
 ai_r2_model <- lm(r2 ~ trt * avg_ai, data = results_with_averages)
 summary(ai_r2_model)
+
 
 full_slope_model <- lm(slope ~ trt * (avg_proportion_par  + avg_ai + avg_richness + avg_lrr_mass
                                       + avg_avg_c4_proportion + avg_avg_annual_proportion), 
                        data = results_with_averages, na.action = "na.fail")
 
 summary(full_slope_model)
+full_slope_model_table <- dredge(full_slope_model, m.lim = c(NA, 6))
+full_slope_model_avg <- model.avg(get.models(full_slope_model_table, subset = delta < 10))
+summary(full_slope_model_avg); sw(full_slope_model_avg)
 
 ai_slope_model <- lm(slope ~ trt * avg_ai, data = results_with_averages)
 summary(ai_slope_model)
 
+annual_slope_model <- lm(slope ~ trt * avg_avg_annual_proportion, data = results_with_averages)
+summary(annual_slope_model)
+
+
 r2_lrr_mass_plot <- ggplot(data = results_with_averages, 
                            aes(x = avg_lrr_mass, y = r2, color = trt, shape = trt)) +
   geom_point(alpha = 0.7) +
-  xlab("Log Response Ratio of Mass") + ylab("R2 of ppt vs. mass") +
+  xlab("Mass Response Ratio") + ylab("R2 of ppt vs. mass") +
   theme_bw() +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 
@@ -612,14 +655,14 @@ r2_rich_plot <- ggplot(data = results_with_averages,
 r2_c4_plot <- ggplot(data = results_with_averages, 
                      aes(x = avg_avg_c4_proportion, y = r2, color = trt, shape = trt)) +
   geom_point(alpha = 0.7) + 
-  xlab("Proportion C4 Species") + ylab("R2 of ppt vs. mass") +
+  xlab("Proportion C4") + ylab("R2 of ppt vs. mass") +
   theme_bw() +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 r2_annual_plot <- ggplot(data = results_with_averages, 
                          aes(x = avg_avg_annual_proportion, y = r2, color = trt, shape = trt)) +
   geom_point(alpha = 0.7) + 
-  xlab("Proportion Annual Species") + ylab("R2 of ppt vs. mass") +
+  xlab("Proportion Annual") + ylab("R2 of ppt vs. mass") +
   theme_bw() +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 
@@ -646,7 +689,7 @@ r2_covar_figure
 slope_lrr_mass_plot <- ggplot(data = results_with_averages, 
                               aes(x = avg_lrr_mass, y = slope, color = trt, shape = trt)) +
   geom_point(alpha = 0.7) + 
-  xlab("Log Response Ratio of Mass") + ylab("Sensitivity (g/m²/mm)") +
+  xlab("Mass Response Ratio") + ylab("Sensitivity (g/m²/mm)") +
   theme_bw() +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 
@@ -672,8 +715,7 @@ slope_ai_plot_quad <- ggplot(data = results_with_averages,
                              aes(x = avg_ai, y = slope)) +
   geom_point(aes(color = trt, shape = trt), alpha = 0.7) +
   geom_smooth(method = lm, formula = y ~ poly(x, 2, raw = TRUE), se = FALSE, color = "#6F6F6F") +
-  labs(x = "Aridity Index", y = "Sensitivity (g/m²/mm)",
-       color = "Treatment", shape = "Treatment") +
+  labs(x = "Aridity Index", y = "Sensitivity (g/m²/mm)") +
   theme_bw() +
   theme(legend.position = "none") +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
@@ -688,14 +730,15 @@ slope_rich_plot <- ggplot(data = results_with_averages,
 slope_c4_plot <- ggplot(data = results_with_averages, 
                         aes(x = avg_avg_c4_proportion, y = slope, color = trt, shape = trt)) +
   geom_point(alpha = 0.7) +
-  xlab("Proportion C4 Species") + ylab("Sensitivity (g/m²/mm)") +
+  xlab("Proportion C4") + ylab("Sensitivity (g/m²/mm)") +
   theme_bw() +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 
 slope_annual_plot <- ggplot(data = results_with_averages, 
-                            aes(x = avg_avg_annual_proportion, y = slope, color = trt, shape = trt)) +
-  geom_point(alpha = 0.7) + 
-  xlab("Proportion Annual Species") + ylab("Sensitivity (g/m²/mm)") +
+                            aes(x = avg_avg_annual_proportion, y = slope)) +
+  geom_point(aes(color = trt, shape = trt), alpha = 0.7) + 
+  geom_smooth(method = lm, se = FALSE, color = "#6F6F6F") +
+  xlab("Proportion Annual") + ylab("Sensitivity (g/m²/mm)") +
   theme_bw() +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 
