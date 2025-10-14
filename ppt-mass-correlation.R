@@ -198,24 +198,7 @@ r2_ppt_pet_model <- performance::r2(main_model_pet)
 
 ### Back-transforming data for graphing - allows for non-linear curves on linear scale
 
-# Back transform from log-log scale
-fit_model_and_predict <- function(data) {
-  model <- lm(log_mass ~ log_ppt, data = data)
-  new_data <- data.frame(log_ppt = seq(min(data$log_ppt, na.rm = TRUE),
-                                             max(data$log_ppt, na.rm = TRUE),
-                                             length.out = 100))
-  new_data$predicted_log_mass <- predict(model, newdata = new_data)
-  new_data$predicted_mass <- 10^new_data$predicted_log_mass
-  new_data$site_code <- unique(data$site_code)
-  new_data$trt <- unique(data$trt)
-  return(new_data)
-}
-
-predictions <- mass_ppt %>%
-  group_by(site_code, trt) %>%
-  group_modify(~ fit_model_and_predict(.x)) %>%
-  ungroup()
-
+# Back transform from log-log scale and graph
 fit_model_and_predict_allsites <- function(data) {
   model <- lm(log_mass ~ log_ppt, data = data)
   new_data <- data.frame(log_ppt = seq(min(data$log_ppt, na.rm = TRUE),
@@ -244,72 +227,46 @@ ggplot(data = mass_ppt, aes(x = ppt, y = live_mass, color = trt, shape = trt)) +
   scale_color_manual(values = c("#0092E0", "#ff924c")) +
   theme_bw(base_size = 14)
 
-ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = trt)) +
-  geom_point(alpha = 0.7) +
-  geom_line(data = predictions, aes(x = 10^log_ppt, y = predicted_mass), linewidth = 1) +
-  labs(x = "Annual Growing Season Precipitation (mm)", y = "Biomass (g/m²)", color = "Treatment") +
-  facet_wrap(~ site_code, scales = "free") +
-  theme_bw(base_size = 14) +
-  scale_color_manual(values = c("#0092E0", "#ff924c")) +
-  theme(legend.position = "bottom")
-
-
-
 
 fit_model_and_predict <- function(data) {
   model <- lm(log_mass ~ log_ppt, data = data)
   p_value <- summary(model)$coefficients["log_ppt", "Pr(>|t|)"]
   
-  # Empty dataframe to return if not significant
-  empty_df <- data.frame(
-    log_ppt = numeric(0),
-    predicted_log_mass = numeric(0),
-    predicted_mass = numeric(0),
-    p_value = numeric(0)
+  new_data <- data.frame(
+    log_ppt = seq(min(data$log_ppt, na.rm = TRUE),
+                  max(data$log_ppt, na.rm = TRUE),
+                  length.out = 100)
   )
-  
-  if (!is.na(p_value) && p_value < 0.05) {
-    new_data <- data.frame(
-      log_ppt = seq(min(data$log_ppt, na.rm = TRUE),
-                    max(data$log_ppt, na.rm = TRUE),
-                    length.out = 100)
-    )
-    new_data$predicted_log_mass <- predict(model, newdata = new_data)
-    new_data$predicted_mass <- 10^new_data$predicted_log_mass
-    new_data$p_value <- p_value
-    return(new_data)
-  } else {
-    return(empty_df)
-  }
+  new_data$predicted_log_mass <- predict(model, newdata = new_data)
+  new_data$predicted_mass <- 10^new_data$predicted_log_mass
+  new_data$p_value <- p_value
+  return(new_data)
 }
 
-# Apply across groups safely
-predictions_sig <- mass_ppt %>%
+predictions <- mass_ppt %>%
   group_by(site_code, trt) %>%
   group_modify(~ fit_model_and_predict(.x)) %>%
   ungroup()
 
-# Plot only significant lines
-ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = trt)) +
+predictions_sig <- predictions %>%
+  filter(!is.na(p_value) & p_value < 0.05)
+
+ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = trt, shape = trt, fill = trt)) +
   geom_point(alpha = 0.7) +
-  geom_line(
-    data = predictions_sig,
-    aes(x = 10^log_ppt, y = predicted_mass),
-    linewidth = 1
-  ) +
-  labs(
-    x = "Annual Growing Season Precipitation (mm)",
-    y = "Biomass (g/m²)",
-    color = "Treatment"
-  ) +
+  geom_line(data = predictions_sig,
+            aes(x = 10^log_ppt, y = predicted_mass), 
+            linewidth = 1) +
+  labs(x = "Annual Growing Season Precipitation (mm)", y = "Biomass (g/m²)",
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
   facet_wrap(~ site_code, scales = "free") +
   theme_bw(base_size = 14) +
-  scale_color_manual(values = c("#0092E0", "#ff924c")) +
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
   theme(legend.position = "bottom")
-
-
-
-
 
 
 ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = site_code)) +
@@ -645,56 +602,100 @@ summary(annual_slope_model)
 
 
 r2_lrr_mass_plot <- ggplot(data = results_with_averages, 
-                           aes(x = avg_lrr_mass, y = r2, color = trt, shape = trt)) +
+                           aes(x = avg_lrr_mass, y = r2, color = trt, shape = trt, fill = trt)) +
   geom_point(alpha = 0.7) +
-  xlab("Mass Response Ratio") + ylab("R2 of ppt vs. mass") +
-  theme_bw() +
-  scale_color_manual(values = c("#0092E0", "#ff924c"))
+  labs(x = "Mass Response Ratio", y = "R² of ppt vs. mass", 
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
+  theme_bw(base_size = 14) +
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
 
 r2_par_plot <- ggplot(data = results_with_averages, 
-                      aes(x = avg_proportion_par, y = r2, color = trt, shape = trt)) +
+                      aes(x = avg_proportion_par, y = r2, color = trt, shape = trt, fill = trt)) +
   geom_point(alpha = 0.7) +
-  xlab("Proportion PAR") + ylab("R2 of ppt vs. mass") +
-  theme_bw() +
-  scale_color_manual(values = c("#0092E0", "#ff924c"))
+  labs(x = "Proportion PAR", y = "R² of ppt vs. mass", 
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
+  theme_bw(base_size = 14) +
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+
 
 r2_ai_plot <- ggplot(data = results_with_averages, 
-                     aes(x = avg_ai, y = r2, color = trt, shape = trt)) +
+                     aes(x = avg_ai, y = r2, color = trt, shape = trt, fill = trt)) +
   geom_point(alpha = 0.7) +
-  labs(x = "Aridity Index", y = "R2 of ppt vs. mass",
+  labs(x = "Aridity Index", y = "R² of ppt vs. mass",
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
-  theme_bw() +
-  scale_color_manual(values = c("#0092E0", "#ff924c"))
+  theme_bw(base_size = 14) +
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
 
 r2_ai_plot_quad <- ggplot(data = results_with_averages, 
                      aes(x = avg_ai, y = r2)) +
-  geom_point(aes(color = trt, shape = trt), alpha = 0.7) + 
+  geom_point(aes(color = trt, shape = trt, fill = trt), alpha = 0.7) + 
   geom_smooth(method = lm, formula = y ~ poly(x, 2, raw = TRUE), se = F, color = "#6F6F6F") +
-  labs(x = "Aridity Index", y = "R2 of ppt vs. mass",
+  labs(x = "Aridity Index", y = "R² of ppt vs. mass",
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
-  theme_bw() +
-  scale_color_manual(values = c("#0092E0", "#ff924c"))
+  theme_bw(base_size = 14) +
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
 
 r2_rich_plot <- ggplot(data = results_with_averages, 
-                       aes(x = avg_richness, y = r2, color = trt, shape = trt)) +
+                       aes(x = avg_richness, y = r2, color = trt, shape = trt, fill = trt)) +
   geom_point(alpha = 0.7) + 
-  xlab("Richness") + ylab("R2 of ppt vs. mass") +
-  theme_bw() +
-  scale_color_manual(values = c("#0092E0", "#ff924c"))
+  labs(x = "Richness", y = "R² of ppt vs. mass", 
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
+  theme_bw(base_size = 14) +
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+
 
 r2_c4_plot <- ggplot(data = results_with_averages, 
-                     aes(x = avg_avg_c4_proportion, y = r2, color = trt, shape = trt)) +
+                     aes(x = avg_avg_c4_proportion, y = r2, color = trt, shape = trt, fill = trt)) +
   geom_point(alpha = 0.7) + 
-  xlab("Proportion C4") + ylab("R2 of ppt vs. mass") +
-  theme_bw() +
-  scale_color_manual(values = c("#0092E0", "#ff924c"))
+  labs(x ="Proportion C4", y = "R² of ppt vs. mass", 
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
+  theme_bw(base_size = 14) +
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+
 
 r2_annual_plot <- ggplot(data = results_with_averages, 
-                         aes(x = avg_avg_annual_proportion, y = r2, color = trt, shape = trt)) +
+                         aes(x = avg_avg_annual_proportion, y = r2, color = trt, shape = trt, fill = trt)) +
   geom_point(alpha = 0.7) + 
-  xlab("Proportion Annual") + ylab("R2 of ppt vs. mass") +
-  theme_bw() +
-  scale_color_manual(values = c("#0092E0", "#ff924c"))
+  labs(x ="Proportion Annual", y = "R² of ppt vs. mass", 
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
+  theme_bw(base_size = 14) +
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+
 
 r2_covar_figure <- ggarrange(r2_ai_plot_quad, 
                              
@@ -717,61 +718,99 @@ r2_covar_figure
 
 
 slope_lrr_mass_plot <- ggplot(data = results_with_averages, 
-                              aes(x = avg_lrr_mass, y = slope, color = trt, shape = trt)) +
+                              aes(x = avg_lrr_mass, y = slope, color = trt, shape = trt, fill = trt)) +
   geom_point(alpha = 0.7) + 
-  xlab("Mass Response Ratio") + ylab("Sensitivity (g/m²/mm)") +
-  theme_bw() +
-  scale_color_manual(values = c("#0092E0", "#ff924c"))
+  labs(x = "Mass Response Ratio", y = "Sensitivity (g/m²/mm)",
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
+  theme_bw(base_size = 14) +
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
 
 slope_par_plot <- ggplot(data = results_with_averages, 
-                         aes(x = avg_proportion_par, y = slope, color = trt, shape = trt)) +
+                         aes(x = avg_proportion_par, y = slope, color = trt, shape = trt, fill = trt)) +
   geom_point(alpha = 0.7) + 
-  xlab("Proportion PAR") + ylab("Sensitivity (g/m²/mm)") +
-  theme_bw() +
-  scale_color_manual(values = c("#0092E0", "#ff924c"))
+  labs(x = "Proportion PAR", y = "Sensitivity (g/m²/mm)",
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
+  theme_bw(base_size = 14) +
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
 
 slope_ai_plot <- ggplot(data = results_with_averages, 
-                        aes(x = avg_ai, y = slope, color = trt, fill = trt, shape = trt)) +
+                        aes(x = avg_ai, y = slope, color = trt, shape = trt, fill = trt)) +
   geom_point(alpha = 0.7) + 
   geom_smooth(method = lm, alpha = 0.2) +
   labs(x = "Aridity Index", y = "Sensitivity (g/m²/mm)", 
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
-  theme_bw() +
-  theme(legend.position = "bottom") +
-  scale_color_manual(values = c("#0092E0", "#ff924c")) +
-  scale_fill_manual(values = c("#0092E0", "#ff924c"))
+  theme_bw(base_size = 14) +
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
 
 slope_ai_plot_quad <- ggplot(data = results_with_averages, 
                              aes(x = avg_ai, y = slope)) +
-  geom_point(aes(color = trt, shape = trt), alpha = 0.7) +
+  geom_point(aes(color = trt, shape = trt, fill = trt), alpha = 0.7) +
   geom_smooth(method = lm, formula = y ~ poly(x, 2, raw = TRUE), se = FALSE, color = "#6F6F6F") +
   labs(x = "Aridity Index", y = "Sensitivity (g/m²/mm)",
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
-  theme_bw() +
-  theme(legend.position = "none") +
-  scale_color_manual(values = c("#0092E0", "#ff924c"))
+  theme_bw(base_size = 14) +
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
 
 slope_rich_plot <- ggplot(data = results_with_averages, 
-                          aes(x = avg_richness, y = slope, color = trt, shape = trt)) +
+                          aes(x = avg_richness, y = slope, color = trt, shape = trt, fill = trt)) +
   geom_point(alpha = 0.7) + 
-  xlab("Richness") + ylab("Sensitivity (g/m²/mm)") +
-  theme_bw() +
-  scale_color_manual(values = c("#0092E0", "#ff924c"))
+  labs(x = "Richness", y = "Sensitivity (g/m²/mm)",
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
+  theme_bw(base_size = 14) +
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
 
 slope_c4_plot <- ggplot(data = results_with_averages, 
-                        aes(x = avg_avg_c4_proportion, y = slope, color = trt, shape = trt)) +
+                        aes(x = avg_avg_c4_proportion, y = slope, color = trt, shape = trt, fill = trt)) +
   geom_point(alpha = 0.7) +
-  xlab("Proportion C4") + ylab("Sensitivity (g/m²/mm)") +
-  theme_bw() +
-  scale_color_manual(values = c("#0092E0", "#ff924c"))
+  labs(x = "Proportion C4", y = "Sensitivity (g/m²/mm)",
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
+  theme_bw(base_size = 14) +
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
 
 slope_annual_plot <- ggplot(data = results_with_averages, 
                             aes(x = avg_avg_annual_proportion, y = slope)) +
-  geom_point(aes(color = trt, shape = trt), alpha = 0.7) + 
+  geom_point(aes(color = trt, shape = trt, fill = trt), alpha = 0.7) + 
   geom_smooth(method = lm, se = FALSE, color = "#6F6F6F") +
-  xlab("Proportion Annual") + ylab("Sensitivity (g/m²/mm)") +
-  theme_bw() +
-  scale_color_manual(values = c("#0092E0", "#ff924c"))
+  labs(x = "Proportion Annual", y = "Sensitivity (g/m²/mm)",
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
+  theme_bw(base_size = 14) +
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+
 
 
 slope_covar_figure <- ggarrange(slope_ai_plot_quad, 
