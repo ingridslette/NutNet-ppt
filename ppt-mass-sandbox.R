@@ -577,6 +577,33 @@ wettest_year_plot_p90 <- ggplot(data = subset(mass_ppt_edited, ppt>p90_ppt),
 wettest_year_plot_p90
 
 
+## old code for back-transforming and graphing ppt-biomass faceted by site
+
+fit_model_and_predict <- function(data) {
+  model <- lm(log_mass ~ log_ppt, data = data)
+  new_data <- data.frame(log_ppt = seq(min(data$log_ppt, na.rm = TRUE),
+                                       max(data$log_ppt, na.rm = TRUE),
+                                       length.out = 100))
+  new_data$predicted_log_mass <- predict(model, newdata = new_data)
+  new_data$predicted_mass <- 10^new_data$predicted_log_mass
+  new_data$site_code <- unique(data$site_code)
+  new_data$trt <- unique(data$trt)
+  return(new_data)
+}
+
+predictions <- mass_ppt %>%
+  group_by(site_code, trt) %>%
+  group_modify(~ fit_model_and_predict(.x)) %>%
+  ungroup()
+
+ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = trt)) +
+  geom_point(alpha = 0.7) +
+  geom_line(data = predictions, aes(x = 10^log_ppt, y = predicted_mass), linewidth = 1) +
+  labs(x = "Annual Growing Season Precipitation (mm)", y = "Biomass (g/m²)", color = "Treatment") +
+  facet_wrap(~ site_code, scales = "free") +
+  theme_bw(base_size = 14) +
+  scale_color_manual(values = c("#0092E0", "#ff924c")) +
+  theme(legend.position = "bottom")
 
 
 
