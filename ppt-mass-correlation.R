@@ -253,6 +253,65 @@ ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = trt)) +
   scale_color_manual(values = c("#0092E0", "#ff924c")) +
   theme(legend.position = "bottom")
 
+
+
+
+fit_model_and_predict <- function(data) {
+  model <- lm(log_mass ~ log_ppt, data = data)
+  p_value <- summary(model)$coefficients["log_ppt", "Pr(>|t|)"]
+  
+  # Empty dataframe to return if not significant
+  empty_df <- data.frame(
+    log_ppt = numeric(0),
+    predicted_log_mass = numeric(0),
+    predicted_mass = numeric(0),
+    p_value = numeric(0)
+  )
+  
+  if (!is.na(p_value) && p_value < 0.05) {
+    new_data <- data.frame(
+      log_ppt = seq(min(data$log_ppt, na.rm = TRUE),
+                    max(data$log_ppt, na.rm = TRUE),
+                    length.out = 100)
+    )
+    new_data$predicted_log_mass <- predict(model, newdata = new_data)
+    new_data$predicted_mass <- 10^new_data$predicted_log_mass
+    new_data$p_value <- p_value
+    return(new_data)
+  } else {
+    return(empty_df)
+  }
+}
+
+# Apply across groups safely
+predictions_sig <- mass_ppt %>%
+  group_by(site_code, trt) %>%
+  group_modify(~ fit_model_and_predict(.x)) %>%
+  ungroup()
+
+# Plot only significant lines
+ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = trt)) +
+  geom_point(alpha = 0.7) +
+  geom_line(
+    data = predictions_sig,
+    aes(x = 10^log_ppt, y = predicted_mass),
+    linewidth = 1
+  ) +
+  labs(
+    x = "Annual Growing Season Precipitation (mm)",
+    y = "Biomass (g/m²)",
+    color = "Treatment"
+  ) +
+  facet_wrap(~ site_code, scales = "free") +
+  theme_bw(base_size = 14) +
+  scale_color_manual(values = c("#0092E0", "#ff924c")) +
+  theme(legend.position = "bottom")
+
+
+
+
+
+
 ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = site_code)) +
   geom_line(data = predictions, aes(x = 10^log_ppt, y = predicted_mass), linewidth = 1) +
   geom_line(data = predictions_allsites, aes(x = 10^log_ppt, y = predicted_mass), 
