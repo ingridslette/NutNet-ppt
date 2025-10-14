@@ -407,14 +407,15 @@ unique(mass_ppt_edited$site_code)
 
 full_model <- lmer(log_mass ~ trt * (log_ppt + proportion_par + AI + rich + prev_ppt + lrr_mass
                                      + avg_c4_proportion + avg_annual_proportion)
-                   + (1 | site_code/year_trt) + (1 | site_code/block), 
+                   + (1 | year_trt) + (1 | site_code/block), 
                    data = mass_ppt_edited, REML = FALSE, na.action = "na.fail")
-
 summary(full_model)
 full_model_table <- dredge(full_model, m.lim = c(NA, 6), fixed = c("c.Control", "c.NPK"))
 full_model_avg <- model.avg(get.models(full_model_table, subset = delta < 10))
 summary(full_model_avg); sw(full_model_avg)
 
+r2_full_model <- performance::r2(full_model)
+r2_full_model
 
 mass_lrr_mass_plot <- ggplot(data = mass_ppt_edited, 
                              aes(x = lrr_mass, y = live_mass, color = trt, fill = trt, shape = trt)) +
@@ -601,7 +602,8 @@ r2_par_plot <- ggplot(data = results_with_averages,
 r2_ai_plot <- ggplot(data = results_with_averages, 
                      aes(x = avg_ai, y = r2, color = trt, shape = trt)) +
   geom_point(alpha = 0.7) +
-  xlab("Aridity Index") + ylab("R2 of ppt vs. mass") +
+  labs(x = "Aridity Index", y = "R2 of ppt vs. mass",
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw() +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 
@@ -609,7 +611,8 @@ r2_ai_plot_quad <- ggplot(data = results_with_averages,
                      aes(x = avg_ai, y = r2)) +
   geom_point(aes(color = trt, shape = trt), alpha = 0.7) + 
   geom_smooth(method = lm, formula = y ~ poly(x, 2, raw = TRUE), se = F, color = "#6F6F6F") +
-  xlab("Aridity Index") + ylab("R2 of ppt vs. mass") +
+  labs(x = "Aridity Index", y = "R2 of ppt vs. mass",
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw() +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 
@@ -683,7 +686,8 @@ slope_ai_plot_quad <- ggplot(data = results_with_averages,
                              aes(x = avg_ai, y = slope)) +
   geom_point(aes(color = trt, shape = trt), alpha = 0.7) +
   geom_smooth(method = lm, formula = y ~ poly(x, 2, raw = TRUE), se = FALSE, color = "#6F6F6F") +
-  labs(x = "Aridity Index", y = "Sensitivity (g/m²/mm)") +
+  labs(x = "Aridity Index", y = "Sensitivity (g/m²/mm)",
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw() +
   theme(legend.position = "none") +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
@@ -731,6 +735,43 @@ slope_covar_figure <- ggarrange(slope_ai_plot_quad,
 
 slope_covar_figure
 
+
+avg_slope_r2_by_trt <- results_long %>%
+  group_by(trt) %>%
+  summarise(
+    avg_slope = mean(slope, na.rm = TRUE),
+    se_slope = sd(slope, na.rm = TRUE) / sqrt(sum(!is.na(slope))),
+    avg_r2 = mean(r2, na.rm = TRUE),
+    se_r2 = sd(r2, na.rm = TRUE) / sqrt(sum(!is.na(r2)))
+  )
+
+avg_slope_r2_by_trt
+
+control_slope <- avg_slope_r2_by_trt$avg_slope[avg_slope_r2_by_trt$trt == "Control"]
+npk_slope <- avg_slope_r2_by_trt$avg_slope[avg_slope_r2_by_trt$trt == "NPK"]
+control_r2 <- avg_slope_r2_by_trt$avg_r2[avg_slope_r2_by_trt$trt == "Control"]
+npk_r2 <- avg_slope_r2_by_trt$avg_r2[avg_slope_r2_by_trt$trt == "NPK"]
+
+percent_increase_slope <- ((npk_slope - control_slope) / control_slope) * 100
+percent_increase_slope
+
+percent_increase_r2 <- ((npk_r2 - control_r2) / control_r2) * 100
+percent_increase_r2
+
+
+slope_r2_sig_fig <- ggarrange(slope_ai_plot_quad,
+                              slope_annual_plot  + rremove("ylab") +
+                                theme(axis.text.y = element_blank()),
+                              r2_ai_plot_quad,
+                              ncol = 3, nrow = 1, common.legend = TRUE, 
+                              legend = "bottom", align = 'hv')
+slope_r2_sig_fig
+
+slope_r2_ai_fig <- ggarrange(slope_ai_plot_quad + rremove("xlab"),
+                              r2_ai_plot_quad,
+                              ncol = 1, nrow = 2, common.legend = TRUE, 
+                              legend = "bottom", align = 'hv')
+slope_r2_ai_fig
 
 ## Main graph
 
@@ -832,6 +873,21 @@ ggplot(mass_ppt_edited, aes(x = trt, y = rue)) +
   theme_bw(14)
 
 
+avg_rue_by_trt <- mass_ppt_edited %>%
+  group_by(trt) %>%
+  summarise(
+    avg_rue = mean(rue, na.rm = TRUE),
+    se_rue = sd(rue, na.rm = TRUE) / sqrt(sum(!is.na(rue)))
+  )
+
+avg_rue_by_trt
+
+control_rue <- avg_rue_by_trt$avg_rue[avg_rue_by_trt$trt == "Control"]
+npk_rue <- avg_rue_by_trt$avg_rue[avg_rue_by_trt$trt == "NPK"]
+
+percent_increase_rue <- ((npk_rue - control_rue) / control_rue) * 100
+percent_increase_rue
+
 ## Analyzing only data from years with ppt < 5th percentile of the long-term record at each site
 
 main_model_p05 <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year_trt), 
@@ -839,15 +895,19 @@ main_model_p05 <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 |
 
 summary(main_model_p05)
 
-p05_plot <- ggplot(data = subset(mass_ppt_edited, ppt<p05_ppt), 
-                           aes(x = ppt, y = live_mass)) +
+p05_plot <- ggplot(data = subset(mass_ppt_edited, ppt < p05_ppt), 
+                   aes(x = ppt, y = live_mass)) +
   geom_point(aes(color = trt, fill = trt, shape = trt), alpha = 0.7) + 
   geom_smooth(method = "lm", color = "#6F6F6F", alpha = 0.3) +
   labs(x = "Precipitation (mm)", y = "Biomass (g/m²)", 
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
-  theme_bw() +
-  scale_color_manual(values = c("#0092E0", "#ff924c")) +
-  scale_fill_manual(values = c("#0092E0", "#ff924c")) +
+  theme_bw(base_size = 16) +
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
   theme(legend.position = "bottom")
 
 p05_plot
@@ -860,18 +920,17 @@ main_model_p95 <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 |
 
 summary(main_model_p95)
 
-wettest_year_plot_p95 <- ggplot(data = subset(mass_ppt_edited, ppt>p95_ppt), 
-                            aes(x = ppt, y = live_mass, color = trt, fill = trt, shape = trt)) +
-  geom_point(alpha = 0.7) + 
-  geom_smooth(method = "lm", alpha = 0.2) +
+p95_plot <- ggplot(data = subset(mass_ppt_edited, ppt>p95_ppt), 
+                            aes(x = ppt, y = live_mass)) +
+  geom_point(aes(color = trt, fill = trt, shape = trt), alpha = 0.7) + 
+  geom_smooth(method = "lm", color = "#6F6F6F", alpha = 0.3) +
   labs(x = "Precipitation (mm)", y = "Biomass (g/m²)", 
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw() +
   scale_color_manual(values = c("#0092E0", "#ff924c")) +
-  scale_fill_manual(values = c("#0092E0", "#ff924c")) +
   theme(legend.position = "bottom")
 
-wettest_year_plot_p95
+p95_plot
 
 
 ### Calculating and graphing effect sizes
@@ -919,25 +978,26 @@ summary(slope_model)
 r2_model <- lmer(r2 ~ trt + (1| site_code), data = results_graphing)
 summary(r2_model)
 
-mean_estimate <- 191.32
-mean_se <- 22.75
-mean_resid_sd <- 89.55
-n_mean <- 62
+mean_estimate <- 188.55
+mean_se <- 20.59
+mean_resid_sd <- 86.15
+n_mean <- 70
 
-slope_estimate <- 0.3427
-slope_se <- 0.1342
-slope_resid_sd <- 0.5283
-n_slope <- 62   
+slope_estimate <- 0.3155
+slope_se <- 0.1212
+slope_resid_sd <- 0.5072
+n_slope <- 70
 
-r2_estimate <- -0.009264
-r2_se <- 0.020466
-r2_resid_sd <- 0.08057
-n_r2 <- 62
+r2_estimate <- -0.0009488
+r2_se <- 0.0189946
+r2_resid_sd <- 0.07946
+n_r2 <- 70
 
 rue_estimate <- 0.5365
 rue_se <- 0.04865
 rue_resid_sd <- 1.0923
 n_rue <- 2046
+
 
 calc_cohen_d <- function(estimate, resid_sd, n) {
   d <- estimate / resid_sd
@@ -974,6 +1034,32 @@ es_fig <- ggplot(cohen_d_df, aes(x = Cohen_d, y = Variable, color = Variable)) +
   theme(axis.text.y = element_text(size = 14), legend.position = "none")
 
 es_fig
+
+
+## map
+library(ggmap)
+
+register_stadiamaps("98dda47f-a35b-4ead-aa46-dda02c95d912", write = FALSE)
+stadiamaps_key()
+has_stadiamaps_key()
+
+bbox <- c(left = -170, bottom = -60, right = 170, top = 81)
+myMap <- get_stadiamap(bbox, zoom = 4, maptype = "stamen_terrain_background")
+
+ggmap(myMap) + 
+  geom_point(data = mass_ppt, aes(x = longitude, y = latitude),
+             shape = 21, size = 1.8, fill = "darkorange", alpha = 0.5) +
+  labs(x = "", y = "")
+
+
+ggplot(data = mass_ppt, aes(x = MAP_v2, y = MAT_v2, fill = AI)) +
+  geom_point(shape = 21, color = "black", size = 3, stroke = 0.3) + 
+  labs(x = "Mean Annual Precipitation (mm)",
+       y = "Mean Annual Temperature (°C)",
+       fill = "Aridity Index") +
+  scale_fill_viridis_c(option = "plasma", direction = -1) +
+  theme_bw(base_size = 14)
+
 
 
 
