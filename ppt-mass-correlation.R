@@ -1334,11 +1334,14 @@ aridity_fig <- ggplot(data = mass_ppt, aes(x = MAP_v2, y = MAT_v2, fill = AI)) +
        y = "Mean Annual \nTemperature (°C)",
        fill = "Aridity \nIndex") +
   scale_fill_viridis_c(option = "plasma", direction = -1) +
-  theme_bw()
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+aridity_fig
 
 map_aridity_inset <- ggdraw() + 
   draw_plot(map) +
-  draw_plot(aridity_fig, x = 0.67, y = 0.62, width = 0.33, height = 0.33)
+  draw_plot(aridity_fig, x = 0.02, y = 0.02, width = 0.25, height = 0.42)
 
 map_aridity_inset
 
