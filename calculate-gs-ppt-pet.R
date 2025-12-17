@@ -50,7 +50,7 @@ ghcn <- ghcn %>%
 unique(ghcn$site_code)
 
 ghcn <- ghcn %>% 
-  filter(site_code %in% c("sage.us","mtca.au","bnch.us","elliot.us","saline.us"))
+  filter(site_code %in% c("sage.us","mtca.au","bnch.us","elliot.us"))
 
 ghcn_monthly <- ghcn %>% 
   group_by(site_code, month, year) %>% 
@@ -88,7 +88,7 @@ mswep <- mswep %>%
                           "badlau.de","jena.de","pape.de","comp.pt","kiny.au","bogong.au",
                           "temple.us","cdpt.us","ethass.au","hopl.us","kidman.au",
                           "lancaster.uk","lagoas.br","ethamc.au","burrawan.au",
-                          "lubb.us","msla.us","kilp.fi","sgs.us","veluwe.nl",
+                          "lubb.us","msla.us","kilp.fi","sgs.us","veluwe.nl", "saline.us",
                           "sevi.us","potrok.ar","hero.uk","msla_2.us","msla_3.us"))
 
 mswep_monthly <- mswep %>% 
