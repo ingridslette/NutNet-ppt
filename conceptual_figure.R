@@ -72,9 +72,24 @@ fig1 <- ggplot(plot_data, aes(x = x, y = y)) +
 
 fig1
 
+panel_labels <- tibble(
+  panel = factor(1:4),
+  label = c(
+    "a. Increased biomass, \nno precipitation by \nfertilization interaction",
+    "b. Increased biomass, \nincreased sensitivity",
+    "c. Increased biomass, \nunchanged sensitivity, \nstronger correlation",
+    "d. Increased biomass, \nincreased sensitivity, \nstronger correlation"
+  )
+)
+
 fig1 +
   geom_text(
-    data = tibble(panel = factor(1:4), label = letters[1:4]),
+    data = panel_labels,
     aes(x = 0.5, y = 14, label = label),
-    inherit.aes = FALSE
+    inherit.aes = FALSE,
+    hjust = 0,
+    vjust = 0.7,
+    lineheight = 1.05,
+    size = 4.5
   )
+
