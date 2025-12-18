@@ -1316,17 +1316,32 @@ library(ggmap)
 register_stadiamaps("98dda47f-a35b-4ead-aa46-dda02c95d912", write = FALSE)
 stadiamaps_key()
 has_stadiamaps_key()
+library(ggmap)
+library(ggplot2)
+library(cowplot)
+library(viridis)
 
 bbox <- c(left = -170, bottom = -60, right = 170, top = 81)
 myMap <- get_stadiamap(bbox, zoom = 4, maptype = "stamen_terrain_background")
 
+# Main map with overlaid legend
 map <- ggmap(myMap) + 
   geom_point(data = mass_ppt, aes(x = longitude, y = latitude, fill = AI),
              shape = 21, size = 2, alpha = 0.2) +
   scale_fill_viridis_c(option = "plasma", direction = -1) +
-  theme(legend.position = "none") +
-  labs(x = "", y = "")
+  labs(x = "", y = "", fill = "Aridity Index") +
+  theme(
+    axis.ticks = element_blank(),
+    axis.text = element_blank(),
+    legend.position = "inside",
+    legend.position.inside = c(0.65, 0.07),
+    legend.direction = "horizontal",
+    legend.title = element_text(color = "white", size = 14, face = "bold"),
+    legend.text = element_text(color = "white", size = 10),
+    legend.background = element_rect(fill = "transparent", colour = NA)
+  )
 
+map
 
 aridity_fig <- ggplot(data = mass_ppt, aes(x = MAP_v2, y = MAT_v2, fill = AI)) +
   geom_point(shape = 21, color = "black", size = 2, stroke = 0.3) + 
@@ -1335,13 +1350,11 @@ aridity_fig <- ggplot(data = mass_ppt, aes(x = MAP_v2, y = MAT_v2, fill = AI)) +
        fill = "Aridity \nIndex") +
   scale_fill_viridis_c(option = "plasma", direction = -1) +
   theme_bw() +
-  theme(legend.position = "bottom")
-
-aridity_fig
+  theme(legend.position = "none")
 
 map_aridity_inset <- ggdraw() + 
   draw_plot(map) +
-  draw_plot(aridity_fig, x = 0.02, y = 0.02, width = 0.25, height = 0.42)
+  draw_plot(aridity_fig, x = 0.04, y = 0.042, width = 0.25, height = 0.36)
 
 map_aridity_inset
 
