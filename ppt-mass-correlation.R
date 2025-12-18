@@ -1312,14 +1312,11 @@ slope_r2_ai_fig
 ## Mapping sites
 
 library(ggmap)
+library(viridis)
 
 register_stadiamaps("98dda47f-a35b-4ead-aa46-dda02c95d912", write = FALSE)
 stadiamaps_key()
 has_stadiamaps_key()
-library(ggmap)
-library(ggplot2)
-library(cowplot)
-library(viridis)
 
 bbox <- c(left = -170, bottom = -60, right = 170, top = 81)
 myMap <- get_stadiamap(bbox, zoom = 4, maptype = "stamen_terrain_background")
