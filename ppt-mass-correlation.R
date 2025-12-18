@@ -783,7 +783,23 @@ percent_increase_r2 <- ((npk_r2 - control_r2) / control_r2) * 100
 percent_increase_r2
 
 
-## Main graph
+## Main graph(s)
+
+fig_2 <- ggplot(predictions_allsites, 
+                aes(x = 10^log_ppt, y = predicted_mass, colour = trt)) +
+  geom_line(linewidth = 1) +
+  geom_ribbon(aes(ymin = mass_lower, ymax = mass_upper, fill = trt), alpha = 0.3, , colour = NA) +
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
+                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m²)",
+       color = "Treatment", fill = "Treatment",) +
+  scale_y_continuous(limits = c(0, 1000)) +
+  theme_bw(base_size = 14)
+
+fig_2  
+
 
 predictions <- predictions %>%
   left_join(results_with_averages, by = c("site_code", "trt"))
@@ -796,12 +812,6 @@ fig2_control <- ggplot(subset(predictions, trt == "Control"), aes(x = 10^log_ppt
   geom_line(data = subset(predictions_allsites, trt == "Control"), 
             aes(x = 10^log_ppt, y = predicted_mass),
             color = "#0092E0") +
-  # geom_ribbon(data = subset(predictions_allsites, trt == "NPK"),
-  #             aes(x = 10^log_ppt, ymin = mass_lower, ymax = mass_upper), 
-  #             fill = "#ff924c", alpha = 0.15) +
-  # geom_line(data = subset(predictions_allsites, trt == "NPK"), 
-  #           aes(x = 10^log_ppt, y = predicted_mass),
-  #           color = "#ff924c", linetype = "dashed") +
   labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m²)", 
        title = "Control", colour = expression(R^2)) +
   scale_y_continuous(limits = c(0, 2300)) +
@@ -826,12 +836,6 @@ fig2_npk <- ggplot(subset(predictions, trt == "NPK"), aes(x = 10^log_ppt, y = pr
   geom_line(data = subset(predictions_allsites, trt == "NPK"), 
             aes(x = 10^log_ppt, y = predicted_mass),
             color = "#ff924c") +
-  # geom_ribbon(data = subset(predictions_allsites, trt == "Control"),
-  #             aes(x = 10^log_ppt, ymin = mass_lower, ymax = mass_upper), 
-  #             fill = "#0092E0", alpha = 0.15) +
-  # geom_line(data = subset(predictions_allsites, trt == "Control"), 
-  #           aes(x = 10^log_ppt, y = predicted_mass),
-  #           color = "#0092E0", linetype = "dashed") +
   labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m²)", 
        title = "Fertilized", colour = expression(R^2)) +
   scale_y_continuous(limits = c(0, 2300)) +
@@ -1030,13 +1034,13 @@ r2_results <- calc_cohen_d(r2_estimate, r2_resid_sd, n_r2)
 rue_results <- calc_cohen_d(rue_estimate, rue_resid_sd, n_rue)
 
 cohen_d_df <- data.frame(
-  Variable = c("Biomass", "Rain Use \nEfficiency", "Sensitivity", "R²"),
+  Variable = c("Biomass", "Rain Use \nEfficiency", "Sensitivity", "Correlation \n Strength"),
   Cohen_d = c(mean_results[1], rue_results[1], slope_results[1], r2_results[1]),
   Lower_CI = c(mean_results[2], rue_results[2], slope_results[2], r2_results[2]),
   Upper_CI = c(mean_results[3], rue_results[3], slope_results[3], r2_results[3])
 )
 
-cohen_d_df$Variable <- factor(cohen_d_df$Variable, levels = c("R²", "Sensitivity", "Rain Use \nEfficiency", "Biomass"))
+cohen_d_df$Variable <- factor(cohen_d_df$Variable, levels = c("Correlation \n Strength", "Sensitivity", "Rain Use \nEfficiency", "Biomass"))
 
 es_fig <- ggplot(cohen_d_df, aes(x = Cohen_d, y = Variable, color = Variable)) +
   geom_point(size = 4) +
@@ -1045,10 +1049,28 @@ es_fig <- ggplot(cohen_d_df, aes(x = Cohen_d, y = Variable, color = Variable)) +
        y = "") +
   geom_vline(xintercept = 0, linetype = "dashed") +
   scale_color_manual(values = c("#6F6F6F", "#ff924c", "#ff924c", "#ff924c")) +
-  theme_bw(base_size = 16) +
-  theme(axis.text.y = element_text(size = 16), legend.position = "none")
+  theme_bw(base_size = 14) +
+  theme(axis.text.y = element_text(size = 14), legend.position = "none")
 
 es_fig
+
+es_fig_y <- es_fig + 
+  labs(y = "variable") + 
+  theme(axis.title.y = element_text(color = "white"))
+es_fig_y
+
+fig_2_inside <- fig_2 + theme(legend.position = "inside",
+                             legend.position.inside = c(0.21, 0.82))
+
+es_fig2 <- ggarrange(fig_2_inside, 
+                     es_fig_y,
+                     align = "hv",
+                     nrow = 2, ncol = 1
+                     )
+es_fig2 
+
+es_fig2 <- annotate_figure(es_fig2,
+                           left = text_grob("Biomass", rot = 90, size = 16))
 
 
 
