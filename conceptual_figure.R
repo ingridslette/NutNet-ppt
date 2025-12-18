@@ -57,7 +57,7 @@ plot_data <- panel_specs %>%
 fig1 <- ggplot(plot_data, aes(x = x, y = y)) +
   geom_ribbon(aes(ymin = ymin, ymax = ymax, fill = Treatment), alpha = 0.3) +
   geom_line(aes(color = Treatment), linewidth = 1.2) +
-  facet_wrap(~ panel, nrow = 1, ncol = 4) +
+  facet_wrap(~ panel, nrow = 2, ncol = 2) +
   theme_bw(14) +
   scale_color_manual(values = c("#0092E0", "#ff924c")) +
   scale_fill_manual(values = c("#0092E0", "#ff924c")) +
@@ -75,10 +75,10 @@ fig1
 panel_labels <- tibble(
   panel = factor(1:4),
   label = c(
-    "a. Increased biomass, \nno precipitation by \nfertilization interaction",
-    "b. Increased biomass, \nincreased sensitivity",
-    "c. Increased biomass, \nunchanged sensitivity, \nstronger correlation",
-    "d. Increased biomass, \nincreased sensitivity, \nstronger correlation"
+    "a. Unchanged sensitivity & \nunchanged correlation",
+    "b. Increased sensitivity & \nunchanged correlation",
+    "c. Unchanged sensitivity & \nstronger correlation",
+    "d. Increased sensitivity & \nstronger correlation"
   )
 )
 
@@ -88,7 +88,7 @@ fig1 +
     aes(x = 0.5, y = 14, label = label),
     inherit.aes = FALSE,
     hjust = 0,
-    vjust = 0.7,
+    vjust = 0.6,
     lineheight = 1.05,
     size = 4.5
   )
