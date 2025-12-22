@@ -604,7 +604,7 @@ mass_c4_plot <- ggplot(data = mass_ppt_edited,
 mass_annual_plot <- ggplot(data = mass_ppt_edited, 
                            aes(x = annual_proportion, y = live_mass)) +
   geom_point(aes(color = trt, fill = trt, shape = trt), alpha = 0.3) +
-  geom_smooth(method = "lm", color = "#6F6F6F", alpha = 0.3) +
+#  geom_smooth(method = "lm", color = "#6F6F6F", alpha = 0.3) +
   labs(x = "Proportion Annual \nLifespan", y = "Biomass (g/m²)",
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
@@ -796,7 +796,8 @@ fig_2 <- ggplot(predictions_allsites,
   labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m²)",
        color = "Treatment", fill = "Treatment",) +
   scale_y_continuous(limits = c(0, 1000)) +
-  theme_bw(base_size = 14)
+  theme_bw(base_size = 14) +
+  theme(legend.title = element_text(size = 12))
 
 fig_2  
 
@@ -1334,7 +1335,7 @@ slope_r2_sig_fig <- ggarrange(slope_ai_plot2 + rremove("xlab"),
                                 theme(axis.text.y = element_blank()),
                               r2_ai_plot2,
                               ncol = 2, nrow = 2, common.legend = TRUE, 
-                              legend = "bottom", align = 'hv')
+                              legend = "right", align = 'hv')
 slope_r2_sig_fig
 
 slope_r2_ai_fig <- ggarrange(slope_ai_plot2 + rremove("xlab"),
