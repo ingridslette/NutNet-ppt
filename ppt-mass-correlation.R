@@ -479,9 +479,12 @@ full_model <- lmer(log_mass ~ trt * (log_ppt + light_intercepted + AI + rich + p
                    + (1 | year) + (1 | site_code/block), 
                    data = mass_ppt_edited, REML = FALSE, na.action = "na.fail")
 summary(full_model)
+
 full_model_table <- dredge(full_model, m.lim = c(NA, 8))
 full_model_avg <- model.avg(get.models(full_model_table, subset = delta < 10))
 summary(full_model_avg); sw(full_model_avg)
+
+r2_full_model <- performance::r2(full_model)
 
 light_model <- lmer(log_mass ~ trt * light_intercepted + (1 | year) + (1 | site_code/block), 
                     data = mass_ppt_edited)
