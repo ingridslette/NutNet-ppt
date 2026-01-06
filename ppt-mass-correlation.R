@@ -387,7 +387,20 @@ for (site in site_codes) {
 }
 
 paired_t_test_r2 <- t.test(results$control_r2, results$npk_r2, paired = TRUE)
-print(paired_t_test_r2)
+paired_t_test_r2
+
+# Function to calculate mean ± SE
+mean_se <- function(x) {
+  m <- mean(x, na.rm = TRUE)
+  se <- sd(x, na.rm = TRUE) / sqrt(length(x))
+  return(c(mean = m, se = se))
+}
+
+mean_se_control <- mean_se(results$control_r2)
+mean_se_npk     <- mean_se(results$npk_r2)
+
+mean_se_control
+mean_se_npk
 
 
 ### Covariate analyses
