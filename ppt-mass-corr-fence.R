@@ -38,7 +38,7 @@ mass1_f <- mass1_f %>%
   )
   )
 
-summary(mass1$live_mass)
+summary(mass1_f$live_mass)
 
 site_year_counts_f <- mass1_f %>%
   group_by(site_code, trt) %>%
@@ -58,35 +58,34 @@ unique(mass2_f$site_code)
 ## popped over to script "calculate-gs-ppt-pet.R" here, to get growing season ppt for the sites included in mass2
 ## exported that as csv and now loading it here
 
-ppt_data <- read.csv("/Users/ingridslette/Desktop/NutNet/ppt_pet_annual_gs_only_2025-10-09.csv")
-
-unique(ppt_data$site_code)
-
-ppt_data <- ppt_data %>%
-  arrange(site_code, year) %>% 
-  group_by(site_code) %>%
-  mutate(prev_ppt = lag(ppt)) %>%
-  ungroup()
-
-ppt_data <- filter(ppt_data, year >= 1983)
-ppt_data <- filter(ppt_data, year < 2025) 
-unique(ppt_data$year)
-
-ppt_data <- ppt_data %>%
-  group_by(site_code) %>%
-  mutate(
-    avg_ppt = mean(ppt, na.rm = TRUE),
-    avg_pet = mean(pet, na.rm = TRUE),
-    sd_ppt = sd(ppt, na.rm = TRUE),
-    p10_ppt = quantile(ppt, 0.10, na.rm = TRUE),
-    p90_ppt = quantile(ppt, 0.90, na.rm = TRUE),
-    p05_ppt = quantile(ppt, 0.05, na.rm = TRUE),
-    p95_ppt = quantile(ppt, 0.95, na.rm = TRUE)
-  ) %>%
-  ungroup()
-
-unique(mass2$site_code)
-unique(ppt_data$site_code)
+# ppt_data <- read.csv("/Users/ingridslette/Desktop/NutNet/ppt_pet_annual_gs_only_2025-10-09.csv")
+# 
+# unique(ppt_data$site_code)
+# 
+# ppt_data <- ppt_data %>%
+#   arrange(site_code, year) %>% 
+#   group_by(site_code) %>%
+#   mutate(prev_ppt = lag(ppt)) %>%
+#   ungroup()
+# 
+# ppt_data <- filter(ppt_data, year >= 1983)
+# ppt_data <- filter(ppt_data, year < 2025) 
+# unique(ppt_data$year)
+# 
+# ppt_data <- ppt_data %>%
+#   group_by(site_code) %>%
+#   mutate(
+#     avg_ppt = mean(ppt, na.rm = TRUE),
+#     avg_pet = mean(pet, na.rm = TRUE),
+#     sd_ppt = sd(ppt, na.rm = TRUE),
+#     p10_ppt = quantile(ppt, 0.10, na.rm = TRUE),
+#     p90_ppt = quantile(ppt, 0.90, na.rm = TRUE),
+#     p05_ppt = quantile(ppt, 0.05, na.rm = TRUE),
+#     p95_ppt = quantile(ppt, 0.95, na.rm = TRUE)
+#   ) %>%
+#   ungroup()
+# 
+# unique(ppt_data$site_code)
 
 mass_ppt_f <- inner_join(mass2_f, ppt_data, by = c("site_code", "year"))
 
@@ -123,7 +122,9 @@ main_model_f <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | y
 summary(main_model_f)
 
 r2_main_model_f <- performance::r2(main_model_f)
+r2_main_model_f
 
+AIC(main_model_f)
 
 # Model assumptions check 
 plot(main_model_f)
@@ -131,7 +132,7 @@ resid <- residuals(main_model_f)
 hist(resid, breaks = 30, main = "Histogram of Residuals")
 qqnorm(resid)
 qqline(resid)
-plot(fitted(main_model), resid, main = "Residuals vs Fitted")
+plot(fitted(main_model_f), resid, main = "Residuals vs Fitted")
 
 summary(mass_ppt_f$live_mass)
 hist(mass_ppt_f$live_mass)
@@ -140,21 +141,21 @@ hist(mass_ppt_f$live_mass)
 ### Back-transforming data for graphing - allows for non-linear curves on linear scale
 
 # Back transform from log-log scale and graph
-fit_model_and_predict_allsites <- function(data) {
-  model <- lm(log_mass ~ log_ppt, data = data)
-  new_data <- data.frame(log_ppt = seq(min(data$log_ppt, na.rm = TRUE),
-                                       max(data$log_ppt, na.rm = TRUE),
-                                       length.out = 100))
-  preds <- predict(model, newdata = new_data, se.fit = TRUE)
-  new_data$predicted_log_mass <- preds$fit
-  new_data$se_log_mass <- preds$se.fit
-  new_data$predicted_mass <- 10^new_data$predicted_log_mass
-  new_data$mass_lower <- 10^(new_data$predicted_log_mass - 1.96 * new_data$se_log_mass)
-  new_data$mass_upper <- 10^(new_data$predicted_log_mass + 1.96 * new_data$se_log_mass)
-  new_data$trt <- unique(data$trt)
-  return(new_data)
-}
-
+# 
+# fit_model_and_predict_allsites <- function(data) {
+#   model <- lm(log_mass ~ log_ppt, data = data)
+#   new_data <- data.frame(log_ppt = seq(min(data$log_ppt, na.rm = TRUE),
+#                                        max(data$log_ppt, na.rm = TRUE),
+#                                        length.out = 100))
+#   preds <- predict(model, newdata = new_data, se.fit = TRUE)
+#   new_data$predicted_log_mass <- preds$fit
+#   new_data$se_log_mass <- preds$se.fit
+#   new_data$predicted_mass <- 10^new_data$predicted_log_mass
+#   new_data$mass_lower <- 10^(new_data$predicted_log_mass - 1.96 * new_data$se_log_mass)
+#   new_data$mass_upper <- 10^(new_data$predicted_log_mass + 1.96 * new_data$se_log_mass)
+#   new_data$trt <- unique(data$trt)
+#   return(new_data)
+# }
 
 predictions_allsites_f <- mass_ppt_f %>%
   group_by(trt) %>%
@@ -170,20 +171,20 @@ ggplot(data = mass_ppt_f, aes(x = ppt, y = live_mass, color = trt, shape = trt))
   theme_bw(base_size = 14)
 
 
-fit_model_and_predict <- function(data) {
-  model <- lm(log_mass ~ log_ppt, data = data)
-  p_value <- summary(model)$coefficients["log_ppt", "Pr(>|t|)"]
-  
-  new_data <- data.frame(
-    log_ppt = seq(min(data$log_ppt, na.rm = TRUE),
-                  max(data$log_ppt, na.rm = TRUE),
-                  length.out = 100)
-  )
-  new_data$predicted_log_mass <- predict(model, newdata = new_data)
-  new_data$predicted_mass <- 10^new_data$predicted_log_mass
-  new_data$p_value <- p_value
-  return(new_data)
-}
+# fit_model_and_predict <- function(data) {
+#   model <- lm(log_mass ~ log_ppt, data = data)
+#   p_value <- summary(model)$coefficients["log_ppt", "Pr(>|t|)"]
+#   
+#   new_data <- data.frame(
+#     log_ppt = seq(min(data$log_ppt, na.rm = TRUE),
+#                   max(data$log_ppt, na.rm = TRUE),
+#                   length.out = 100)
+#   )
+#   new_data$predicted_log_mass <- predict(model, newdata = new_data)
+#   new_data$predicted_mass <- 10^new_data$predicted_log_mass
+#   new_data$p_value <- p_value
+#   return(new_data)
+# }
 
 predictions_f <- mass_ppt_f %>%
   group_by(site_code, trt) %>%
