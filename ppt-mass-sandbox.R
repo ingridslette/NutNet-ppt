@@ -1,6 +1,110 @@
 
 # "just playing around" code
 
+## Trying main model with year_trt as main effect
+
+main_model2 <- lmer(
+  log_mass ~ log_ppt * trt + year_trt * trt +
+    (1 | site_code / block) + (1 | year),
+  data = mass_ppt,
+  na.action = na.exclude
+)
+
+summary(main_model2)
+
+plot(main_model2)
+resid <- residuals(main_model2)
+hist(resid, breaks = 30, main = "Histogram of Residuals")
+plot(fitted(main_model), resid, main = "Residuals vs Fitted")
+
+plot(resid(main_model2) ~ fitted(main_model2))   # residuals vs fitted
+plot(resid(main_model2) ~ mass_ppt$log_ppt)     # residuals vs log_ppt
+plot(resid(main_model2) ~ mass_ppt$year_trt)    # residuals vs treatment year
+
+qqnorm(resid(main_model2))
+qqline(resid(main_model2))
+
+qqnorm(ranef(main_model2)$year[[1]]); qqline(ranef(main_model2)$year[[1]])
+
+check_collinearity(main_model)
+
+isSingular(main_model2, tol = 1e-4)
+
+main_model_ml <- update(main_model, REML = FALSE)
+main_model2_ml <- update(main_model2, REML = FALSE)
+
+anova(main_model_ml, main_model2_ml)   # likelihood ratio test
+AIC(main_model_ml, main_model2_ml)     # compare AIC directly
+
+summary(main_model)$coefficients
+summary(main_model2)$coefficients
+
+
+ggplot(mass_ppt, aes(x = year_trt, y = log_mass, color = trt)) +
+  geom_point(alpha = 0.4) +
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE) +
+  labs(x = "Treatment Year", y = "log(Mass)")
+
+# Graphing PPT-PET
+
+ggplot(data = mass_ppt, aes(x = ppt_pet, y = live_mass, color = trt, shape = trt)) +
+  geom_point(alpha = 0.7) + 
+  geom_smooth(method = lm, alpha = 0.2) +
+  labs(x = "GSP-PET (mm)", y = "Biomass (g/m²)", color = "Treatment", shape = "Treatment") +
+  scale_color_manual(values = c("#0092E0", "#ff924c")) +
+  theme_bw(base_size = 14)
+
+ggplot(mass_ppt, aes(x = ppt_pet, y = live_mass, color = trt, shape = trt)) +
+  geom_point(alpha = 0.7) +
+  geom_smooth(method = lm, alpha = 0.2) +
+  labs(x = "GSP-PET (mm)", y = "Biomass (g/m²)", color = "Treatment", shape = "Treatment") +
+  facet_wrap(~ site_code, scales = "free") +
+  theme_bw(base_size = 14) +
+  scale_color_manual(values = c("#0092E0", "#ff924c")) +
+  theme(legend.position = "bottom")
+
+ggplot(mass_ppt, aes(x = ppt_pet, y = live_mass)) +
+  geom_smooth(method = lm, alpha = 0.2, color = "black") +
+  geom_smooth(aes(color = site_code), method = lm, alpha = 0.2, se = F) +
+  labs(x = "GSP-PET (mm)", y = "Biomass (g/m²)") +
+  facet_wrap(~ trt) +
+  theme_bw(base_size = 14)
+
+
+# Comparing a GLM to regular main model
+main_glmm <- glmer(
+  live_mass ~ ppt * trt + (1 | site_code / block) + (1 | year),
+  data = mass_ppt,
+  family = Gamma(link = "log"),
+  na.action = na.exclude
+)
+
+summary(main_glmm)
+
+AIC(main_model, main_glmm)
+BIC(main_model, main_glmm)
+
+r2_main_glmm <- performance::r2(main_glmm)
+
+
+# cover_by_site_trt <- cover_by_site_plot %>%
+#   group_by(site_code, trt) %>%
+#   summarise(
+#     avg_c4_proportion = mean(c4_proportion, na.rm = TRUE),
+#     avg_annual_proportion = mean(annual_proportion, na.rm = TRUE),
+#     .groups = "drop"
+#   )
+
+
+
+mass_covar_fig_sig <- ggarrange(mass_par_plot, 
+                                mass_annual_plot + rremove("ylab") +
+                                  theme(axis.text.y = element_blank()),
+                                ncol = 2, nrow = 1, common.legend = TRUE, 
+                                legend = "bottom", align = 'hv')
+mass_covar_fig_sig
+
+
 fig2_4 <- ggarrange(
   es_fig,
   fig2_control + rremove("xlab"),
