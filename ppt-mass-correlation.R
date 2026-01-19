@@ -305,7 +305,7 @@ paired_t_test_r2 <- t.test(results$control_r2, results$npk_r2, paired = TRUE)
 paired_t_test_r2
 
 
-# Function to calculate mean ± SE
+# Function to calculate mean ± SE of R2
 mean_se <- function(x) {
   m <- mean(x, na.rm = TRUE)
   se <- sd(x, na.rm = TRUE) / sqrt(length(x))
@@ -317,6 +317,41 @@ mean_se_npk     <- mean_se(results$npk_r2)
 
 mean_se_control
 mean_se_npk
+
+
+# comparing R2s for ppt-pet model
+
+results_ppt_pet <- data.frame(site_code = character(), 
+                      control_r2 = numeric(), 
+                      npk_r2 = numeric(),
+                      r2_diff = numeric(),
+                      control_slope = numeric(), 
+                      npk_slope = numeric(),
+                      slope_diff = numeric(),
+                      stringsAsFactors = FALSE)
+
+for (site in site_codes) {
+  site_data_control <- subset(mass_ppt, site_code == site & trt == "Control")
+  site_data_npk <- subset(mass_ppt, site_code == site & trt == "NPK")
+  control_model <- lm(log_mass ~ ppt_pet, data = site_data_control)
+  npk_model <- lm(log_mass ~ ppt_pet, data = site_data_npk)
+  control_r2 <- summary(control_model)$r.squared
+  npk_r2 <- summary(npk_model)$r.squared
+  control_slope <- coef(control_model)["ppt_pet"]
+  npk_slope <- coef(npk_model)["ppt_pet"]
+  results_ppt_pet <- rbind(results_ppt_pet, data.frame(
+    site_code = site,
+    control_r2 = control_r2,
+    npk_r2 = npk_r2,
+    r2_diff = npk_r2 - control_r2,
+    control_slope = control_slope,
+    npk_slope = npk_slope,
+    slope_diff = npk_slope - control_slope
+  ))
+}
+
+paired_t_test_r2_ppt_pet <- t.test(results_ppt_pet$control_r2, results_ppt_pet$npk_r2, paired = TRUE)
+paired_t_test_r2_ppt_pet
 
 
 ### Covariate analyses
@@ -807,11 +842,14 @@ percent_increase_rue <- ((npk_rue - control_rue) / control_rue) * 100
 percent_increase_rue
 
 
+
 ## Analyzing only data from non-extreme precipitation years
+
+mass_ppt_nominal <- subset(mass_ppt_edited, ppt > p05_ppt & ppt < p95_ppt)
 
 main_model_non_extreme <- lmer(
   log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year),
-  data = subset(mass_ppt_edited, ppt > p05_ppt & ppt < p95_ppt),
+  data = mass_ppt_nominal,
   na.action = na.exclude
 )
 
@@ -822,7 +860,7 @@ AIC(main_model_non_extreme)
 r2_main_non_extreme <- performance::r2(main_model_non_extreme)
 print(r2_main_non_extreme)
 
-non_extreme_plot <- ggplot(data = subset(mass_ppt_edited, ppt > p05_ppt & ppt < p95_ppt), 
+non_extreme_plot <- ggplot(data = mass_ppt_nominal, 
                    aes(x = ppt, y = live_mass, color = trt, fill = trt, shape = trt)) +
   geom_point(alpha = 0.7) + 
   geom_smooth(method = "lm", alpha = 0.3) +
@@ -844,18 +882,58 @@ non_extreme_plot <- ggplot(data = subset(mass_ppt_edited, ppt > p05_ppt & ppt < 
 non_extreme_plot
 
 
+### Comparing control vs. NPK R2 - non-extreme years
+
+site_codes_nominal <- unique(mass_ppt_nominal$site_code)
+
+results_nominal <- data.frame(site_code = character(), 
+                      control_r2 = numeric(), 
+                      npk_r2 = numeric(),
+                      r2_diff = numeric(),
+                      control_slope = numeric(), 
+                      npk_slope = numeric(),
+                      slope_diff = numeric(),
+                      stringsAsFactors = FALSE)
+
+for (site in site_codes_nominal) {
+  site_data_control <- subset(mass_ppt_nominal, site_code == site & trt == "Control")
+  site_data_npk <- subset(mass_ppt_nominal, site_code == site & trt == "NPK")
+  control_model <- lm(log_mass ~ log_ppt, data = site_data_control)
+  npk_model <- lm(log_mass ~ log_ppt, data = site_data_npk)
+  control_r2 <- summary(control_model)$r.squared
+  npk_r2 <- summary(npk_model)$r.squared
+  control_slope <- coef(control_model)["log_ppt"]
+  npk_slope <- coef(npk_model)["log_ppt"]
+  results_nominal <- rbind(results_nominal, data.frame(
+    site_code = site,
+    control_r2 = control_r2,
+    npk_r2 = npk_r2,
+    r2_diff = npk_r2 - control_r2,
+    control_slope = control_slope,
+    npk_slope = npk_slope,
+    slope_diff = npk_slope - control_slope
+  ))
+}
+
+paired_t_test_r2_nominal <- t.test(results_nominal$control_r2, results_nominal$npk_r2, paired = TRUE)
+paired_t_test_r2_nominal
+
+
 ## Analyzing only data from extreme dry years
 
-main_model_p05 <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year), 
-                          data = subset(mass_ppt_edited, ppt<p05_ppt))
+mass_ppt_dry <- subset(mass_ppt_edited, ppt<p05_ppt)
 
-summary(main_model_p05)
+main_model_dry <- lmer(log_mass ~ log_ppt * trt + (1 | site_code / block) + (1 | year), 
+                          data = mass_ppt_dry)
 
-AIC(main_model_p05)
-r2_main_p05 <- performance::r2(main_model_p05)
-print(r2_main_p05)
+summary(main_model_dry)
 
-p05_plot <- ggplot(data = subset(mass_ppt_edited, ppt < p05_ppt), 
+AIC(main_model_dry)
+
+r2_main_dry <- performance::r2(main_model_dry)
+r2_main_dry
+
+dry_plot <- ggplot(data = mass_ppt_dry, 
                    aes(x = ppt, y = live_mass)) +
   geom_point(aes(color = trt, fill = trt, shape = trt), alpha = 0.7) + 
   geom_smooth(method = "lm", color = "#6F6F6F", alpha = 0.3) +
@@ -874,7 +952,50 @@ p05_plot <- ggplot(data = subset(mass_ppt_edited, ppt < p05_ppt),
         legend.title = element_text(size = 14),
         legend.text = element_text(size = 14))
 
-p05_plot
+dry_plot
+
+### Comparing control vs. NPK R2 - extreme dry years
+
+site_codes_dry <- unique(mass_ppt_dry$site_code)
+
+results_dry <- data.frame(site_code = character(), 
+                              control_r2 = numeric(), 
+                              npk_r2 = numeric(),
+                              r2_diff = numeric(),
+                              control_slope = numeric(), 
+                              npk_slope = numeric(),
+                              slope_diff = numeric(),
+                              stringsAsFactors = FALSE)
+
+for (site in site_codes_dry) {
+  site_data_control <- subset(mass_ppt_dry, site_code == site & trt == "Control")
+  site_data_npk <- subset(mass_ppt_dry, site_code == site & trt == "NPK")
+  control_model <- lm(log_mass ~ log_ppt, data = site_data_control)
+  npk_model <- lm(log_mass ~ log_ppt, data = site_data_npk)
+  control_r2 <- summary(control_model)$r.squared
+  npk_r2 <- summary(npk_model)$r.squared
+  control_slope <- coef(control_model)["log_ppt"]
+  npk_slope <- coef(npk_model)["log_ppt"]
+  results_dry <- rbind(results_dry, data.frame(
+    site_code = site,
+    control_r2 = control_r2,
+    npk_r2 = npk_r2,
+    r2_diff = npk_r2 - control_r2,
+    control_slope = control_slope,
+    npk_slope = npk_slope,
+    slope_diff = npk_slope - control_slope
+  ))
+}
+
+paired_t_test_r2_dry <- t.test(results_dry$control_r2, results_dry$npk_r2, paired = TRUE)
+paired_t_test_r2_dry
+
+
+mean_se_control_dry <- mean_se(results_dry$control_r2)
+mean_se_npk_dry <- mean_se(results_dry$npk_r2)
+
+mean_se_control_dry
+mean_se_npk_dry
 
 
 ## Analyzing only data from extreme wet years
