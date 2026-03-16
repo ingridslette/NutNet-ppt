@@ -164,7 +164,7 @@ hist(mass_ppt$live_mass)
 
 ## Trying a PPT-PET model
 
-main_model_pet <- lmer(log_mass ~ ppt_pet * trt + (1 | site_code / block) + (1 | year), 
+main_model_pet <- lmer(log_mass ~ ppt_pet * trt + (1 | site_code / block / plot) + (1 | year), 
                    data = mass_ppt, na.action = na.exclude)
 
 summary(main_model_pet)
@@ -247,12 +247,15 @@ ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = trt, shape = trt, fill = tr
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   facet_wrap(~ site_code, scales = "free") +
   theme_bw(base_size = 12) +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                   #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
   theme(legend.position = "bottom",
         axis.title = element_text(size = 18),
         legend.title = element_text(size = 18),
@@ -442,6 +445,7 @@ full_model <- lmer(log_mass ~ trt * (log_ppt + light_intercepted + AI + rich + p
                    data = mass_ppt_edited, REML = FALSE, na.action = "na.fail")
 summary(full_model)
 
+
 full_model_table <- dredge(full_model, m.lim = c(NA, 6))
 full_model_avg <- model.avg(get.models(full_model_table, subset = delta < 50))
 summary(full_model_avg); sw(full_model_avg)
@@ -460,12 +464,15 @@ mass_lrr_mass_plot <- ggplot(data = mass_ppt_edited,
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
   theme(legend.position = "none") +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     )
 
 mass_par_plot <- ggplot(data = mass_ppt_edited, 
                         aes(x = light_intercepted, y = live_mass, color = trt, fill = trt, shape = trt)) +
@@ -475,12 +482,15 @@ mass_par_plot <- ggplot(data = mass_ppt_edited,
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
   theme(legend.position = "none") +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     )
 
 mass_ai_plot <- ggplot(data = mass_ppt_edited, 
                        aes(x = AI, y = live_mass, color = trt, fill = trt, shape = trt)) +
@@ -489,12 +499,15 @@ mass_ai_plot <- ggplot(data = mass_ppt_edited,
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
   theme(legend.position = "none") +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 16, "NPK" = 17),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 16, "NPK" = 17)
+                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     )
 
 mass_rich_plot <- ggplot(data = mass_ppt_edited, 
                          aes(x = rich, y = live_mass, color = trt, shape = trt, fill = trt)) +
@@ -503,12 +516,15 @@ mass_rich_plot <- ggplot(data = mass_ppt_edited,
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
   theme(legend.position = "none") +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     )
 
 mass_prev_ppt_plot <- ggplot(data = mass_ppt_edited, 
                              aes(x = prev_ppt, y = live_mass, color = trt, shape = trt, fill = trt)) +
@@ -517,12 +533,15 @@ mass_prev_ppt_plot <- ggplot(data = mass_ppt_edited,
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
   theme(legend.position = "none") +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     )
 
 mass_c4_plot <- ggplot(data = mass_ppt_edited, 
                        aes(x = c4_proportion, y = live_mass, color = trt, shape = trt, fill = trt)) +
@@ -532,12 +551,15 @@ mass_c4_plot <- ggplot(data = mass_ppt_edited,
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
   theme(legend.position = "none") +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     )
 
 mass_annual_plot <- ggplot(data = mass_ppt_edited, 
                            aes(x = annual_proportion, y = live_mass, color = trt, fill = trt, shape = trt)) +
@@ -547,12 +569,15 @@ mass_annual_plot <- ggplot(data = mass_ppt_edited,
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
   theme(legend.position = "none") +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     )
 
 mass_year_trt_plot <- ggplot(data = mass_ppt_edited, 
                            aes(x = year_trt, y = live_mass, color = trt, shape = trt, fill = trt)) +
@@ -561,12 +586,15 @@ mass_year_trt_plot <- ggplot(data = mass_ppt_edited,
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
   theme(legend.position = "none") +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     )
 
 
 mass_covar_fig_all <- ggarrange(mass_ai_plot,
@@ -723,10 +751,12 @@ fig_2 <- ggplot(predictions_allsites,
                 aes(x = 10^log_ppt, y = predicted_mass, colour = trt)) +
   geom_line(linewidth = 1) +
   geom_ribbon(aes(ymin = mass_lower, ymax = mass_upper, fill = trt), alpha = 0.3, , colour = NA) +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
   labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m²)",
        color = "Treatment", fill = "Treatment",) +
   scale_y_continuous(limits = c(0, 1000)) +
@@ -772,7 +802,7 @@ fig2_npk <- ggplot(subset(predictions, trt == "NPK"), aes(x = 10^log_ppt, y = pr
             aes(x = 10^log_ppt, y = predicted_mass),
             color = "#ff924c") +
   labs(x = "Growing Season Precipitation (mm)", y = "Biomass (g/m²)", 
-       title = "Fertilized", colour = "Correlation \nStrength") +
+       title = "NPK", colour = "Correlation \nStrength") +
   scale_y_continuous(limits = c(0, 2300)) +
   scale_colour_gradient2(low = "#E4D3EE", mid = "#B185DB", high = "#423073",
                          midpoint = 0.3) +
@@ -868,12 +898,15 @@ non_extreme_plot <- ggplot(data = mass_ppt_nominal,
        color = "Treatment", shape = "Treatment", fill = "Treatment",
        title = "Non-Extreme Precipitation Years") +
   theme_bw(base_size = 16) +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
   theme(legend.position = "bottom",
         plot.title = element_text(hjust = 0.5, size = 16),
         legend.title = element_text(size = 14),
@@ -941,12 +974,15 @@ dry_plot <- ggplot(data = mass_ppt_dry,
        color = "Treatment", shape = "Treatment", fill = "Treatment",
        title = "Extreme Dry Years") +
   theme_bw(base_size = 16) +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
   theme(legend.position = "bottom",
         plot.title = element_text(hjust = 0.5, size = 16),
         legend.title = element_text(size = 14),
@@ -1013,12 +1049,15 @@ p95_plot <- ggplot(data = subset(mass_ppt_edited, ppt>p95_ppt),
        color = "Treatment", shape = "Treatment", fill = "Treatment",
        title = "Extreme Wet Years") +
   theme_bw(base_size = 16) +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
   theme(legend.position = "bottom",
         plot.title = element_text(hjust = 0.5, size = 16),
         legend.title = element_text(size = 14),
@@ -1135,18 +1174,18 @@ es_fig_y <- es_fig +
 es_fig_y
 
 fig_2_inside <- fig_2 + theme(legend.position = "inside",
-                             legend.position.inside = c(0.21, 0.82))
+                             legend.position.inside = c(0.25, 0.8))
 
 es_fig2 <- ggarrange(fig_2_inside, 
                      es_fig_y,
+                     labels = c("a", "b"),
+                     label.x = 0.3,
+                     label.y = 0.95,
+                     font.label = list(size = 12),
                      align = "hv",
                      nrow = 1, ncol = 2
                      )
 es_fig2 
-
-es_fig2 <- annotate_figure(es_fig2,
-                           left = text_grob("Biomass", rot = 90, size = 16))
-
 
 
 ## Graphing covariates against R2 and slope
@@ -1160,12 +1199,15 @@ r2_lrr_mass_plot <- ggplot(data = results_with_averages,
   labs(x = "Biomass Response \nRatio", y = "Correlation Strength", 
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     )
 
 r2_par_plot <- ggplot(data = results_with_averages, 
                       aes(x = avg_light, y = r2, color = trt, shape = trt, fill = trt)) +
@@ -1174,12 +1216,15 @@ r2_par_plot <- ggplot(data = results_with_averages,
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
 #  scale_y_continuous(limits = c(0, 0.6)) +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     )
 
 
 r2_ai_plot <- ggplot(data = results_with_averages, 
@@ -1189,12 +1234,15 @@ r2_ai_plot <- ggplot(data = results_with_averages,
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
 #  scale_y_continuous(limits = c(0, 0.6)) +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     )
 
 r2_ai_plot2 <- ggplot(data = results_with_averages, 
                           aes(x = avg_ai, y = r2)) +
@@ -1204,14 +1252,57 @@ r2_ai_plot2 <- ggplot(data = results_with_averages,
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
 #  scale_y_continuous(limits = c(0, 0.6)) +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     )
 
 r2_ai_plot2
+
+r2_ai_plot3 <- ggplot(data = results_with_averages, 
+                      aes(x = avg_ai, y = r2)) +
+  geom_point(aes(color = trt, shape = trt, fill = trt), alpha = 0.7) + 
+  geom_smooth(method = lm, formula = y ~ log(x), se = F, color = "#6F6F6F", linewidth = 0.75) +
+  labs(x = "Aridity Index", y = "Correlation Strength",
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
+  theme_bw(base_size = 14) +
+  #  scale_y_continuous(limits = c(0, 0.6)) +
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     )
+
+r2_ai_plot3
+
+r2_ai_plot2_trt <- ggplot(data = results_with_averages, 
+                      aes(x = avg_ai, y = r2, color = trt, shape = trt, fill = trt)) +
+  geom_point(alpha = 0.7) + 
+  geom_smooth(method = lm, formula = y ~ log(x), se = F, linewidth = 0.75) +
+  labs(x = "Aridity Index \n\nMore Arid   →   Less Arid", y = "Correlation Strength",
+       color = "Treatment", shape = "Treatment", fill = "Treatment") +
+  theme_bw(base_size = 14) +
+  #  scale_y_continuous(limits = c(0, 0.6)) +
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     )
+
+r2_ai_plot2_trt
 
 r2_rich_plot <- ggplot(data = results_with_averages, 
                        aes(x = avg_richness, y = r2, color = trt, shape = trt, fill = trt)) +
@@ -1220,12 +1311,15 @@ r2_rich_plot <- ggplot(data = results_with_averages,
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
 # scale_y_continuous(limits = c(0, 0.6)) +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     )
 
 
 r2_c4_plot <- ggplot(data = results_with_averages, 
@@ -1235,12 +1329,15 @@ r2_c4_plot <- ggplot(data = results_with_averages,
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
 #  scale_y_continuous(limits = c(0, 0.6)) +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     )
 
 
 r2_annual_plot <- ggplot(data = results_with_averages, 
@@ -1250,12 +1347,15 @@ r2_annual_plot <- ggplot(data = results_with_averages,
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
 #  scale_y_continuous(limits = c(0, 0.6)) +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     )
 
 
 r2_covar_figure <- ggarrange(r2_ai_plot2, 
@@ -1285,12 +1385,15 @@ slope_lrr_mass_plot <- ggplot(data = results_with_averages,
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
 #  scale_y_continuous(limits = c(-1.1, 3.8)) +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     )
 
 slope_par_plot <- ggplot(data = results_with_averages, 
                          aes(x = avg_light, y = slope, color = trt, shape = trt, fill = trt)) +
@@ -1299,12 +1402,15 @@ slope_par_plot <- ggplot(data = results_with_averages,
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
 #  scale_y_continuous(limits = c(-1.1, 3.8)) +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     )
 
 slope_ai_plot <- ggplot(data = results_with_averages, 
                         aes(x = avg_ai, y = slope, color = trt, shape = trt, fill = trt)) +
@@ -1314,12 +1420,15 @@ slope_ai_plot <- ggplot(data = results_with_averages,
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
 #  scale_y_continuous(limits = c(-1.1, 3.8)) +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     )
 
 slope_ai_plot2 <- ggplot(data = results_with_averages, 
                              aes(x = avg_ai, y = slope, color = trt, shape = trt, fill = trt)) +
@@ -1329,12 +1438,15 @@ slope_ai_plot2 <- ggplot(data = results_with_averages,
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
 #  scale_y_continuous(limits = c(-1.1, 3.8)) +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     )
 slope_ai_plot2
 
 
@@ -1345,12 +1457,15 @@ slope_rich_plot <- ggplot(data = results_with_averages,
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
 #  scale_y_continuous(limits = c(-1.1, 3.8)) +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     )
 
 slope_c4_plot <- ggplot(data = results_with_averages, 
                         aes(x = avg_c4_proportion, y = slope, color = trt, shape = trt, fill = trt)) +
@@ -1359,12 +1474,15 @@ slope_c4_plot <- ggplot(data = results_with_averages,
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
 #  scale_y_continuous(limits = c(-1.1, 3.8)) +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     )
 
 slope_annual_plot <- ggplot(data = results_with_averages, 
                             aes(x = avg_annual_proportion, y = slope, color = trt, shape = trt, fill = trt)) +
@@ -1374,12 +1492,15 @@ slope_annual_plot <- ggplot(data = results_with_averages,
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
 #  scale_y_continuous(limits = c(-1.1, 3.8)) +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c"),
-                    labels = c("Control" = "Control", "NPK" = "Fertilized")) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24),
-                     labels = c("Control" = "Control", "NPK" = "Fertilized"))
+  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     ) +
+  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
+                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                    ) +
+  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
+                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
+                     )
 
 
 slope_covar_figure <- ggarrange(slope_ai_plot2, 
@@ -1408,13 +1529,23 @@ slope_r2_sig_fig <- ggarrange(slope_ai_plot2 + rremove("xlab"),
                                 theme(axis.text.y = element_blank()),
                               r2_ai_plot2,
                               ncol = 2, nrow = 2, common.legend = TRUE, 
-                              legend = "right", align = 'hv')
+                              legend = "right", align = 'hv',
+                              labels = c("a*", "b", "c*"),
+                              label.x = 0.27,          # left aligned
+                              label.y = 0.95,          # top aligned
+                              font.label = list(size = 12)
+)
+
 slope_r2_sig_fig
 
 slope_r2_ai_fig <- ggarrange(slope_ai_plot2 + rremove("xlab"),
                              r2_ai_plot2,
                              ncol = 1, nrow = 2, common.legend = TRUE, 
-                             legend = "bottom", align = 'hv')
+                             legend = "bottom", align = 'hv',
+                             labels = c("a", "b"),
+                             label.x = 0.26,          # left aligned
+                             label.y = 0.95,          # top aligned
+                             font.label = list(size = 12))
 slope_r2_ai_fig
 
 
@@ -1427,14 +1558,14 @@ register_stadiamaps("98dda47f-a35b-4ead-aa46-dda02c95d912", write = FALSE)
 stadiamaps_key()
 has_stadiamaps_key()
 
-bbox <- c(left = -170, bottom = -60, right = 170, top = 81)
+bbox <- c(left = -170, bottom = -60, right = 160, top = 75)
 myMap <- get_stadiamap(bbox, zoom = 4, maptype = "stamen_terrain_background")
 
 # Main map with overlaid legend
 map <- ggmap(myMap) + 
   geom_point(data = mass_ppt, aes(x = longitude, y = latitude, fill = AI),
-             shape = 21, size = 2, alpha = 0.2) +
-  scale_fill_viridis_c(option = "plasma", direction = -1) +
+             shape = 21, size = 1.2, alpha = 0.2) +
+  scale_fill_viridis_c(option = "plasma", direction = 1) +
   labs(x = "", y = "", fill = "Aridity Index") +
   theme(
     axis.ticks = element_blank(),
@@ -1450,17 +1581,17 @@ map <- ggmap(myMap) +
 map
 
 aridity_fig <- ggplot(data = mass_ppt, aes(x = MAP_v2, y = MAT_v2, fill = AI)) +
-  geom_point(shape = 21, color = "black", size = 2, stroke = 0.3) + 
+  geom_point(shape = 21, color = "black", size = 1.2, stroke = 0.3) + 
   labs(x = "Mean Annual \nPrecipitation (mm)",
        y = "Mean Annual \nTemperature (°C)",
        fill = "Aridity \nIndex") +
-  scale_fill_viridis_c(option = "plasma", direction = -1) +
+  scale_fill_viridis_c(option = "plasma", direction = 1) +
   theme_bw() +
   theme(legend.position = "none")
 
 map_aridity_inset <- ggdraw() + 
   draw_plot(map) +
-  draw_plot(aridity_fig, x = 0.04, y = 0.042, width = 0.25, height = 0.36)
+  draw_plot(aridity_fig, x = 0.04, y = 0.07, width = 0.24, height = 0.35)
 
 map_aridity_inset
 
@@ -1544,3 +1675,7 @@ site_block_counts <- mass_ppt %>%
 site_plot_counts <- mass_ppt %>%
   group_by(site_code, block, trt) %>%
   summarise(plot_count = n_distinct(plot), .groups = 'drop')
+
+
+
+
