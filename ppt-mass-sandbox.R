@@ -512,12 +512,16 @@ slope_lrr_mass_plot2 <- ggplot(data = results_with_averages,
   theme_bw() +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
 
+slope_lrr_mass_plot2
+
+
 slope_par_plot2 <- ggplot(data = results_with_averages, 
-                          aes(x = avg_proportion_par, y = slope, color = trt, shape = trt)) +
+                          aes(x = avg_light, y = slope, color = trt, shape = trt)) +
   geom_point() + geom_smooth(method = lm, se = FALSE) +
   xlab("Proportion PAR") + ylab("Slope of ppt vs. mass") +
   theme_bw() +
   scale_color_manual(values = c("#0092E0", "#ff924c"))
+
 
 par_lrr_mass_model <- lm(avg_proportion_par ~ trt * avg_lrr_mass, data = results_with_averages, na.action = "na.fail")
 summary(par_lrr_mass_model) # NS
