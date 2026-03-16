@@ -26,7 +26,7 @@ se_control     <- 1
 plot_data <- panel_specs %>%
   crossing(
     x = x,
-    Treatment = c("Control", "Fertilized")
+    Treatment = c("Control", "NPK")
   ) %>%
   mutate(
     intercept = if_else(
