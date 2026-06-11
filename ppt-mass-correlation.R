@@ -1190,9 +1190,6 @@ es_fig2
 
 ## Graphing covariates against R2 and slope
 
-results_with_averages_graphing <- results_graphing %>%
-  left_join(averages, by = c("site_code", "trt"))
-
 r2_lrr_mass_plot <- ggplot(data = results_with_averages, 
                            aes(x = avg_lrr_mass, y = r2, color = trt, shape = trt, fill = trt)) +
   geom_point(alpha = 0.7) +
@@ -1200,13 +1197,10 @@ r2_lrr_mass_plot <- ggplot(data = results_with_averages,
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
   scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      ) +
   scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                     ) +
   scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      )
 
 r2_par_plot <- ggplot(data = results_with_averages, 
@@ -1215,15 +1209,11 @@ r2_par_plot <- ggplot(data = results_with_averages,
   labs(x = "Light Interception", y = "Correlation Strength", 
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
-#  scale_y_continuous(limits = c(0, 0.6)) +
   scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      ) +
   scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                     ) +
   scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      )
 
 
@@ -1233,76 +1223,26 @@ r2_ai_plot <- ggplot(data = results_with_averages,
   labs(x = "Aridity Index", y = "Correlation Strength",
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
-#  scale_y_continuous(limits = c(0, 0.6)) +
   scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      ) +
   scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                     ) +
   scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      )
 
 r2_ai_plot2 <- ggplot(data = results_with_averages, 
                           aes(x = avg_ai, y = r2)) +
   geom_point(aes(color = trt, shape = trt, fill = trt), alpha = 0.7) + 
-  geom_smooth(method = lm, formula = y ~ log(x), se = F, color = "#6F6F6F", linewidth = 0.75) +
+  geom_smooth(method = lm, formula = y ~ poly(x, 2, raw = T), se = F, color = "#6F6F6F", linewidth = 0.5) +
   labs(x = "Aridity Index \n\nMore Arid   →   Less Arid", y = "Correlation Strength",
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
-#  scale_y_continuous(limits = c(0, 0.6)) +
   scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
                      ) +
   scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                     ) +
   scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      )
-
-r2_ai_plot2
-
-r2_ai_plot3 <- ggplot(data = results_with_averages, 
-                      aes(x = avg_ai, y = r2)) +
-  geom_point(aes(color = trt, shape = trt, fill = trt), alpha = 0.7) + 
-  geom_smooth(method = lm, formula = y ~ log(x), se = F, color = "#6F6F6F", linewidth = 0.75) +
-  labs(x = "Aridity Index", y = "Correlation Strength",
-       color = "Treatment", shape = "Treatment", fill = "Treatment") +
-  theme_bw(base_size = 14) +
-  #  scale_y_continuous(limits = c(0, 0.6)) +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
-                     ) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
-                    ) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
-                     )
-
-r2_ai_plot3
-
-r2_ai_plot2_trt <- ggplot(data = results_with_averages, 
-                      aes(x = avg_ai, y = r2, color = trt, shape = trt, fill = trt)) +
-  geom_point(alpha = 0.7) + 
-  geom_smooth(method = lm, formula = y ~ log(x), se = F, linewidth = 0.75) +
-  labs(x = "Aridity Index \n\nMore Arid   →   Less Arid", y = "Correlation Strength",
-       color = "Treatment", shape = "Treatment", fill = "Treatment") +
-  theme_bw(base_size = 14) +
-  #  scale_y_continuous(limits = c(0, 0.6)) +
-  scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
-                     ) +
-  scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
-                    ) +
-  scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
-                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
-                     )
-
-r2_ai_plot2_trt
 
 r2_rich_plot <- ggplot(data = results_with_averages, 
                        aes(x = avg_richness, y = r2, color = trt, shape = trt, fill = trt)) +
@@ -1310,15 +1250,11 @@ r2_rich_plot <- ggplot(data = results_with_averages,
   labs(x = "Species Richness", y = "Correlation Strength", 
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
-# scale_y_continuous(limits = c(0, 0.6)) +
   scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      ) +
   scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                     ) +
   scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
-                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
                      )
 
 
@@ -1328,17 +1264,12 @@ r2_c4_plot <- ggplot(data = results_with_averages,
   labs(x = expression("Proportion C"[4]), y = "Correlation Strength", 
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
-#  scale_y_continuous(limits = c(0, 0.6)) +
   scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      ) +
   scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                     ) +
   scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      )
-
 
 r2_annual_plot <- ggplot(data = results_with_averages, 
                          aes(x = avg_annual_proportion, y = r2, color = trt, shape = trt, fill = trt)) +
@@ -1346,15 +1277,11 @@ r2_annual_plot <- ggplot(data = results_with_averages,
   labs(x ="Proportion Annual \nLifespan", y = "Correlation Strength", 
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
-#  scale_y_continuous(limits = c(0, 0.6)) +
   scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      ) +
   scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                    #, labels = c("Control" = "Control", "NPK" = "Fertilized")
                     ) +
   scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      )
 
 
@@ -1366,12 +1293,12 @@ r2_covar_figure <- ggarrange(r2_ai_plot2,
                              r2_par_plot + rremove("ylab") +
                                theme(axis.text.y = element_blank()),
                              
-                             r2_rich_plot, 
-                             
-                             r2_annual_plot  + rremove("ylab") +
-                               theme(axis.text.y = element_blank()),
+                             r2_annual_plot, 
                              
                              r2_c4_plot + rremove("ylab") +
+                               theme(axis.text.y = element_blank()),
+                             
+                             r2_rich_plot + rremove("ylab") +
                                theme(axis.text.y = element_blank()),
                              
                              ncol = 3, nrow = 2, common.legend = TRUE, legend = "bottom", align = 'hv')
@@ -1384,15 +1311,11 @@ slope_lrr_mass_plot <- ggplot(data = results_with_averages,
   labs(x = "Biomass Response \nRatio", y = "Sensitivity",
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
-#  scale_y_continuous(limits = c(-1.1, 3.8)) +
   scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      ) +
   scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                     ) +
   scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      )
 
 slope_par_plot <- ggplot(data = results_with_averages, 
@@ -1401,54 +1324,43 @@ slope_par_plot <- ggplot(data = results_with_averages,
   labs(x = "Light Interception", y = "Sensitivity",
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
-#  scale_y_continuous(limits = c(-1.1, 3.8)) +
   scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      ) +
   scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                     ) +
   scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      )
 
 slope_ai_plot <- ggplot(data = results_with_averages, 
-                        aes(x = avg_ai, y = slope, color = trt, shape = trt, fill = trt)) +
-  geom_point(alpha = 0.7) + 
-  geom_smooth(method = lm, se = FALSE, alpha = 0.2) +
+                        aes(x = avg_ai, y = slope)) +
+  geom_point(aes(color = trt, shape = trt, fill = trt), alpha = 0.7) + 
+  geom_smooth(method = lm, se = FALSE, color = "#6F6F6F", linewidth = 0.5) +
   labs(x = "Aridity Index", y = "Sensitivity", 
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
-#  scale_y_continuous(limits = c(-1.1, 3.8)) +
   scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      ) +
   scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                    #, labels = c("Control" = "Control", "NPK" = "Fertilized")
                     ) +
   scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
-                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
                      )
+slope_ai_plot
 
 slope_ai_plot2 <- ggplot(data = results_with_averages, 
-                             aes(x = avg_ai, y = slope, color = trt, shape = trt, fill = trt)) +
-  geom_point(alpha = 0.7) +
-  geom_smooth(method = lm, formula = y ~ log(x), se = FALSE, linewidth = 0.75) +
-  labs(x = "Aridity Index", y = "Sensitivity",
+                         aes(x = avg_ai, y = slope)) +
+  geom_point(aes(color = trt, shape = trt, fill = trt), alpha = 0.7) + 
+  geom_smooth(method = lm, formula = y ~ poly(x, 2, raw = TRUE), se = FALSE, 
+              color = "#6F6F6F", linewidth = 0.5) +
+  labs(x = "Aridity Index \n\nMore Arid   →   Less Arid", y = "Sensitivity",
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
-#  scale_y_continuous(limits = c(-1.1, 3.8)) +
   scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
                      ) +
   scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                     ) +
   scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      )
 slope_ai_plot2
-
 
 slope_rich_plot <- ggplot(data = results_with_averages, 
                           aes(x = avg_richness, y = slope, color = trt, shape = trt, fill = trt)) +
@@ -1456,15 +1368,11 @@ slope_rich_plot <- ggplot(data = results_with_averages,
   labs(x = "Species Richness", y = "Sensitivity",
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
-#  scale_y_continuous(limits = c(-1.1, 3.8)) +
   scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      ) +
   scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                     ) +
   scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      )
 
 slope_c4_plot <- ggplot(data = results_with_averages, 
@@ -1473,33 +1381,25 @@ slope_c4_plot <- ggplot(data = results_with_averages,
   labs(x = expression("Proportion C"[4]), y = "Sensitivity",
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
-#  scale_y_continuous(limits = c(-1.1, 3.8)) +
   scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      ) +
   scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                     ) +
   scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      )
 
 slope_annual_plot <- ggplot(data = results_with_averages, 
-                            aes(x = avg_annual_proportion, y = slope, color = trt, shape = trt, fill = trt)) +
-  geom_point(alpha = 0.7) + 
-  geom_smooth(method = lm, se = FALSE, linewidth = 0.75) +
+                            aes(x = avg_annual_proportion, y = slope)) +
+  geom_point(aes(color = trt, shape = trt, fill = trt), alpha = 0.7) + 
+  geom_smooth(method = lm, se = FALSE, color = "#6F6F6F", linewidth = 0.5) +
   labs(x = "Proportion Annual \nLifespan", y = "Sensitivity",
        color = "Treatment", shape = "Treatment", fill = "Treatment") +
   theme_bw(base_size = 14) +
-#  scale_y_continuous(limits = c(-1.1, 3.8)) +
   scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      ) +
   scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                     ) +
   scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      )
 
 
@@ -1511,12 +1411,12 @@ slope_covar_figure <- ggarrange(slope_ai_plot2,
                                 slope_par_plot + rremove("ylab") +
                                   theme(axis.text.y = element_blank()),
                                 
-                                slope_rich_plot, 
-                                
-                                slope_annual_plot  + rremove("ylab") +
-                                  theme(axis.text.y = element_blank()),
+                                slope_annual_plot , 
                                 
                                 slope_c4_plot + rremove("ylab") +
+                                  theme(axis.text.y = element_blank()),
+                                
+                                slope_rich_plot + rremove("ylab") +
                                   theme(axis.text.y = element_blank()),
                                 
                                 ncol = 3, nrow = 2, common.legend = TRUE, legend = "bottom", align = 'hv')
@@ -1531,8 +1431,8 @@ slope_r2_sig_fig <- ggarrange(slope_ai_plot2 + rremove("xlab"),
                               ncol = 2, nrow = 2, common.legend = TRUE, 
                               legend = "right", align = 'hv',
                               labels = c("a*", "b", "c*"),
-                              label.x = 0.27,          # left aligned
-                              label.y = 0.95,          # top aligned
+                              label.x = 0.27,         
+                              label.y = 0.95,          
                               font.label = list(size = 12)
 )
 
@@ -1543,8 +1443,8 @@ slope_r2_ai_fig <- ggarrange(slope_ai_plot2 + rremove("xlab"),
                              ncol = 1, nrow = 2, common.legend = TRUE, 
                              legend = "bottom", align = 'hv',
                              labels = c("a", "b"),
-                             label.x = 0.26,          # left aligned
-                             label.y = 0.95,          # top aligned
+                             label.x = 0.26,          
+                             label.y = 0.95,          
                              font.label = list(size = 12))
 slope_r2_ai_fig
 
