@@ -259,6 +259,44 @@ ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = trt, shape = trt, fill = tr
         legend.text = element_text(size = 18))
 
 
+site_ai_order <- mass_ppt %>%
+  distinct(site_code, AI) %>%
+  arrange(AI) %>%
+  pull(site_code)
+
+mass_ppt$site_code <- factor(mass_ppt$site_code, levels = site_ai_order)
+predictions_sig$site_code <- factor(predictions_sig$site_code,
+                                    levels = site_ai_order)
+
+all_sites_ai_order <- ggplot(mass_ppt, aes(x = ppt, y = live_mass,
+                     color = trt, shape = trt, fill = trt)) +
+  geom_point(alpha = 0.7) +
+  geom_line(data = predictions_sig,
+            aes(x = 10^log_ppt, y = predicted_mass),
+            linewidth = 1) +
+  labs(x = "Growing Season Precipitation (mm)",
+       y = "Biomass (g/m²)",
+       color = "Treatment",
+       shape = "Treatment",
+       fill = "Treatment") +
+  facet_wrap(~ site_code, scales = "free") +
+  theme_bw(base_size = 12) +
+  scale_color_manual(values = c("Control" = "#0092E0",
+                                "NPK" = "#ff924c")) +
+  scale_fill_manual(values = c("Control" = "#0092E0",
+                               "NPK" = "#ff924c")) +
+  scale_shape_manual(values = c("Control" = 21,
+                                "NPK" = 24)) +
+  theme(
+    legend.position = "bottom",
+    axis.title = element_text(size = 18),
+    legend.title = element_text(size = 18),
+    legend.text = element_text(size = 18)
+  )
+
+all_sites_ai_order
+
+
 ggplot(mass_ppt, aes(x = ppt, y = live_mass, color = site_code)) +
   geom_line(data = predictions, aes(x = 10^log_ppt, y = predicted_mass), linewidth = 1) +
   geom_line(data = predictions_allsites, aes(x = 10^log_ppt, y = predicted_mass), 
