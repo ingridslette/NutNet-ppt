@@ -162,6 +162,33 @@ summary(mass_ppt$live_mass)
 hist(mass_ppt$live_mass)
 
 
+## Calculating percent increase by site first, then averaging
+site_trt_means <- mass_ppt %>%
+  group_by(site_code, trt) %>%
+  summarise(
+    mean_live_mass = mean(live_mass, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+site_effects <- site_trt_means %>%
+  tidyr::pivot_wider(names_from = trt, values_from = mean_live_mass) %>%
+  mutate(percent_increase = ((NPK - Control) / Control) * 100)
+
+mean(site_effects$percent_increase, na.rm = TRUE)
+
+
+## Comparing a non-linear fit
+
+main_model_quad <- lmer(log_mass ~ poly(log_ppt, 2, raw = TRUE) * trt +
+                 (1 | site_code / block) +
+                 (1 | year),
+               data = mass_ppt,
+               REML = FALSE, 
+               na.action = na.exclude)
+
+anova(main_model, main_model_quad)
+
+
 ## Trying a PPT-PET model
 
 main_model_pet <- lmer(log_mass ~ ppt_pet * trt + (1 | site_code / block / plot) + (1 | year), 
