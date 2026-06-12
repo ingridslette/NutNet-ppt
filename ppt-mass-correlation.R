@@ -938,13 +938,10 @@ non_extreme_plot <- ggplot(data = mass_ppt_nominal,
        title = "Non-Extreme Precipitation Years") +
   theme_bw(base_size = 16) +
   scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      ) +
   scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                    #, labels = c("Control" = "Control", "NPK" = "Fertilized")
                     ) +
   scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
-                     #, labels = c("Control" = "Control", "NPK" = "Fertilized")
                      ) +
   theme(legend.position = "bottom",
         plot.title = element_text(hjust = 0.5, size = 16),
@@ -1014,13 +1011,10 @@ dry_plot <- ggplot(data = mass_ppt_dry,
        title = "Extreme Dry Years") +
   theme_bw(base_size = 16) +
   scale_color_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      ) +
   scale_fill_manual(values = c("Control" = "#0092E0", "NPK" = "#ff924c")
-                    #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                     ) +
   scale_shape_manual(values = c("Control" = 21, "NPK" = 24)
-                     #,labels = c("Control" = "Control", "NPK" = "Fertilized")
                      ) +
   theme(legend.position = "bottom",
         plot.title = element_text(hjust = 0.5, size = 16),
